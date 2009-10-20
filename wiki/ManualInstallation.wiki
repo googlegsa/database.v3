@@ -1,0 +1,71 @@
+Steps to install Google Enterprise Connector for Databases.
+
+= Introduction =
+This document walks you through the steps to manually install a connector. The instructions mentioned here are applicable to connector version 1.0.0_ALPHA and above
+
+Google recommends that you use the installer for installing the connector. You may want to do it manually if,
+
+  * You have built and installed a customized connector manager or a customized version of   the connector
+  * You want to deploy the connector on an existing Tomcat installation
+  * You are installing a patch release that is not packaged with an installer.
+
+=Pre-requisites=
+  * Apache Tomcat 6. You can download it from it from http://tomcat.apache.org/download-60.cgi
+  * JRE1.5 or above. Refer to http://java.sun.com/javase/downloads/index_jdk5.jsp for downloads
+
+=Manual installation steps=
+  # Shut down Tomcat if it is running.
+  # Go to $CATALINA_HOME\bin directory.
+    * *For Windows* edit Add the following lines in the start of the file:
+      {{{
+      Add the following lines in the start of the file:
+      set JRE_HOME=<JRE_HOME>
+      set PATH=%PATH%;
+   
+      Add the following lines just before "rem Set standard command for invoking Java":
+      rem Google Enterpise Connector Logging
+      set CONNECTOR_LOGGING=%CATALINA_HOME%\webapps\connector-manager\WEB-INF\lib\connector-logging.jar
+      if not exist "%CONNECTOR_LOGGING%" goto noConnectorLogging
+      set CLASSPATH=%CLASSPATH%;%CONNECTOR_LOGGING%
+      :noConnectorLogging
+      }}} 
+    * *For Linux* edit setclasspath.sh
+      {{{
+      Add the following lines in the start of the file:
+      export JRE_HOME=<JRE_HOME>
+      export PATH="$PATH":"$JRE_HOME"/bin
+     
+      Add the following lines just before "# OSX hack to CLASSPATH":
+      # Google Enterpise Connector Logging
+      CONNECTOR_LOGGING="$CATALINA_HOME"/webapps/connector-manager/WEB-INF/lib/connector-logging.jar
+      if [ -f "$CONNECTOR_LOGGING ]; then
+      CLASSPATH="$CLASSPATH":"$CONNECTOR_LOGGING"
+      fi
+
+      }}}
+      Please make sure that all the shell scripts (with ".sh" as extension) have execute permissions.
+  # If you do not have the connector manager installed, follow these steps
+    * Start a web browser and navigate to http://code.google.com/p/google-enterprise-connector-manager/downloads/list
+    * Download the correct binary distribution compressed file for your platform
+    * unpack the binary distribution
+    * copy the connector-manager.war to $CATALINA_HOME/webapps directory
+    * Start Tomcat so that the connector manager gets deployed. 
+    * To confirm that the connector manager has been properly deployed under Tomcat confirm that a directory with the name connector-manager has been created under $CATALINA_HOME/webapps directory
+    * Shut down the Tomcat to start with the further steps.
+  # In a browser goto http://code.google.com/p/google-enterprise-connector-database/downloads/list and download the binary distribution of your choice.
+  # Unzip the downloaded file into an empty root distribution directory.
+  # Copy connector-database.jar from the root distribution directory to the $CATALINA_HOME/webapps/connector-manager/WEB-INF/lib directory.
+  # Copy the files in the Lib directory under the root distribution directory to the $CATALINA_HOME/webapps/connector-manager/WEB-INF/lib directory.
+  # Edit the file $CATALINA_HOME/bin/catalina.bat (catalina.sh on Linux): 
+    {{{
+       Change the line:
+         set JAVA_OPTS=%JAVA_OPTS% -Djava.util.logging.manager=org.apache.juli.ClassLoaderLogManager -Djava.util.logging.config.file="%CATALINA_BASE%\conf\logging.properties"
+       To:
+         set JAVA_OPTS=%JAVA_OPTS% -Djava.util.logging.manager=java.util.logging.LogManager -Djava.util.logging.config.file="%CATALINA_BASE%\webapps\connector-manager\WEB-INF\classes\logging.properties"
+
+       For Linux use a Unix path and $CATALINA_BASE 
+    }}}
+  # In the $CATALINA_HOME/webapps/connector-manager/WEB-INF directory, create a directory or called classes.
+  # Copy the file logging.properties file from the Config directory in the root distribution directory to the new $CATALINA_HOME/webapps/connector-manager/WEB-INF/classes directory.
+  # Start the Tomcat server.
+  # To confirm whether the Tomcat server has started correctly and the connector is installed, navigate to the $CATALINA_HOME/webapps/connector-manager/WEB-INF/connectors directory, and verify that the $CATALINA_HOME/webapps/connector-manager/WEB-INF/connectors/DBConnectorType directory exists.
