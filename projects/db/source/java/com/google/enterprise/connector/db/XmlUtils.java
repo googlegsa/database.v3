@@ -14,10 +14,6 @@
 
 package com.google.enterprise.connector.db;
 
-import org.w3c.dom.Element;
-import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
-
 import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
@@ -35,6 +31,10 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
+import org.w3c.dom.Element;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
+
 /**
  * Utility class for dealing with Xml.
  *
@@ -44,37 +44,40 @@ public class XmlUtils {
   // This class should not be initialized.
   private XmlUtils() {}
 
-  /**
-   * Converts a DB row into its xml representation. E.g., A following DB row of
-   * test database:
-   * <pre>
-   *    [{id=1, lastName=last_01}
-   * </pre>
-   * is converted to the following xml :
-   * <pre>
-   *    &lt;html&gt;
-   *    &lt;body&gt;
-   *    &lt;title&gt;Database Connector Result id=1 lastName=last_01 
-   *    &lt;/title&gt;
-   *    &lt;table border="1"&gt;
-   *    &lt;tr bgcolor="#9acd32"&gt;
-   *    &lt;th&gt;id&lt;/th&gt;&lt;th&gt;lastName&lt;/th&gt;&lt;th&gt;email
-   *    &lt;/th&gt;&lt;th&gt;firstName&lt;/th&gt;
-   *    &lt;/tr&gt;
-   *    &lt;tr&gt;
-   *    &lt;td&gt;1&lt;/td&gt;&lt;td&gt;last_01&lt;/td&gt;
-   *    &lt;td&gt;01@google.com&lt;/td&gt;&lt;td&gt;first_01&lt;/td&gt;
-   *    &lt;/tr&gt;
-   *    &lt;/table&gt;
-   *    &lt;/body&gt;
-   *    &lt;/html&gt;
-   * </pre>
-   *
-   * @param dbName name of the database.
-   * @param row row to convert to its xml representation.
-   * @return xml string.
-   * @throws DBException
-   */
+    /**
+     * Converts a DB row into its xml representation. E.g., A following DB row
+     * of test database:
+     *
+     * <pre>
+     *    [{id=1, lastName=last_01}
+     * </pre>
+     *
+     * is converted to the following xml :
+     *
+     * <pre>
+     *    &lt;html&gt;
+     *    &lt;body&gt;
+     *    &lt;title&gt;Database Connector Result id=1 lastName=last_01
+     *    &lt;/title&gt;
+     *    &lt;table border=&quot;1&quot;&gt;
+     *    &lt;tr bgcolor=&quot;#9acd32&quot;&gt;
+     *    &lt;th&gt;id&lt;/th&gt;&lt;th&gt;lastName&lt;/th&gt;&lt;th&gt;email
+     *    &lt;/th&gt;&lt;th&gt;firstName&lt;/th&gt;
+     *    &lt;/tr&gt;
+     *    &lt;tr&gt;
+     *    &lt;td&gt;1&lt;/td&gt;&lt;td&gt;last_01&lt;/td&gt;
+     *    &lt;td&gt;01@google.com&lt;/td&gt;&lt;td&gt;first_01&lt;/td&gt;
+     *    &lt;/tr&gt;
+     *    &lt;/table&gt;
+     *    &lt;/body&gt;
+     *    &lt;/html&gt;
+     * </pre>
+     *
+     * @param dbName name of the database.
+     * @param row row to convert to its xml representation.
+     * @return xml string.
+     * @throws DBException
+     */
   public static String getXMLRow(String dbName, Map<String, Object> row,
       String[] primaryKeys, String xslt) throws DBException {
     DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
@@ -107,7 +110,7 @@ public class XmlUtils {
     try {
       if (null == xslt) {
         xmlString = getStringFromDomDocument(doc, null);
-      } else if (xslt.isEmpty()) {
+            } else if (xslt.length() == 0) {
         xmlString = getStringFromDomDocument(doc,
             getDomDocFromXslt(getDefaultStyleSheet(dbName, row)));
       } else {
