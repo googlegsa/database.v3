@@ -14,34 +14,33 @@
 
 package com.google.enterprise.connector.db;
 
-import com.google.enterprise.connector.spi.Document;
-import com.google.enterprise.connector.spi.Property;
-import com.google.enterprise.connector.spi.SimpleProperty;
-import com.google.enterprise.connector.spi.Value;
-
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.google.enterprise.connector.spi.Document;
+import com.google.enterprise.connector.spi.Property;
+import com.google.enterprise.connector.spi.SimpleProperty;
+import com.google.enterprise.connector.spi.Value;
+
 /**
- * An implementation of Document for database records. 
- * Each row in the database represents a {@link DBDocument}.
- * 
+ * An implementation of Document for database records. Each row in the database
+ * represents a {@link DBDocument}.
  */
 public class DBDocument implements Document {
 
   private final Map<String, List<Value>> properties = new HashMap<String, List<Value>>();
   public static final String ROW_CHECKSUM = "dbconnector:checksum";
-  
+
   /**
    * Constructs a document with no properties.
    */
-  public DBDocument() {    
+    public DBDocument() {
   }
 
-  @Override
+
   public Property findProperty(String name) {
     List<Value> property = properties.get(name);
     return (property == null) ? null : new SimpleProperty(property);
@@ -50,11 +49,11 @@ public class DBDocument implements Document {
   /**
    * Returns all the property names.
    */
-  @Override
+
   public Set<String> getPropertyNames() {
     return Collections.unmodifiableSet(properties.keySet());
   }
-  
+
   /**
    * Set a property for this document. If propertyValue is null this does
    * nothing.

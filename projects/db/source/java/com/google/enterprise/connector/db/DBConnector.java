@@ -14,11 +14,11 @@
 
 package com.google.enterprise.connector.db;
 
+import java.util.Map;
+
 import com.google.enterprise.connector.spi.Connector;
 import com.google.enterprise.connector.spi.RepositoryException;
 import com.google.enterprise.connector.spi.Session;
-
-import java.util.Map;
 
 /**
  * Implementation of {@link Connector} for the database connector.
@@ -49,7 +49,7 @@ public class DBConnector implements Connector {
     return dbTypeDriver;
   }
 
-  @Override
+
   public Session login() throws RepositoryException {
     DBClient dbClient;
     try {
