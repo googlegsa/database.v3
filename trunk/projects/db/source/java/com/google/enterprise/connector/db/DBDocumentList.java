@@ -14,12 +14,12 @@
 
 package com.google.enterprise.connector.db;
 
+import java.util.LinkedList;
+import java.util.NoSuchElementException;
+
 import com.google.enterprise.connector.spi.Document;
 import com.google.enterprise.connector.spi.DocumentList;
 import com.google.enterprise.connector.spi.RepositoryException;
-
-import java.util.LinkedList;
-import java.util.NoSuchElementException;
 
 /**
  * Implementation of {@link DocumentList}.
@@ -44,7 +44,7 @@ public class DBDocumentList implements DocumentList {
    * Saves the current state on disk. And returns a checkpoint string to the
    * Connector Manager.
    */
-  @Override
+
   public String checkpoint() throws RepositoryException {
     try {
       globalState.saveState();
@@ -62,13 +62,13 @@ public class DBDocumentList implements DocumentList {
     return checkpointString;
   }
 
-  /**
-   * When this method is called by the CM, all the documents that the sent
-   * are also saved in docsInFlight.
-   * 
-   * @return the next document or null if all have been processed.
-   */
-  @Override
+    /**
+     * When this method is called by the CM, all the documents that the sent are
+     * also saved in docsInFlight.
+     *
+     * @return the next document or null if all have been processed.
+     */
+
   public Document nextDocument() {
     DBDocument doc = docList.poll();
     if (null != doc) {
@@ -96,11 +96,11 @@ public class DBDocumentList implements DocumentList {
     docList.clear();
   }
 
-  /**
-   * Returns the size of the docList.
-   * 
-   * @return size of the docList.
-   */
+    /**
+     * Returns the size of the docList.
+     *
+     * @return size of the docList.
+     */
   public int size() {
     return docList.size();
   }
