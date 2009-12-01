@@ -14,6 +14,13 @@
 
 package com.google.enterprise.connector.db;
 
+import com.google.enterprise.connector.spi.ConfigureResponse;
+import com.google.enterprise.connector.spi.ConnectorFactory;
+import com.google.enterprise.connector.spi.ConnectorType;
+import com.google.enterprise.connector.spi.RepositoryException;
+
+import com.ibatis.common.jdbc.SimpleDataSource;
+
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
@@ -26,19 +33,13 @@ import java.util.TreeMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import com.google.enterprise.connector.spi.ConfigureResponse;
-import com.google.enterprise.connector.spi.ConnectorFactory;
-import com.google.enterprise.connector.spi.ConnectorType;
-import com.google.enterprise.connector.spi.RepositoryException;
-import com.ibatis.common.jdbc.SimpleDataSource;
-
 /**
  * Implementation of {@link ConnectorType} for {@link DBConnector}.
  *
  */
 public class DBConnectorType implements ConnectorType {
   private static final Logger LOG = Logger.getLogger(DBConnectorType.class.getName());
-    private static final String LOCALE_DB = "config/DbConnectorResources";
+  private static final String LOCALE_DB = "config/DbConnectorResources";
   private ResourceBundle resource;
   private static final String TEST_CONNECTIVITY = "TEST_CONNECTIVITY";
   private static final String FQDN_HOSTNAME = "FQDN_HOSTNAME";
@@ -436,7 +437,7 @@ public class DBConnectorType implements ConnectorType {
    * @param locale
    * @return result ConfigureResponse which contains the form snippet.
    */
-
+  /* @Override */
   public ConfigureResponse getConfigForm(Locale locale) {
     // TODO(meghna): See if this is thread safe.
     try {
@@ -450,6 +451,7 @@ public class DBConnectorType implements ConnectorType {
   }
 
 
+  /* @Override */
   public ConfigureResponse getPopulatedConfigForm(Map<String, String> configMap,
         Locale locale) {
     try {
@@ -465,7 +467,7 @@ public class DBConnectorType implements ConnectorType {
    * Make sure the configuration map contains all the necessary attributes
    * and that we can instantiate a connector using the provided configuration.
    */
-
+  /* @Override */
   public ConfigureResponse validateConfig(Map<String, String> config,
         Locale locale, ConnectorFactory factory) {
     boolean success = false;
