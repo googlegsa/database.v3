@@ -28,21 +28,22 @@ public class DBSession implements Session {
   private final String xslt;
 
   /**
-     * @param dbClient
-     * @param xslt
-     */
+   * @param dbClient
+   * @param xslt
+   */
   public DBSession(DBClient dbClient, String xslt) {
     this.dbClient = dbClient;
     this.xslt = xslt;
   }
 
+  /* @Override */
   public AuthenticationManager getAuthenticationManager() {
     // TODO(meghna): Implement this for GSA.
     throw new UnsupportedOperationException(
                 "DBSession does not support getAuthenticationManager");
   }
 
-
+  /* @Override */
   public AuthorizationManager getAuthorizationManager() {
     // TODO(meghna): Implement this for GSA.
     throw new UnsupportedOperationException(
@@ -52,7 +53,7 @@ public class DBSession implements Session {
   /**
    * @return traversal manager for this session.
    */
-
+  /* @Override */
   public TraversalManager getTraversalManager() {
     return new DBTraversalManager(dbClient, xslt);
   }
