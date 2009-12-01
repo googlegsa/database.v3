@@ -14,15 +14,15 @@
 
 package com.google.enterprise.connector.db;
 
-import java.util.List;
-import java.util.Map;
-import java.util.NoSuchElementException;
-
 import org.joda.time.DateTime;
 
 import com.google.enterprise.connector.spi.DocumentList;
 import com.google.enterprise.connector.spi.RepositoryException;
 import com.google.enterprise.connector.spi.TraversalManager;
+
+import java.util.List;
+import java.util.Map;
+import java.util.NoSuchElementException;
 
 /**
  * {@link TraversalManager} implementation for the DB connector.
@@ -58,7 +58,7 @@ public class DBTraversalManager implements TraversalManager {
    * made but there was a problem in persisting the checkpoint string. In this
    * case, the docs will just be sent again.
    */
-
+  /* @Override */
   public DocumentList resumeTraversal(String checkpointStr) throws RepositoryException {
     try {
       String oldCheckpointStr;
@@ -109,7 +109,7 @@ public class DBTraversalManager implements TraversalManager {
     }
   }
 
-
+  /* @Override */
   public void setBatchHint(int batchHint) {
     assert batchHint > 0;
     this.batchHint = batchHint;
@@ -135,7 +135,7 @@ public class DBTraversalManager implements TraversalManager {
    *
    * @return docList DBDocumentList corresponding to the rows in the DB.
    */
-
+  /* @Override */
   public DocumentList startTraversal() throws RepositoryException {
     try {
       // Making sure the old state is gone.

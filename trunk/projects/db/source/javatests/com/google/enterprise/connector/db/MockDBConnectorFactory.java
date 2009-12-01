@@ -27,7 +27,7 @@ import java.util.Properties;
 
 public class MockDBConnectorFactory implements ConnectorFactory {
   private final String connectorInstanceXmlFile;
-  
+
   /**
    * @param connectorInstanceXmlFile path to a "connectorInstance.xml" Spring
    *        configuration file.
@@ -35,13 +35,13 @@ public class MockDBConnectorFactory implements ConnectorFactory {
   public MockDBConnectorFactory(String connectorInstanceXmlFile) {
     this.connectorInstanceXmlFile = connectorInstanceXmlFile;
   }
-  
+
   /**
    * Creates a database connector.
    *
-   * @param config map of configuration values. 
+   * @param config map of configuration values.
    */
-  @Override
+  /*@Override*/
   public Connector makeConnector(Map<String, String> config)  {
     Properties props = new Properties();
     props.putAll(config);
