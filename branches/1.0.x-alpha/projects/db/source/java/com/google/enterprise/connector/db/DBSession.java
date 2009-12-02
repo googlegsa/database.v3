@@ -37,14 +37,14 @@ public class DBSession implements Session {
     this.xslt = xslt;
   }
   
-  @Override
+  /*@Override*/
   public AuthenticationManager getAuthenticationManager() {
     // TODO(meghna): Implement this for GSA.
     throw new UnsupportedOperationException(
         "DBSession does not support getAuthenticationManager");    
   }
 
-  @Override
+  /*@Override*/
   public AuthorizationManager getAuthorizationManager() {
     // TODO(meghna): Implement this for GSA.
     throw new UnsupportedOperationException(
@@ -54,7 +54,7 @@ public class DBSession implements Session {
   /**
    * @return traversal manager for this session.
    */
-  @Override
+  /*@Override*/
   public TraversalManager getTraversalManager() {
     return new DBTraversalManager(dbClient, xslt);
   }

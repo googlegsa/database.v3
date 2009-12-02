@@ -39,8 +39,7 @@ import java.util.logging.Logger;
  */
 public class DBConnectorType implements ConnectorType {
   private static final Logger LOG = Logger.getLogger(DBConnectorType.class.getName());
-  private static final String LOCALE_DB = "com/google/enterprise/connector/db/"
-      + "config/DbConnectorResources";
+  private static final String LOCALE_DB = "config/DbConnectorResources";
   private ResourceBundle resource;
   private static final String TEST_CONNECTIVITY = "TEST_CONNECTIVITY";
   private static final String FQDN_HOSTNAME = "FQDN_HOSTNAME";
@@ -307,7 +306,7 @@ public class DBConnectorType implements ConnectorType {
     private boolean success = false;
     private List<String> problemFields;
     ResourceBundle res;
-    
+
     public MissingAttributes(Map<String, String> config, ResourceBundle res) {
       this.config = config;
       this.res = res;
@@ -438,7 +437,7 @@ public class DBConnectorType implements ConnectorType {
    * @param locale
    * @return result ConfigureResponse which contains the form snippet.
    */
-  @Override
+  /* @Override */
   public ConfigureResponse getConfigForm(Locale locale) {
     // TODO(meghna): See if this is thread safe.
     try {
@@ -451,7 +450,7 @@ public class DBConnectorType implements ConnectorType {
     return result;
   }
 
-  @Override
+  /* @Override */
   public ConfigureResponse getPopulatedConfigForm(Map<String, String> configMap,
         Locale locale) {
     try {
@@ -467,7 +466,7 @@ public class DBConnectorType implements ConnectorType {
    * Make sure the configuration map contains all the necessary attributes
    * and that we can instantiate a connector using the provided configuration.
    */
-  @Override
+  /* @Override */
   public ConfigureResponse validateConfig(Map<String, String> config,
         Locale locale, ConnectorFactory factory) {
     boolean success = false;
