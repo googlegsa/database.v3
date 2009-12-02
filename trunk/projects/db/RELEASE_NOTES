@@ -23,3 +23,22 @@ Version Compatibility
 This version works with Connector Manager version 2.0.0 or later. Earlier versions of
 the Connector Manager will not work correctly with this version of the connector.
 
+Issues fixed from last release:
+---------------------------------
+1. The connector was made JRE/JDK 1.5 complaint
+2. The path of the resource bundles was corrected to point to the correct directory
+
+
+------------------------------------------------------------------------------------------------------------------------------------------------
+Release 1.0.0, ALPHA October 20, 2009
+==========================
+
+Introduction
+------------
+This is an initaial release with new features.
+
+
+Version Compatibility
+---------------------
+This version works with Connector Manager version 2.0.0 or later. Earlier versions of
+the Connector Manager will not work correctly with this version of the connector.
