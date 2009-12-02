@@ -26,22 +26,21 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * An implementation of Document for database records. 
- * Each row in the database represents a {@link DBDocument}.
- * 
+ * An implementation of Document for database records. Each row in the database
+ * represents a {@link DBDocument}.
  */
 public class DBDocument implements Document {
 
   private final Map<String, List<Value>> properties = new HashMap<String, List<Value>>();
   public static final String ROW_CHECKSUM = "dbconnector:checksum";
-  
+
   /**
    * Constructs a document with no properties.
    */
-  public DBDocument() {    
+  public DBDocument() {
   }
 
-  @Override
+  /* @Override */
   public Property findProperty(String name) {
     List<Value> property = properties.get(name);
     return (property == null) ? null : new SimpleProperty(property);
@@ -50,11 +49,11 @@ public class DBDocument implements Document {
   /**
    * Returns all the property names.
    */
-  @Override
+  /* @Override */
   public Set<String> getPropertyNames() {
     return Collections.unmodifiableSet(properties.keySet());
   }
-  
+
   /**
    * Set a property for this document. If propertyValue is null this does
    * nothing.

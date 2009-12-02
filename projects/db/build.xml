@@ -3,6 +3,7 @@
 
   <!-- ========================= PROPERTIES ============================= -->
   <property file="${user.home}/google-enterprise-connector-db.properties" />
+  <property file="google-enterprise-connector-db.properties" />
   <property file="version.properties" />
 
   <property name="COMPILE_DEBUG_FLAG" value="true" />
@@ -52,9 +53,9 @@
   <property name="connector-manager-projects.dir"
             location="${connector.manager.home}" />
   <property name="connector-manager.dir"
-            location="${connector-manager-projects.dir}/connector-manager" />
+            location="${connector-manager-projects.dir}" />
   <property name="connector-manager-thirdparty-jar.dir"
-    location="${connector-manager-projects.dir}/connector-manager/third-party" />
+    location="${connector-manager-projects.dir}/third-party" />
   <property name="connector-manager-thirdparty-prod-jar.dir"
     location="${connector-manager-thirdparty-jar.dir}/prod" />
   <property name="connector-manager-thirdparty-tests-jar.dir"

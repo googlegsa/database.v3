@@ -44,7 +44,7 @@ public class DBDocumentList implements DocumentList {
    * Saves the current state on disk. And returns a checkpoint string to the
    * Connector Manager.
    */
-  @Override
+  /*@Override*/
   public String checkpoint() throws RepositoryException {
     try {
       globalState.saveState();
@@ -68,7 +68,7 @@ public class DBDocumentList implements DocumentList {
    * 
    * @return the next document or null if all have been processed.
    */
-  @Override
+  /*@Override*/
   public Document nextDocument() {
     DBDocument doc = docList.poll();
     if (null != doc) {

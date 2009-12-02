@@ -107,7 +107,7 @@ public class XmlUtils {
     try {
       if (null == xslt) {
         xmlString = getStringFromDomDocument(doc, null);
-      } else if (xslt.isEmpty()) {
+      } else if (xslt.length() == 0) {
         xmlString = getStringFromDomDocument(doc,
             getDomDocFromXslt(getDefaultStyleSheet(dbName, row)));
       } else {
