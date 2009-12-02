@@ -450,7 +450,6 @@ public class DBConnectorType implements ConnectorType {
     return result;
   }
 
-
   /* @Override */
   public ConfigureResponse getPopulatedConfigForm(Map<String, String> configMap,
         Locale locale) {
