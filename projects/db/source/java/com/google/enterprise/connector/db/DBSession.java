@@ -40,14 +40,14 @@ public class DBSession implements Session {
   public AuthenticationManager getAuthenticationManager() {
     // TODO(meghna): Implement this for GSA.
     throw new UnsupportedOperationException(
-                "DBSession does not support getAuthenticationManager");
+				"DBSession does not support getAuthenticationManager");
   }
 
   /* @Override */
   public AuthorizationManager getAuthorizationManager() {
     // TODO(meghna): Implement this for GSA.
     throw new UnsupportedOperationException(
-                "DBSession does not support getAuthorizationManager");
+				"DBSession does not support getAuthorizationManager");
   }
 
   /**

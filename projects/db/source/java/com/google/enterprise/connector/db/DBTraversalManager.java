@@ -14,11 +14,11 @@
 
 package com.google.enterprise.connector.db;
 
-import org.joda.time.DateTime;
-
 import com.google.enterprise.connector.spi.DocumentList;
 import com.google.enterprise.connector.spi.RepositoryException;
 import com.google.enterprise.connector.spi.TraversalManager;
+
+import org.joda.time.DateTime;
 
 import java.util.List;
 import java.util.Map;
