@@ -1,23 +1,23 @@
-Welcome to the Google Enterprise Connector for databases
+Welcome to the Google Search Appliance Connector for databases
 
-The Google Enterprise connector framework enables Google search
+The Google Search Appliance connector framework enables Google search
 appliances to search and serve documents stored in non-Web
 repositories, such as enterprise content management systems.
 An enterprise content management (ECM) system provides a central
 repository for large numbers of documents.
 
-The Google Enterprise Connector for databases
-enables the appliance to traverse databases and 
+The Google Search Appliance Connector for databases
+enables the appliance to traverse databases and
 index rows in the form of documents.
 
-The Google Enterprise Connector for databases
-communicates with the databases using the ibatis library which is 
+The Google Search Appliance Connector for databases
+communicates with the databases using the ibatis library which is
 built on top of the jdbc. So the connector could work with any database
 which supports jdbc.
 
 Documentation Links
 
-* Developer Introduction to the Google Enterprise Connector Framework
+* Developer Introduction to the Google Search Appliance Connector Framework
 http://code.google.com/apis/searchappliance/documentation/connectors/index.html
 
 Licensing
