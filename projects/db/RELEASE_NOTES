@@ -23,6 +23,10 @@ Version Compatibility
 This version works with Connector Manager version 2.0.0 or later. Earlier versions of
 the Connector Manager will not work correctly with this version of the connector.
 
+Platform Support
+------------------
+The connector can be installed and run on both 32-bit & 64-bit Windows and Linux environments
+
 Issues fixed from last release:
 ---------------------------------
 1. The connector was made JRE/JDK 1.5 complaint
