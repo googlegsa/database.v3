@@ -44,7 +44,7 @@ public class DBDocumentList implements DocumentList {
    * Saves the current state on disk. And returns a checkpoint string to the
    * Connector Manager.
    */
-  /* @Override */
+  /*@Override*/
   public String checkpoint() throws RepositoryException {
     try {
       globalState.saveState();
@@ -63,12 +63,12 @@ public class DBDocumentList implements DocumentList {
   }
 
   /**
-   * When this method is called by the CM, all the documents that the sent are
-   * also saved in docsInFlight.
-   *
+   * When this method is called by the CM, all the documents that the sent
+   * are also saved in docsInFlight.
+   * 
    * @return the next document or null if all have been processed.
    */
-  /* @Override */
+  /*@Override*/
   public Document nextDocument() {
     DBDocument doc = docList.poll();
     if (null != doc) {
@@ -98,7 +98,7 @@ public class DBDocumentList implements DocumentList {
 
   /**
    * Returns the size of the docList.
-   *
+   * 
    * @return size of the docList.
    */
   public int size() {

@@ -49,7 +49,6 @@ public class DBConnector implements Connector {
     return dbTypeDriver;
   }
 
-
   /* @Override */
   public Session login() throws RepositoryException {
     DBClient dbClient;

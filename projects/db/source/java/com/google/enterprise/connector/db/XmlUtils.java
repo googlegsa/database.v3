@@ -47,20 +47,17 @@ public class XmlUtils {
   /**
    * Converts a DB row into its xml representation. E.g., A following DB row of
    * test database:
-   *
    * <pre>
    *    [{id=1, lastName=last_01}
    * </pre>
-   *
    * is converted to the following xml :
-   *
    * <pre>
    *    &lt;html&gt;
    *    &lt;body&gt;
-   *    &lt;title&gt;Database Connector Result id=1 lastName=last_01
+   *    &lt;title&gt;Database Connector Result id=1 lastName=last_01 
    *    &lt;/title&gt;
-   *    &lt;table border=&quot;1&quot;&gt;
-   *    &lt;tr bgcolor=&quot;#9acd32&quot;&gt;
+   *    &lt;table border="1"&gt;
+   *    &lt;tr bgcolor="#9acd32"&gt;
    *    &lt;th&gt;id&lt;/th&gt;&lt;th&gt;lastName&lt;/th&gt;&lt;th&gt;email
    *    &lt;/th&gt;&lt;th&gt;firstName&lt;/th&gt;
    *    &lt;/tr&gt;

@@ -20,40 +20,41 @@ import com.google.enterprise.connector.spi.Session;
 import com.google.enterprise.connector.spi.TraversalManager;
 
 /**
- * This class provides the TraversalManager, AuthenticationManager and the
- * AuthorizationManager
+ * This class provides the TraversalManager, AuthenticationManager and
+ * the  AuthorizationManager
+ * 
  */
 public class DBSession implements Session {
   private final DBClient dbClient;
   private final String xslt;
-
+  
   /**
-   * @param dbClient
+   * @param dbClient 
    * @param xslt
    */
   public DBSession(DBClient dbClient, String xslt) {
     this.dbClient = dbClient;
     this.xslt = xslt;
   }
-
-  /* @Override */
+  
+  /*@Override*/
   public AuthenticationManager getAuthenticationManager() {
     // TODO(meghna): Implement this for GSA.
     throw new UnsupportedOperationException(
-        "DBSession does not support getAuthenticationManager");
+        "DBSession does not support getAuthenticationManager");    
   }
 
-  /* @Override */
+  /*@Override*/
   public AuthorizationManager getAuthorizationManager() {
     // TODO(meghna): Implement this for GSA.
     throw new UnsupportedOperationException(
-        "DBSession does not support getAuthorizationManager");
+        "DBSession does not support getAuthorizationManager");     
   }
 
   /**
    * @return traversal manager for this session.
    */
-  /* @Override */
+  /*@Override*/
   public TraversalManager getTraversalManager() {
     return new DBTraversalManager(dbClient, xslt);
   }
