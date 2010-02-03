@@ -33,7 +33,7 @@ TODO: Provide JDBC URLs with JDBC jars for standard databases
    Database name is a required field. User must supply value of database name. This field valueis used in xslt , display UR and xml representation of a row.
 
 
-   *Hostname: 
+   * Hostname: 
 Hostname is a required field. Fully qualified Hostname should be provided. For Example hostname.domain. Hostname is used in display URL.
 
 
@@ -60,4 +60,3 @@ Primary Keys: this is a required field. User must provide primary key column nam
 
 
 For details of different JDBC drivers for various databases you can refer to: http://www.dbvis.com/products/dbvis/doc/supports.jsp
-
