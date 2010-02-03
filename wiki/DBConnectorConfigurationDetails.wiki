@@ -1,8 +1,12 @@
-#summary One-sentence summary of this page.
+#summary Configuration Form Details for Google Enterprise Connector for Databases.
 
 = Introduction =
+This document will provide you the details of various fields of configuration form for Google Enterprise Connector for Databases.
 
-Add your content here.
+= Pre-requisites =
+
+  * Database connector is installed and running.
+
 
 
 = Details =
