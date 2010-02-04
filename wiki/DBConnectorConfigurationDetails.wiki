@@ -10,15 +10,13 @@ This document will provide you the details of various fields of configuration fo
 
 = Configuration form fields details =
 
-  * Username: *Username is a required field and the value of this field must be the username of SQL server user.  This field value is used to connect to the database.
+  * * Username: *Username is a required field and the value of this field must be the username of SQL server user.  This field value is used to connect to the database.
 
 
-   * Password: *
-    Password in not a mandatory field. But user must provide password associated with above mentioned username. This field value is used to establish connection with the database.
+   * * Password: * Password in not a mandatory field. But user must provide password associated with above mentioned username. This field value is used to establish connection with the database.
 
 
-   * JDBC Connection URL: * 
-   This is a required field. Valid connection URL must be supplied to connect to the database. Connection URL must follow below format.
+   * * JDBC Connection URL: * This is a required field. Valid connection URL must be supplied to connect to the database. Connection URL must follow below format.
 
 Protocol://db-server: port/DB
 
@@ -26,27 +24,27 @@ For example
 "jdbc:mysql://10.88.45.40:3306/MySQL" is JDBC Connection URL for connecting to the database “MySQL” which is running on server “10.88.45.40” and port 3306 using jdbc:mysql protocol.
  
 
-   * Database Name: * Database name is a required field. User must supply value of database name. This field valueis used in xslt , display UR and xml representation of a row.
+   * * Database Name: * Database name is a required field. User must supply value of database name. This field valueis used in xslt , display UR and xml representation of a row.
 
 
-   * Hostname: * Hostname is a required field. Fully qualified Hostname should be provided. For Example hostname.domain. Hostname is used in display URL.
+   * * Hostname: * Hostname is a required field. Fully qualified Hostname should be provided. For Example hostname.domain. Hostname is used in display URL.
 
 
-   * JDBC Driver Classname: * This is a required field. Fully qualified type 4 driver class name should be provided without .class extension. The value of this field is used by iBatis framework to load JDBC driver class.
+   * * JDBC Driver Classname: * This is a required field. Fully qualified type 4 driver class name should be provided without .class extension. The value of this field is used by iBatis framework to load JDBC driver class.
 For example: for My SQL database user must type “com.mysql.jdbc.Driver” in JDBC Driver Classname field.
 
-For details of different JDBC drivers for various databases you can refer to: http://www.dbvis.com/products/dbvis/doc/supports.jsp
+For details of different JDBC drivers for various databases you can refer to: [http://www.dbvis.com/products/dbvis/doc/supports.jsp]
+
  
 
-   * SQL Query: * SQL query is a required field. User must provide valid SELECT SQL query. iBatis framework executes this SQL query for fetching records from database while crawling.
+   * * SQL Query: * SQL query is a required field. User must provide valid SELECT SQL query. iBatis framework executes this SQL query for fetching records from database while crawling.
 
 For example,
 
 SELECT empid , first_name, last_name, manager , deptno FROM employee
 
 
-    * Primary Keys: * this is a required field. User must provide primary key column name as a primary key. If table is using composite primary key, then the columns forming primary key should be given with comma separated value. Value of this field is used in building DOC_ID.
+    * * Primary Keys: * this is a required field. User must provide primary key column name as a primary key. If table is using composite primary key, then the columns forming primary key should be given with comma separated value. Value of this field is used in building DOC_ID.
 
 
-   * Stylesheet for serving results: * This is not a required field. User can supply valid xslt for customized look and feel. If xslt value is not supplied, default Stylesheet will be used.
-
+   * * Stylesheet for serving results: * This is not a required field. User can supply valid xslt for customized look and feel. If xslt value is not supplied, default Stylesheet will be used.
