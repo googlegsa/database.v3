@@ -1,0 +1,48 @@
+Release Notes:
+===============
+
+Google Search Appliance Connector Connector for Databases
+
+This document contains the release notes for Google Search Appliance Connector Connector for Databases.
+The following sections describe the release in detail and provide information that supplements
+the main documentation.  See the Issues Tab on the Code Site for the current list of known
+issues and workarounds.
+
+Web Site: http://code.google.com/p/google-enterprise-connector-database/
+
+Release 1.0.1, ALPHA December 2, 2009
+==========================
+
+Introduction
+------------
+This is an initial release with new features.
+
+
+Version Compatibility
+---------------------
+This version works with Connector Manager version 2.0.0 or later. Earlier versions of
+the Connector Manager will not work correctly with this version of the connector.
+
+Platform Support
+------------------
+The connector can be installed and run on both 32-bit & 64-bit Windows and Linux environments
+
+Issues fixed from last release:
+---------------------------------
+1. The connector was made JRE/JDK 1.5 complaint
+2. The path of the resource bundles was corrected to point to the correct directory
+
+
+------------------------------------------------------------------------------------------------------------------------------------------------
+Release 1.0.0, ALPHA October 20, 2009
+==========================
+
+Introduction
+------------
+This is an initaial release with new features.
+
+
+Version Compatibility
+---------------------
+This version works with Connector Manager version 2.0.0 or later. Earlier versions of
+the Connector Manager will not work correctly with this version of the connector.
