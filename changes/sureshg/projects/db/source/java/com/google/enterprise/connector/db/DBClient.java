@@ -176,7 +176,7 @@ public class DBClient {
 				+ " <sqlMap url=\"file://" + googleConnectorWorkDir
 				+ "/IbatisSqlMap.xml\"/>\n" + "</sqlMapConfig>\n";
 		LOG.info("Generated sqlMapConfig : \n"
-				+ sqlMapConfig.replace(dbContext.getLogin(), "*****").replace(dbContext.getPassword(), "******"));
+				+ sqlMapConfig.replace(dbContext.getLogin(), "******").replace(dbContext.getPassword(), "******"));
 	}
 
 	/**
