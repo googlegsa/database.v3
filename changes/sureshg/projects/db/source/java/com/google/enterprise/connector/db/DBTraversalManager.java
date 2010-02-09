@@ -171,8 +171,13 @@ public class DBTraversalManager implements TraversalManager {
 				 * globalState.getDocQueue().size() can be non-zero if there are
 				 * any documents to delete.
 				 */
+				/*
+				 * Connector returns null value to notify connector that
+				 * traversing has reached the end of the DB and it to wait till
+				 * retry delay time lapse before starting next crawl cycle.
+				 */
 				if (0 == globalState.getDocQueue().size()) {
-					executeQueryAndAddDocs();
+					return null;
 				}
 			}
 		}
