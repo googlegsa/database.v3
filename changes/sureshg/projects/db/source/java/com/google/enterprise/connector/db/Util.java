@@ -17,6 +17,7 @@ package com.google.enterprise.connector.db;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Map;
+import java.util.Set;
 import java.util.logging.Logger;
 
 import org.joda.time.DateTime;
@@ -85,7 +86,19 @@ public class Util {
 	public static String getTitle(String[] primaryKeys, Map<String, Object> row) {
 		StringBuilder title = new StringBuilder();
 		title.append(DATABASE_TITLE_PREFIX).append(" ");
+		Set<String> keySet = row.keySet();
 		for (String primaryKey : primaryKeys) {
+			/*
+			 * Primary key value is mapped to the value of key of map row before
+			 * getting record. We need to do this because GSA admin may entered
+			 * primary key value which differed in case from column name.
+			 */
+			for (String key : keySet) {
+				if (primaryKey.equalsIgnoreCase(key)) {
+					primaryKey = key;
+					break;
+				}
+			}
 			Object keyValue = row.get(primaryKey);
 			title.append(primaryKey).append("=");
 			title.append(keyValue.toString()).append(" ");
