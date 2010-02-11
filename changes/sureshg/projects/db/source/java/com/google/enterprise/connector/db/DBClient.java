@@ -173,10 +173,16 @@ public class DBClient {
 				+ " <property name=\"JDBC.Password\" value=\""
 				+ dbContext.getPassword() + "\" />\n"
 				+ " </dataSource></transactionManager>\n"
-				+ " <sqlMap url=\"file://" + googleConnectorWorkDir
+				+ " <sqlMap url=\"file:///" + googleConnectorWorkDir
 				+ "/IbatisSqlMap.xml\"/>\n" + "</sqlMapConfig>\n";
+
+		String oldString = " <property name=\"JDBC.Password\" value=\""
+				+ dbContext.getPassword() + "\" />";
+		String newString = " <property name=\"JDBC.Password\" value=\""
+				+ "*****" + "\" />";
+
 		LOG.info("Generated sqlMapConfig : \n"
-				+ sqlMapConfig.replace(dbContext.getLogin(), "******").replace(dbContext.getPassword(), "******"));
+				+ sqlMapConfig.replace(oldString, newString));
 	}
 
 	/**
