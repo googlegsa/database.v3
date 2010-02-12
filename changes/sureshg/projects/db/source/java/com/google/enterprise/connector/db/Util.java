@@ -119,15 +119,33 @@ public class Util {
 		StringBuilder length = new StringBuilder();
 		StringBuilder primaryKeyValues = new StringBuilder();
 		length.append("(");
-		for (String primaryKey : primaryKeys) {
-			Object keyValue = row.get(primaryKey);
-			if (null == keyValue) {
-				length.append("-1" + PRIMARY_KEYS_SEPARATOR);
-			} else {
-				String keyValueStr = keyValue.toString();
-				length.append(keyValueStr.length() + PRIMARY_KEYS_SEPARATOR);
-				primaryKeyValues.append(keyValueStr);
+		if (row != null && (primaryKeys != null && primaryKeys.length > 0)) {
+			Set<String> keySet = row.keySet();
+
+			for (String primaryKey : primaryKeys) {
+				/*
+				 * Primary key value is mapped to the value of key of map row
+				 * before getting record. We need to do this because GSA admin
+				 * may entered primary key value which differed in case from
+				 * column name.
+				 */
+				for (String key : keySet) {
+					if (primaryKey.equalsIgnoreCase(key)) {
+						primaryKey = key;
+						break;
+					}
+				}
+				Object keyValue = row.get(primaryKey);
+				if (null == keyValue) {
+					length.append("-1" + PRIMARY_KEYS_SEPARATOR);
+				} else {
+					String keyValueStr = keyValue.toString();
+					length.append(keyValueStr.length() + PRIMARY_KEYS_SEPARATOR);
+					primaryKeyValues.append(keyValueStr);
+				}
 			}
+		} else {
+			length.append("-1" + PRIMARY_KEYS_SEPARATOR);
 		}
 		length.deleteCharAt(length.length() - 1);
 		length.append(")");
