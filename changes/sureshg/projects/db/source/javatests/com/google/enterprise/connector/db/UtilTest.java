@@ -32,8 +32,13 @@ public class UtilTest extends TestCase {
 	 * Test for generating the docId.
 	 */
 	public final void testGenerateDocId() {
-		Map<String, Object> rowMap = TestUtils.getStandardDBRow();
-		String primaryKeys[] = TestUtils.getStandardPrimaryKeys();
+		// Test for null values
+		Map<String, Object> rowMap = null;
+		String primaryKeys[] = null;
+		assertEquals("eb883130e83d588e41aae5e4c5d715ef7683cfe1", Util.generateDocId(primaryKeys, rowMap));
+
+		rowMap = TestUtils.getStandardDBRow();
+		primaryKeys = TestUtils.getStandardPrimaryKeys();
 		assertEquals("6fd5643953e6e60188c93b89c71bc1808eb7edc2", Util.generateDocId(primaryKeys, rowMap));
 	}
 
@@ -50,7 +55,7 @@ public class UtilTest extends TestCase {
 				LOG.info(propName + ":    " + prop.nextValue().toString());
 			}
 			assertEquals("6fd5643953e6e60188c93b89c71bc1808eb7edc2", doc.findProperty(SpiConstants.PROPNAME_DOCID).nextValue().toString());
-			assertEquals("7ffd1d7efaf0d1ee260c646d827020651519e7b0", doc.findProperty(DBDocument.ROW_CHECKSUM).nextValue().toString());
+			assertEquals("eb476c046da8b3e83081e3195923aba1dd9c6045", doc.findProperty(DBDocument.ROW_CHECKSUM).nextValue().toString());
 		} catch (DBException e) {
 			fail("Could not generate DB document from row.");
 		} catch (RepositoryException e) {
