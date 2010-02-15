@@ -115,7 +115,7 @@ public class Util {
 	 * @return docId checksum generated using the primary key values.
 	 */
 	public static String generateDocId(String[] primaryKeys,
-			Map<String, Object> row) {
+			Map<String, Object> row) throws DBException {
 		StringBuilder length = new StringBuilder();
 		StringBuilder primaryKeyValues = new StringBuilder();
 		length.append("(");
@@ -129,11 +129,17 @@ public class Util {
 				 * may entered primary key value which differed in case from
 				 * column name.
 				 */
+
 				for (String key : keySet) {
 					if (primaryKey.equalsIgnoreCase(key)) {
 						primaryKey = key;
 						break;
 					}
+				}
+				if (!keySet.contains(primaryKey)) {
+					String msg = "Primary Key does not match with any of the coulmn names";
+					LOG.info(msg);
+					throw new DBException(msg);
 				}
 				Object keyValue = row.get(primaryKey);
 				if (null == keyValue) {
@@ -145,7 +151,9 @@ public class Util {
 				}
 			}
 		} else {
-			length.append("-1" + PRIMARY_KEYS_SEPARATOR);
+			String msg = "row is null";
+			LOG.info(msg);
+			throw new DBException(msg);
 		}
 		length.deleteCharAt(length.length() - 1);
 		length.append(")");
