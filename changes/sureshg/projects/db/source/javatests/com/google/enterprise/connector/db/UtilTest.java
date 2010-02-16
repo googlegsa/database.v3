@@ -36,7 +36,8 @@ public class UtilTest extends TestCase {
 		String primaryKeys[] = null;
 
 		try {
-			// below line should throw an exception
+			// generateDocId(primaryKeys, rowMap) should throw an exception as
+			// primary key array and rowMai is null
 			String docId = Util.generateDocId(primaryKeys, rowMap);
 			fail();
 		} catch (DBException e1) {
@@ -48,7 +49,7 @@ public class UtilTest extends TestCase {
 			primaryKeys = TestUtils.getStandardPrimaryKeys();
 			assertEquals("6fd5643953e6e60188c93b89c71bc1808eb7edc2", Util.generateDocId(primaryKeys, rowMap));
 		} catch (DBException e) {
-			e.printStackTrace();
+			fail("Exception while generating doc id" + e.toString());
 		}
 	}
 
