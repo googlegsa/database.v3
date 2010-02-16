@@ -32,14 +32,24 @@ public class UtilTest extends TestCase {
 	 * Test for generating the docId.
 	 */
 	public final void testGenerateDocId() {
-		// Test for null values
 		Map<String, Object> rowMap = null;
 		String primaryKeys[] = null;
-		assertEquals("eb883130e83d588e41aae5e4c5d715ef7683cfe1", Util.generateDocId(primaryKeys, rowMap));
 
-		rowMap = TestUtils.getStandardDBRow();
-		primaryKeys = TestUtils.getStandardPrimaryKeys();
-		assertEquals("6fd5643953e6e60188c93b89c71bc1808eb7edc2", Util.generateDocId(primaryKeys, rowMap));
+		try {
+			// below line should throw an exception
+			String docId = Util.generateDocId(primaryKeys, rowMap);
+			fail();
+		} catch (DBException e1) {
+			e1.printStackTrace();
+		}
+
+		try {
+			rowMap = TestUtils.getStandardDBRow();
+			primaryKeys = TestUtils.getStandardPrimaryKeys();
+			assertEquals("6fd5643953e6e60188c93b89c71bc1808eb7edc2", Util.generateDocId(primaryKeys, rowMap));
+		} catch (DBException e) {
+			e.printStackTrace();
+		}
 	}
 
 	/**
