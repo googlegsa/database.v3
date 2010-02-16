@@ -120,7 +120,14 @@ public class Util {
 				title.append(strKeyValue).append(" ");
 			}
 		} else {
-			String msg = "row is null";
+			String msg = "";
+			if (row != null && (primaryKeys != null && primaryKeys.length > 0)) {
+				msg = "row is null and primary key array is empty";
+			} else if (row != null) {
+				msg = "hash amp row is null";
+			} else {
+				msg = "primary key array is empty or null";
+			}
 			LOG.info(msg);
 			throw new DBException(msg);
 		}
@@ -172,7 +179,14 @@ public class Util {
 				}
 			}
 		} else {
-			String msg = "row is null";
+			String msg = "";
+			if (row != null && (primaryKeys != null && primaryKeys.length > 0)) {
+				msg = "row is null and primary key array is empty";
+			} else if (row != null) {
+				msg = "hash amp row is null";
+			} else {
+				msg = "primary key array is empty or null";
+			}
 			LOG.info(msg);
 			throw new DBException(msg);
 		}
