@@ -83,25 +83,46 @@ public class Util {
 	 * @param row row corresponding to the document.
 	 * @return title String.
 	 */
-	public static String getTitle(String[] primaryKeys, Map<String, Object> row) {
+	public static String getTitle(String[] primaryKeys, Map<String, Object> row)
+			throws DBException {
 		StringBuilder title = new StringBuilder();
 		title.append(DATABASE_TITLE_PREFIX).append(" ");
-		Set<String> keySet = row.keySet();
-		for (String primaryKey : primaryKeys) {
-			/*
-			 * Primary key value is mapped to the value of key of map row before
-			 * getting record. We need to do this because GSA admin may entered
-			 * primary key value which differed in case from column name.
-			 */
-			for (String key : keySet) {
-				if (primaryKey.equalsIgnoreCase(key)) {
-					primaryKey = key;
-					break;
+
+		if (row != null && (primaryKeys != null && primaryKeys.length > 0)) {
+			Set<String> keySet = row.keySet();
+			for (String primaryKey : primaryKeys) {
+				/*
+				 * Primary key value is mapped to the value of key of map row
+				 * before getting record. We need to do this because GSA admin
+				 * may entered primary key value which differed in case from
+				 * column name.
+				 */
+				for (String key : keySet) {
+					if (primaryKey.equalsIgnoreCase(key)) {
+						primaryKey = key;
+						break;
+					}
 				}
+				if (!keySet.contains(primaryKey)) {
+					String msg = "Primary Key does not match with any of the coulmn names";
+					LOG.info(msg);
+					throw new DBException(msg);
+				}
+				Object keyValue = row.get(primaryKey);
+				String strKeyValue;
+				if (keyValue == null
+						|| keyValue.toString().trim().length() == 0) {
+					strKeyValue = "";
+				} else {
+					strKeyValue = keyValue.toString();
+				}
+				title.append(primaryKey).append("=");
+				title.append(strKeyValue).append(" ");
 			}
-			Object keyValue = row.get(primaryKey);
-			title.append(primaryKey).append("=");
-			title.append(keyValue.toString()).append(" ");
+		} else {
+			String msg = "row is null";
+			LOG.info(msg);
+			throw new DBException(msg);
 		}
 		return title.toString();
 	}
