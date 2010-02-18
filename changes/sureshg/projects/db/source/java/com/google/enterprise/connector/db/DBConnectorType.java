@@ -53,6 +53,11 @@ public class DBConnectorType implements ConnectorType {
 	private static final String COLS = "cols";
 	private static final String ROWS_VALUE = "10";
 	private static final String COLS_VALUE = "50";
+	// SIZE is a constant for size attribute of html input field
+	private static final String SIZE = "size";
+	// SIZE_VALUE is a constant value for size attribute of html input field
+	private static final String SIZE_VALUE = "40";
+
 	private static final String CLOSE_ELEMENT_SLASH = "/>";
 	private static final String OPEN_ELEMENT = "<";
 	private static final String OPEN_ELEMENT_SLASH = "</";
@@ -122,6 +127,15 @@ public class DBConnectorType implements ConnectorType {
 		return buf.toString();
 	}
 
+	/**
+	 * Makes a database connector configuration form snippet using supplied key
+	 * and value.
+	 * 
+	 * @param key for html form field of configuration form
+	 * @param value of html form field of configuration form
+	 * @param red indicates whether this field is required or not
+	 * @return database connector configuration form snippet
+	 */
 	private String formSnippetWithColor(String key, String value, boolean red) {
 		StringBuilder buf = new StringBuilder();
 		appendStartRow(buf, key, red);
@@ -145,6 +159,7 @@ public class DBConnectorType implements ConnectorType {
 			} else {
 				appendAttribute(buf, TYPE, TEXT);
 			}
+			appendAttribute(buf, SIZE, SIZE_VALUE);
 			appendAttribute(buf, NAME, key);
 			if (null != value) {
 				appendAttribute(buf, VALUE, value);
