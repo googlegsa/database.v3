@@ -48,6 +48,16 @@ public class DBTraversalManager implements TraversalManager {
 	}
 
 	/**
+	 * getter method for dbClient is added so that other part of application can
+	 * make use of it whenever required to perform database operation
+	 * 
+	 * @return DBClient to perform database operations
+	 */
+	public DBClient getDbClient() {
+		return dbClient;
+	}
+
+	/**
 	 * Resumes traversal from the point where it was left in the previous run.
 	 * If the checkpoint string passed to it is the same as the connector thinks
 	 * should be then the connector assumes the docsInFlight actually made it.
