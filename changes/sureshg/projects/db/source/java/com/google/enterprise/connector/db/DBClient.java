@@ -74,6 +74,18 @@ public class DBClient {
 	}
 
 	/**
+	 * getter method for sqlMapClient, so that it can be used outside to perform
+	 * database related operation
+	 * 
+	 * @return SqlMapClient that is used to perform database operations like
+	 *         CRUD.
+	 */
+
+	public SqlMapClient getSqlMapClient() {
+		return sqlMapClient;
+	}
+
+	/**
 	 * @return the googleConnectorWorkDir
 	 */
 	public String getGoogleConnectorWorkDir() {
