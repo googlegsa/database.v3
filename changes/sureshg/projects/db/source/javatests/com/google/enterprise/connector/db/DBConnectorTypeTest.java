@@ -62,7 +62,6 @@ public class DBConnectorTypeTest extends TestCase {
 		configMap.put("hostname", "PS4210.persistent");
 		configMap.put("xslt", "");
 		configMap.put("googleConnectorWorkDir", TestUtils.TESTCONFIG_DIR);
-
 	}
 
 	protected void tearDown() throws Exception {
@@ -112,7 +111,6 @@ public class DBConnectorTypeTest extends TestCase {
 
 		final ConfigureResponse configureResponse = connectorType.getPopulatedConfigForm(configMap, Locale.ENGLISH);
 		final String configForm = configureResponse.getFormSnippet();
-		System.out.println(configForm);
 		boolean check = checkForExpectedFields(configForm);
 		assertTrue(check);
 	}
