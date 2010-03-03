@@ -124,7 +124,7 @@ public class Util {
 			if (row != null && (primaryKeys != null && primaryKeys.length > 0)) {
 				msg = "row is null and primary key array is empty";
 			} else if (row != null) {
-				msg = "hash amp row is null";
+				msg = "hash map row is null";
 			} else {
 				msg = "primary key array is empty or null";
 			}
@@ -183,7 +183,7 @@ public class Util {
 			if (row != null && (primaryKeys != null && primaryKeys.length > 0)) {
 				msg = "row is null and primary key array is empty";
 			} else if (row != null) {
-				msg = "hash amp row is null";
+				msg = "hash map row is null";
 			} else {
 				msg = "primary key array is empty or null";
 			}
