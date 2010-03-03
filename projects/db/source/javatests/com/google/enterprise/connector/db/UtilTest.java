@@ -14,68 +14,79 @@
 
 package com.google.enterprise.connector.db;
 
-import com.google.enterprise.connector.spi.Property;
-import com.google.enterprise.connector.spi.RepositoryException;
-import com.google.enterprise.connector.spi.SpiConstants;
+import java.util.Map;
+import java.util.logging.Logger;
 
 import junit.framework.TestCase;
 
 import org.joda.time.DateTime;
 
-import java.util.Map;
-import java.util.logging.Logger;
+import com.google.enterprise.connector.spi.Property;
+import com.google.enterprise.connector.spi.RepositoryException;
+import com.google.enterprise.connector.spi.SpiConstants;
 
 public class UtilTest extends TestCase {
-  private static final Logger LOG = Logger.getLogger(UtilTest.class.getName());
+	private static final Logger LOG = Logger.getLogger(UtilTest.class.getName());
 
-  /**
-   * Test for generating the docId.
-   */
-  public final void testGenerateDocId() {
-    Map<String, Object> rowMap = TestUtils.getStandardDBRow();
-    String primaryKeys[] = TestUtils.getStandardPrimaryKeys();
-    assertEquals("6fd5643953e6e60188c93b89c71bc1808eb7edc2",
-        Util.generateDocId(primaryKeys, rowMap));
-  }
+	/**
+	 * Test for generating the docId.
+	 */
+	public final void testGenerateDocId() {
+		Map<String, Object> rowMap = null;
+		String primaryKeys[] = null;
 
-  /**
-   * Test for converting DB row to DB Doc.
-   */
-  public final void testRowToDoc() {
-    Map<String, Object> rowMap = TestUtils.getStandardDBRow();
-    String[] primaryKeys = TestUtils.getStandardPrimaryKeys();
-    try {
-      DBDocument doc = Util.rowToDoc("testdb_", primaryKeys, rowMap, 
-          "localhost", null);
-      for (String propName : doc.getPropertyNames()) {
-        Property prop = doc.findProperty(propName);
-        LOG.info(propName + ":    " +   prop.nextValue().toString());
-      }
-      assertEquals("6fd5643953e6e60188c93b89c71bc1808eb7edc2",
-          doc.findProperty(SpiConstants.PROPNAME_DOCID).nextValue().toString());
-      assertEquals("7ffd1d7efaf0d1ee260c646d827020651519e7b0",
-          doc.findProperty(DBDocument.ROW_CHECKSUM).nextValue().toString());
-    } catch (DBException e) {
-      fail("Could not generate DB document from row.");
-    } catch (RepositoryException e) {
-      fail("Could not generate DB document from row.");
-    }
-  }
+		try {
+			// generateDocId(primaryKeys, rowMap) should throw an exception as
+			// primary key array and rowMai is null
+			String docId = Util.generateDocId(primaryKeys, rowMap);
+			fail();
+		} catch (DBException e1) {
+			e1.printStackTrace();
+		}
 
-  public final void testGetCheckpointString() throws DBException {
-    Map<String, Object> rowMap = TestUtils.getStandardDBRow();
-    DBDocument doc = Util.rowToDoc("testdb_",
-          TestUtils.getStandardPrimaryKeys(), rowMap, "localhost", null);
-    try {
-      String checkpointStr = Util.getCheckpointString(null, null);
-      assertEquals("(NO_TIMESTAMP)NO_DOCID", checkpointStr);
-      DateTime dt = new DateTime();
-      checkpointStr = Util.getCheckpointString(dt, doc);
-      assertTrue(checkpointStr.contains(dt.toString()));
-      assertTrue(checkpointStr.contains("6fd5643953e6e60188c93b89c71bc1808eb7edc2"));
-      LOG.info(checkpointStr);
-    } catch (RepositoryException e) {
-      fail("Unexpected exception" + e.toString());
-    }
-  }
+		try {
+			rowMap = TestUtils.getStandardDBRow();
+			primaryKeys = TestUtils.getStandardPrimaryKeys();
+			assertEquals("6fd5643953e6e60188c93b89c71bc1808eb7edc2", Util.generateDocId(primaryKeys, rowMap));
+		} catch (DBException e) {
+			fail("Exception while generating doc id" + e.toString());
+		}
+	}
+
+	/**
+	 * Test for converting DB row to DB Doc.
+	 */
+	public final void testRowToDoc() {
+		Map<String, Object> rowMap = TestUtils.getStandardDBRow();
+		String[] primaryKeys = TestUtils.getStandardPrimaryKeys();
+		try {
+			DBDocument doc = Util.rowToDoc("testdb_", primaryKeys, rowMap, "localhost", null);
+			for (String propName : doc.getPropertyNames()) {
+				Property prop = doc.findProperty(propName);
+				LOG.info(propName + ":    " + prop.nextValue().toString());
+			}
+			assertEquals("6fd5643953e6e60188c93b89c71bc1808eb7edc2", doc.findProperty(SpiConstants.PROPNAME_DOCID).nextValue().toString());
+			assertEquals("eb476c046da8b3e83081e3195923aba1dd9c6045", doc.findProperty(DBDocument.ROW_CHECKSUM).nextValue().toString());
+		} catch (DBException e) {
+			fail("Could not generate DB document from row.");
+		} catch (RepositoryException e) {
+			fail("Could not generate DB document from row.");
+		}
+	}
+
+	public final void testGetCheckpointString() throws DBException {
+		Map<String, Object> rowMap = TestUtils.getStandardDBRow();
+		DBDocument doc = Util.rowToDoc("testdb_", TestUtils.getStandardPrimaryKeys(), rowMap, "localhost", null);
+		try {
+			String checkpointStr = Util.getCheckpointString(null, null);
+			assertEquals("(NO_TIMESTAMP)NO_DOCID", checkpointStr);
+			DateTime dt = new DateTime();
+			checkpointStr = Util.getCheckpointString(dt, doc);
+			assertTrue(checkpointStr.contains(dt.toString()));
+			assertTrue(checkpointStr.contains("6fd5643953e6e60188c93b89c71bc1808eb7edc2"));
+			LOG.info(checkpointStr);
+		} catch (RepositoryException e) {
+			fail("Unexpected exception" + e.toString());
+		}
+	}
 }
