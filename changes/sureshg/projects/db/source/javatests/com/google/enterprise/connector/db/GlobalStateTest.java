@@ -21,6 +21,8 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import junit.framework.TestCase;
 
@@ -146,9 +148,15 @@ public class GlobalStateTest extends TestCase {
 				+ "docid=\"7796571db039cc272cf73197369e1d9fb1395696\" "
 				+ "rowChecksum=\"10e15f4a65635d5264063a6b50ebf8d2e5df937f\"/>"
 				+ "<checksumMapEntry";
+		String[] expectedPatterns = new String[] {
+				"docid=\"1f81a76b56764180bdce3d3a55081c94338e0bd3\" ",
+				"</currentChecksumMap><previousChecksumMap><checksumMapEntry ",
+				"docid=\"7796571db039cc272cf73197369e1d9fb1395696\"",
+				"<checksumMapEntry" };
 		String expectedCursorXml = "<dbCursor>0</dbCursor>";
-		String expectedDocToDeleteXml = "docid=\"2a61639c96ed45ec8f6e3d4e1ab79944cd1d1923\" "
-				+ "rowChecksum=\"8cad0bec28c3a68838f1276d40d162c98cf3ca57\"";
+		String[] expectedDocToDeleteXml = new String[] {
+				"docid=\"2a61639c96ed45ec8f6e3d4e1ab79944cd1d1923\"",
+				"rowChecksum=.*" };
 
 		try {
 			for (Map<String, Object> row : TestUtils.getDBRows()) {
@@ -165,7 +173,8 @@ public class GlobalStateTest extends TestCase {
 
 			String actualXml = readFile(globalState.getStateFileLocation());
 			LOG.info(actualXml);
-			assertTrue(actualXml.toString().contains(expectedXmlSnippet));
+			assertCheckPatterns(actualXml, expectedPatterns);
+			// assertTrue(actualXml.toString().contains(expectedXmlSnippet));
 			assertTrue(actualXml.toString().contains(expectedCursorXml));
 
 			DBDocument dbDoc = TestUtils.createDBDoc(5, "first_05", "last_05", "05@google.com");
@@ -183,7 +192,7 @@ public class GlobalStateTest extends TestCase {
 			globalState.saveState();
 			actualXml = readFile(globalState.getStateFileLocation());
 			LOG.info(actualXml);
-			assertTrue(actualXml.toString().contains(expectedDocToDeleteXml));
+			assertCheckPatterns(actualXml, expectedDocToDeleteXml);
 		} catch (DBException e) {
 			fail("Caught exception");
 		}
@@ -248,6 +257,28 @@ public class GlobalStateTest extends TestCase {
 
 		} catch (DBException e) {
 			fail("Could not save state");
+		}
+	}
+
+	/**
+	 * Method search for pattern in document string. It gives an assertion error
+	 * when accepted pattern does not found in document string.
+	 * 
+	 * @param docStringUnderTest String that represent actual document.
+	 * @param expectedPatterns array of patterns that document String should
+	 *            have
+	 */
+	private void assertCheckPatterns(final String docStringUnderTest,
+			final String[] expectedPatterns) {
+
+		Pattern pattern = null;
+		Matcher match = null;
+
+		for (String strPattern : expectedPatterns) {
+			LOG.info("Checking for pattern  :   " + strPattern + "  ...");
+			pattern = Pattern.compile(strPattern);
+			match = pattern.matcher(docStringUnderTest);
+			assertTrue(match.find());
 		}
 	}
 }
