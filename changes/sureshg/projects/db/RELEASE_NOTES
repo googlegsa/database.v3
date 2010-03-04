@@ -10,6 +10,36 @@ issues and workarounds.
 
 Web Site: http://code.google.com/p/google-enterprise-connector-database/
 
+Release 1.0.2, ALPHA March 4, 2010
+===========================================
+
+Introduction
+----------------
+This is a patch release contain fix for bugs.
+
+Version Compatibility
+---------------------
+This version works with Connector Manager version 2.0.0 or later. Earlier versions of
+the Connector Manager will not work correctly with this version of the connector.
+
+Platform Support
+------------------
+The connector can be installed and run on both 32-bit & 64-bit Windows and Linux environments
+
+Issues fixed from last release
+----------------------------------
+1. Issue 2: On Windows, the path to the IbatisSqlMap.xml file is not resolved correctly and hence no crawling is initiated.
+2. Issue 4: "NullPointerException" is thrown when the column name is different from the value entered as primary key during connector
+          configuration.
+3. Issue 6: Connector is not honoring the retry delay time and starting next crawl cycle immediately.
+4. Issue 7: Database user password is visible in log file
+5. Issue 8: Text box size in Database configuration form need be increased.
+6. Issue 9: JUnit test cases (e.g. XmlUtilsTest.testGetXmlRowEmptyStylesheet) fail due to differences in HashMap ordering
+7. Issue 12: Same DocID is generated for different records in a database table when the column name is differed in case
+          from the value entered as primary key during connector configuration.
+8. Issue 13: JUnit Test Case GlobalStateTest is failing
+
+
 Release 1.0.1, ALPHA December 2, 2009
 ==========================
 
