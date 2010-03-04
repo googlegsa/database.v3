@@ -20,6 +20,11 @@ import junit.framework.Assert;
 
 import com.google.enterprise.connector.spi.RepositoryException;
 
+/**
+ * This is JUnit test case for DBTraversalManager.
+ * 
+ * @author Suresh_Ghuge
+ */
 public class DBTraversalManagerTest extends DBTestBase {
 	private DBTraversalManager traversalMgr;
 

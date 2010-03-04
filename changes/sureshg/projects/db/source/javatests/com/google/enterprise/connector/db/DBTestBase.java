@@ -19,7 +19,6 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.logging.Logger;
 
 import junit.framework.TestCase;
 
@@ -30,11 +29,16 @@ import com.google.enterprise.connector.spi.Session;
 import com.ibatis.common.jdbc.ScriptRunner;
 import com.ibatis.common.resources.Resources;
 
+/**
+ * This is a base class for all test classes that requires interaction with
+ * database. This provide methods to interact with database. *
+ * 
+ * @author Suresh_Ghuge
+ */
 public class DBTestBase extends TestCase {
 
 	private Map<String, String> configMap = new HashMap<String, String>();
 	private GlobalState globalState;
-	private static final Logger LOG = Logger.getLogger(DBTestBase.class.getName());
 
 	public GlobalState getGlobalState() {
 		return globalState;
@@ -48,21 +52,22 @@ public class DBTestBase extends TestCase {
 	@Override
 	protected void setUp() throws Exception {
 		TestDirectoryManager testDirManager = new TestDirectoryManager(this);
-		configMap.put("login", "root");
-		configMap.put("password", "root");
-		configMap.put("connectionUrl", "jdbc:mysql://10.88.45.40:3306/MySQL");
-		configMap.put("dbName", "MySQL");
-		configMap.put("hostname", "persistent.PS4210");
-		configMap.put("driverClassName", "com.mysql.jdbc.Driver");
-		configMap.put("sqlQuery", "SELECT * FROM TestEmpTable");
-		configMap.put("primaryKeysString", "id");
+		configMap.put("login", LanguageResource.getPropertyValue("login"));
+		configMap.put("password", LanguageResource.getPropertyValue("password"));
+		configMap.put("connectionUrl", LanguageResource.getPropertyValue("connectionUrl"));
+		configMap.put("dbName", LanguageResource.getPropertyValue("dbName"));
+		configMap.put("hostname", LanguageResource.getPropertyValue("hostname"));
+		configMap.put("driverClassName", LanguageResource.getPropertyValue("driverClassName"));
+		configMap.put("sqlQuery", LanguageResource.getPropertyValue("sqlQuery"));
+		configMap.put("primaryKeysString", LanguageResource.getPropertyValue("primaryKeysString"));
+		System.out.println("Configuration map:======= " + configMap);
 		configMap.put("googleConnectorWorkDir", testDirManager.getTmpDir());
 		configMap.put("xslt", "");
 		globalState = new GlobalState(testDirManager.getTmpDir());
 		runDBScript(CREATE_TEST_DB_TABLE);
 	}
 
-	public DBConnector getConnector() {
+	protected DBConnector getConnector() {
 		MockDBConnectorFactory mdbConnectorFactory = new MockDBConnectorFactory(
 				TestUtils.TESTCONFIG_DIR + TestUtils.CONNECTOR_INSTANCE_XML);
 
@@ -70,12 +75,12 @@ public class DBTestBase extends TestCase {
 		return connector;
 	}
 
-	public Session getSession() throws RepositoryException {
+	protected Session getSession() throws RepositoryException {
 
 		return getConnector().login();
 	}
 
-	public DBTraversalManager getDBTraversalManager()
+	protected DBTraversalManager getDBTraversalManager()
 			throws RepositoryException {
 		return (DBTraversalManager) getSession().getTraversalManager();
 	}
@@ -90,7 +95,7 @@ public class DBTestBase extends TestCase {
 	 * This method will set up initial state of GlobalState class. Test
 	 * documents are added toGlobalState for testing
 	 */
-	public void setUpInitialState() {
+	protected void setUpInitialState() {
 		DateTime queryExecutionTime = new DateTime();
 		globalState.setQueryExecutionTime(queryExecutionTime);
 		try {
@@ -99,7 +104,7 @@ public class DBTestBase extends TestCase {
 				globalState.addDocument(dbDoc);
 			}
 		} catch (DBException dbe) {
-			LOG.info("DBException is occured while closing database connection"
+			fail("DBException is occured while closing database connection"
 					+ dbe.toString());
 		}
 	}
@@ -109,27 +114,27 @@ public class DBTestBase extends TestCase {
 	 * 
 	 * @param scriptPath path of SQL script file
 	 */
-	public void runDBScript(String scriptPath) {
+	protected void runDBScript(String scriptPath) {
 		Connection connection = null;
 		try {
 			connection = getDBTraversalManager().getDbClient().getSqlMapClient().getDataSource().getConnection();
 			ScriptRunner runner = new ScriptRunner(connection, false, true);
 			runner.runScript(Resources.getResourceAsReader(scriptPath));
 		} catch (SQLException se) {
-			LOG.info("SQLException is occured while closing database connection"
+			fail("SQLException is occured while closing database connection"
 					+ se.toString());
 		} catch (RepositoryException re) {
-			LOG.info("RepositoryException is occured while closing database connection"
+			fail("RepositoryException is occured while closing database connection"
 					+ re.toString());
 		} catch (IOException ioe) {
-			LOG.info("IOException is occured while closing database connection"
+			fail("IOException is occured while closing database connection"
 					+ ioe.toString());
 		} finally {
 			if (connection != null) {
 				try {
 					connection.close();
 				} catch (SQLException se) {
-					LOG.info("SQLException is occured while closing database connection"
+					fail("SQLException is occured while closing database connection"
 							+ se.toString());
 				}
 			}
