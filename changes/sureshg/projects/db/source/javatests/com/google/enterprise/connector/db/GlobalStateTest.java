@@ -142,12 +142,6 @@ public class GlobalStateTest extends TestCase {
 	}
 
 	public final void testSaveState() {
-		String expectedXmlSnippet = "docid=\"1f81a76b56764180bdce3d3a55081c94338e0bd3\" "
-				+ "rowChecksum=\"753c0bfc210ef12055a3eec57dc238ead8d62587\"/>"
-				+ "</currentChecksumMap><previousChecksumMap><checksumMapEntry "
-				+ "docid=\"7796571db039cc272cf73197369e1d9fb1395696\" "
-				+ "rowChecksum=\"10e15f4a65635d5264063a6b50ebf8d2e5df937f\"/>"
-				+ "<checksumMapEntry";
 		String[] expectedPatterns = new String[] {
 				"docid=\"1f81a76b56764180bdce3d3a55081c94338e0bd3\" ",
 				"</currentChecksumMap><previousChecksumMap><checksumMapEntry ",
