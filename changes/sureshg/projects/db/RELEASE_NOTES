@@ -31,7 +31,7 @@ Issues fixed from last release
 ----------------------------------
 1. Issue 2: On Windows, the path to the IbatisSqlMap.xml file is not resolved correctly and hence no crawling is initiated.
 2. Issue 4: "NullPointerException" is thrown when the column name is different from the value entered as primary key  even if the case
-            of the PK is different,    during connector configuration.
+            of primary key is different, during connector configuration.
 3. Issue 6: Connector does not honor the retry delay time and starts next crawl cycle immediately.
 4. Issue 7: Database user password is visible in log file.
 5. Issue 8: Text box size in database connector configuration form is increased.
