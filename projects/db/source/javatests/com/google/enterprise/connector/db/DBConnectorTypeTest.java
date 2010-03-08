@@ -28,6 +28,11 @@ import junit.framework.TestCase;
 
 import com.google.enterprise.connector.spi.ConfigureResponse;
 
+/**
+ * This is a JUNit test case for DBConnectorType class.
+ * 
+ * @author Suresh_Ghuge
+ */
 public class DBConnectorTypeTest extends TestCase {
 
 	private static final Logger LOG = Logger.getLogger(DBConnectorTypeTest.class.getName());
@@ -52,14 +57,14 @@ public class DBConnectorTypeTest extends TestCase {
 	 */
 
 	private void loadConfigMap() {
-		configMap.put("login", "root");
-		configMap.put("driverClassName", "com.mysql.jdbc.Driver");
-		configMap.put("password", "root");
-		configMap.put("primaryKeysString", "id");
-		configMap.put("connectionUrl", "jdbc:mysql://ps4210:3306/MySQL");
-		configMap.put("sqlQuery", "SELECT * FROM myemp");
+		configMap.put("login", LanguageResource.getPropertyValue("login"));
+		configMap.put("driverClassName", LanguageResource.getPropertyValue("driverClassName"));
+		configMap.put("password", LanguageResource.getPropertyValue("password"));
+		configMap.put("primaryKeysString", LanguageResource.getPropertyValue("primaryKeysString"));
+		configMap.put("connectionUrl", LanguageResource.getPropertyValue("connectionUrl"));
+		configMap.put("sqlQuery", LanguageResource.getPropertyValue("sqlQuery"));
 		configMap.put("dbName", "");
-		configMap.put("hostname", "PS4210.persistent");
+		configMap.put("hostname", LanguageResource.getPropertyValue("hostname"));
 		configMap.put("xslt", "");
 		configMap.put("googleConnectorWorkDir", TestUtils.TESTCONFIG_DIR);
 	}
@@ -86,7 +91,7 @@ public class DBConnectorTypeTest extends TestCase {
 		assertTrue(match.find());
 
 		LOG.info("Checking when all required fields are provided...");
-		configMap.put("dbName", "MySQL");
+		configMap.put("dbName", LanguageResource.getPropertyValue("dbName"));
 		configRes = this.connectorType.validateConfig(this.configMap, Locale.ENGLISH, mdbConnectorFactory);
 		assertNull(configRes);
 		LOG.info("[ validateConfig() ] Test Passed.");
