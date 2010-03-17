@@ -184,9 +184,12 @@ public class DBTraversalManager implements TraversalManager {
 				/*
 				 * Connector returns null value to notify connector that
 				 * traversing has reached the end of the DB and it to wait till
-				 * retry delay time lapse before starting next crawl cycle.
+				 * retry delay time lapse before starting next crawl cycle. Save
+				 * the current state into xml file at the end of each traversal
+				 * cycle.
 				 */
 				if (0 == globalState.getDocQueue().size()) {
+					globalState.saveState();
 					return null;
 				}
 			}

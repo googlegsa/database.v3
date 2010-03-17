@@ -22,10 +22,14 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
+import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
+
+import javax.sql.DataSource;
 
 import com.ibatis.sqlmap.client.SqlMapClient;
 import com.ibatis.sqlmap.client.SqlMapClientBuilder;
@@ -148,9 +152,27 @@ public class DBClient {
 				+ "maxRows = " + maxRows);
 		try {
 			rows = sqlMapClient.queryForList("IbatisDBClient.getAll", skipRows, maxRows);
-		} catch (SQLException e) {
-			throw new DBException("Could not execute query on the database\n",
-					e);
+		} catch (Exception e) {
+			DataSource ds = sqlMapClient.getDataSource();
+			Connection conn = null;
+			try {
+				conn = ds.getConnection();
+				LOG.info("Could not execute SQL query on the database\n"
+						+ e.toString());
+				rows = new ArrayList<Map<String, Object>>();
+			} catch (SQLException e1) {
+				LOG.info("Unable to connect to the database\n" + e.toString());
+				throw new DBException(e);
+			} finally {
+				if (conn != null) {
+					try {
+						conn.close();
+					} catch (SQLException e1) {
+						LOG.info("Could not close database connection: "
+								+ e1.toString());
+					}
+				}
+			}
 		}
 		LOG.info("Rows returned : " + rows);
 		return rows;
