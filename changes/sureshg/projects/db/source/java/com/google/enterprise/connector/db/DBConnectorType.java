@@ -14,7 +14,11 @@
 
 package com.google.enterprise.connector.db;
 
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -40,6 +44,9 @@ public class DBConnectorType implements ConnectorType {
 	private static final String LOCALE_DB = "config/DbConnectorResources";
 	private ResourceBundle resource;
 	private static final String TEST_CONNECTIVITY = "TEST_CONNECTIVITY";
+	private static final String TEST_DRIVER_CLASS = "TEST_DRIVER_CLASS";
+	private static final String TEST_SQL_QUERY = "TEST_SQL_QUERY";
+	private static final String TEST_PRIMARY_KEYS = "TEST_PRIMARY_KEYS";
 	private static final String FQDN_HOSTNAME = "FQDN_HOSTNAME";
 	private static final String MISSING_ATTRIBUTES = "MISSING_ATTRIBUTES";
 	private static final String REQ_FIELDS = "REQ_FIELDS";
@@ -274,6 +281,10 @@ public class DBConnectorType implements ConnectorType {
 		}
 
 		public boolean validate() {
+			Statement stmt = null;
+			Connection conn = null;
+			ResultSet resultSet = null;
+			boolean result = false;
 			password = config.get(PASSWORD);
 			login = config.get(LOGIN);
 			connectionUrl = config.get(CONNECTION_URL);
@@ -285,22 +296,117 @@ public class DBConnectorType implements ConnectorType {
 				jdbcProps.put(JDBC_DRIVER_STR, driverClassName);
 				jdbcProps.put(JDBC_USERNAME_STR, login);
 				jdbcProps.put(JDBC_PASSWORD_STR, password);
-				SimpleDataSource sds = new SimpleDataSource(jdbcProps);
+				SimpleDataSource sds = null;
+
+				/*
+				 * to test JDBC driver class
+				 */
 				try {
-					sds.getConnection();
-					success = true;
-				} catch (SQLException e) {
-					LOG.warning("Caught SQLException : " + "\n" + e.toString());
-					message = res.getString(TEST_CONNECTIVITY);
-					// TODO(meghna): See if there is a way to pin point the
-					// actual
-					// problematic fields.
+					sds = new SimpleDataSource(jdbcProps);
+				} catch (Exception e) {
+					LOG.warning("Caught Exception while testing driver class name: "
+							+ "\n" + e.toString());
+					message = res.getString(TEST_DRIVER_CLASS);
 					problemFields.add(DRIVER_CLASS_NAME);
-					problemFields.add(LOGIN);
-					problemFields.add(PASSWORD);
-					problemFields.add(CONNECTION_URL);
+				}
+
+				/*
+				 * below if block is for testing connection with the database
+				 * with given values of input parameters.
+				 */
+				if (sds != null) {
+					try {
+						conn = sds.getConnection();
+					} catch (SQLException e) {
+						LOG.warning("Caught SQLException while testing connection: "
+								+ "\n" + e.toString());
+						message = res.getString(TEST_CONNECTIVITY);
+						// TODO(meghna): See if there is a way to pin point the
+						// actual
+						// problematic fields.
+						problemFields.add(DRIVER_CLASS_NAME);
+						problemFields.add(LOGIN);
+						problemFields.add(PASSWORD);
+						problemFields.add(CONNECTION_URL);
+					}
+				}
+				/*
+				 * Block to test SQL query. SQL query should be of type SELECT,
+				 * it should not be DML statement.
+				 */
+				if (conn != null) {
+					try {
+						conn.setAutoCommit(false);
+						conn.setReadOnly(true);
+						stmt = conn.createStatement();
+						result = stmt.execute(config.get(SQL_QUERY));
+						if (!result) {
+							message = res.getString(TEST_SQL_QUERY);
+							problemFields.add(SQL_QUERY);
+						}
+					} catch (SQLException e) {
+						LOG.warning("Caught SQLException while testing SQL crawl query : "
+								+ "\n" + e.toString());
+						message = res.getString(TEST_SQL_QUERY);
+						problemFields.add(SQL_QUERY);
+					}
+				}
+
+				/*
+				 * This block of code is to validate primary keys.
+				 */
+				if (result) {
+					try {
+						resultSet = stmt.getResultSet();
+						if (resultSet != null) {
+							ResultSetMetaData rsMeta = resultSet.getMetaData();
+							int columnCount = rsMeta.getColumnCount();
+							String[] primaryKeys = config.get(PRIMARY_KEYS_STRING).split(",");
+							boolean flag = false;
+							for (String key : primaryKeys) {
+								flag = false;
+								for (int i = 1; i <= columnCount; i++) {
+									if (key.trim().equalsIgnoreCase(rsMeta.getColumnLabel(i))) {
+										flag = true;
+										break;
+									}
+								}
+								if (!flag) {
+									LOG.info("One or more primary keys are invalid");
+									message = res.getString(TEST_PRIMARY_KEYS);
+									problemFields.add(PRIMARY_KEYS_STRING);
+									break;
+								}
+							}
+							if (flag) {
+								success = true;
+							}
+
+						}
+					} catch (SQLException e) {
+						LOG.warning("Caught SQLException while testing primary keys: "
+								+ "\n" + e.toString());
+					}
+
 				}
 			}
+			/*
+			 * close dabase connection, result set and statement
+			 */
+			try {
+				if (conn != null) {
+					conn.close();
+				}
+				if (resultSet != null) {
+					resultSet.close();
+				}
+				if (stmt != null) {
+					stmt.close();
+				}
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+
 			return success;
 		}
 
