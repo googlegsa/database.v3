@@ -11,7 +11,7 @@ This document will provide you the details of various fields of configuration fo
 = Configuration form fields details =
 
   * * Username: *Username is a required field and the value of this field must be the 
-  username of SQL server user.  This field value is used to connect to the database.
+  username of Database server user.  This field value is used to connect to the database. Please note that Windows authentication used in MS SQL server is not currently supported by the connector.
 
 
    * * Password: * Password in not a mandatory field. But user must provide password     
