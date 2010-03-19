@@ -23,6 +23,7 @@ import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.sql.Connection;
+import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
@@ -75,6 +76,10 @@ public class DBClient {
 			throw new DBException("Could not instantiate DBClient.", e);
 		}
 		this.sqlMapClient = SqlMapClientBuilder.buildSqlMapClient(resources);
+
+		LOG.info("DBClient for database " + getDatabaseInfo()
+				+ " is instantiated");
+
 	}
 
 	/**
@@ -153,6 +158,13 @@ public class DBClient {
 		try {
 			rows = sqlMapClient.queryForList("IbatisDBClient.getAll", skipRows, maxRows);
 		} catch (Exception e) {
+			/*
+			 * Below code is added to handle scenarios when table is deleted or
+			 * connectivity with database is lost. In this scenario connector
+			 * first check the connectivity with database and if there is
+			 * connectivity it returns empty list of rows else throughs
+			 * RepositoryException.
+			 */
 			DataSource ds = sqlMapClient.getDataSource();
 			Connection conn = null;
 			try {
@@ -215,7 +227,7 @@ public class DBClient {
 		String newString = " <property name=\"JDBC.Password\" value=\""
 				+ "*****" + "\" />";
 
-		LOG.info("Generated sqlMapConfig : \n"
+		LOG.config("Generated sqlMapConfig : \n"
 				+ sqlMapConfig.replace(oldString, newString));
 	}
 
@@ -237,7 +249,7 @@ public class DBClient {
 				+ "<sqlMap namespace=\"IbatisDBClient\">\n"
 				+ " <select id=\"getAll\" resultClass=\"java.util.HashMap\"> \n"
 				+ sqlQuery + "\n </select> \n" + " </sqlMap> \n";
-		LOG.info("Generated sqlMap : \n" + sqlMap);
+		LOG.config("Generated sqlMap : \n" + sqlMap);
 		File file = new File(googleConnectorWorkDir, "IbatisSqlMap.xml");
 		Writer output;
 		try {
@@ -249,4 +261,38 @@ public class DBClient {
 					+ googleConnectorWorkDir + "/IbatisSqlMap.xml", e);
 		}
 	}
+
+	/**
+	 * This method return the database name and version details.
+	 * 
+	 * @author Suresh_Ghuge
+	 * @return database name and version details
+	 */
+	public String getDatabaseInfo() {
+		String dbDetails = "";
+		Connection conn = null;
+		DatabaseMetaData meta = null;
+		try {
+			SqlMapClient sqlClient = getSqlMapClient();
+			conn = sqlClient.getDataSource().getConnection();
+			meta = conn.getMetaData();
+			String productName = meta.getDatabaseProductName();
+			String productVersion = meta.getDatabaseProductVersion();
+			dbDetails = productName + " " + productVersion;
+		} catch (SQLException e) {
+			LOG.info("Caught SQLException while fetching database details"
+					+ e.toString());
+		} finally {
+			if (conn != null) {
+				try {
+					conn.close();
+				} catch (SQLException e) {
+					LOG.info("Caught SQLException while closing connection : "
+							+ e.toString());
+				}
+			}
+		}
+		return dbDetails;
+	}
+
 }

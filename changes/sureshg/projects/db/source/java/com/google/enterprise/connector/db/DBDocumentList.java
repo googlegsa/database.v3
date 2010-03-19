@@ -14,8 +14,10 @@
 
 package com.google.enterprise.connector.db;
 
+import java.util.Date;
 import java.util.LinkedList;
 import java.util.NoSuchElementException;
+import java.util.logging.Logger;
 
 import com.google.enterprise.connector.spi.Document;
 import com.google.enterprise.connector.spi.DocumentList;
@@ -27,6 +29,7 @@ import com.google.enterprise.connector.spi.RepositoryException;
 public class DBDocumentList implements DocumentList {
 	private final LinkedList<DBDocument> docList = new LinkedList<DBDocument>();
 	private GlobalState globalState;
+	private static final Logger LOG = Logger.getLogger(DBDocumentList.class.getName());
 
 	/**
 	 * Constructs an empty document list.
@@ -45,6 +48,7 @@ public class DBDocumentList implements DocumentList {
 	 */
 	/* @Override */
 	public String checkpoint() throws RepositoryException {
+		LOG.info("Check point is called at: " + new Date());
 		try {
 			globalState.saveState();
 		} catch (DBException e) {

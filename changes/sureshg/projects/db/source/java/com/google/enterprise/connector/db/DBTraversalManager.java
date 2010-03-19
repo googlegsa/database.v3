@@ -14,9 +14,11 @@
 
 package com.google.enterprise.connector.db;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.logging.Logger;
 
 import org.joda.time.DateTime;
 
@@ -28,6 +30,7 @@ import com.google.enterprise.connector.spi.TraversalManager;
  * {@link TraversalManager} implementation for the DB connector.
  */
 public class DBTraversalManager implements TraversalManager {
+	private static final Logger LOG = Logger.getLogger(DBTraversalManager.class.getName());
 	private DBClient dbClient;
 	private GlobalState globalState;
 	private String xslt;
@@ -70,6 +73,8 @@ public class DBTraversalManager implements TraversalManager {
 	/* @Override */
 	public DocumentList resumeTraversal(String checkpointStr)
 			throws RepositoryException {
+		LOG.info("Traversal resumed at " + new Date() + " from checkpoint "
+				+ checkpointStr);
 		try {
 			String oldCheckpointStr;
 			try {
@@ -144,6 +149,8 @@ public class DBTraversalManager implements TraversalManager {
 	 */
 	/* @Override */
 	public DocumentList startTraversal() throws RepositoryException {
+		LOG.info("Traversal of database " + dbClient.getDBContext().getDbName()
+				+ " is started at : " + new Date());
 		try {
 			// Making sure the old state is gone.
 			globalState.clearState();
@@ -169,6 +176,7 @@ public class DBTraversalManager implements TraversalManager {
 	 * @throws DBException
 	 */
 	private DBDocumentList traverseDB() throws DBException {
+
 		List<Map<String, Object>> rows;
 		if (0 == globalState.getDocQueue().size()) {
 			// Multiplying batch hint by 3 (picked randomly) to prefetch some
@@ -176,6 +184,7 @@ public class DBTraversalManager implements TraversalManager {
 			rows = executeQueryAndAddDocs();
 			// You've reached the end of the DB or the DB is empty.
 			if (0 == rows.size()) {
+				int recordCOunt = globalState.getCursorDB();
 				globalState.markNewDBTraversal();
 				/*
 				 * globalState.getDocQueue().size() can be non-zero if there are
@@ -190,6 +199,11 @@ public class DBTraversalManager implements TraversalManager {
 				 */
 				if (0 == globalState.getDocQueue().size()) {
 					globalState.saveState();
+					LOG.info("Crawl cycle of database "
+							+ dbClient.getDBContext().getDbName()
+							+ " is completed at: " + new Date() + "\nTotal "
+							+ recordCOunt
+							+ " records are crawled during this crawl cycle");
 					return null;
 				}
 			}
