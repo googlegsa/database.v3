@@ -404,7 +404,7 @@ public class DBConnectorType implements ConnectorType {
 					stmt.close();
 				}
 			} catch (SQLException e) {
-				LOG.info("Caught SQLException " + e.toString());
+				LOG.warning("Caught SQLException " + e.toString());
 			}
 
 			return success;

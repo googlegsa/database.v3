@@ -274,25 +274,30 @@ public class DBClient {
 		DatabaseMetaData meta = null;
 		try {
 			SqlMapClient sqlClient = getSqlMapClient();
-			conn = sqlClient.getDataSource().getConnection();
-			meta = conn.getMetaData();
-			String productName = meta.getDatabaseProductName();
-			String productVersion = meta.getDatabaseProductVersion();
-			dbDetails = productName + " " + productVersion;
+			if (sqlClient != null) {
+				conn = sqlClient.getDataSource().getConnection();
+				if (conn != null) {
+					meta = conn.getMetaData();
+					if (meta != null) {
+						String productName = meta.getDatabaseProductName();
+						String productVersion = meta.getDatabaseProductVersion();
+						dbDetails = productName + " " + productVersion;
+					}
+				}
+			}
 		} catch (SQLException e) {
-			LOG.info("Caught SQLException while fetching database details"
+			LOG.warning("Caught SQLException while fetching database details"
 					+ e.toString());
 		} finally {
 			if (conn != null) {
 				try {
 					conn.close();
 				} catch (SQLException e) {
-					LOG.info("Caught SQLException while closing connection : "
+					LOG.warning("Caught SQLException while closing connection : "
 							+ e.toString());
 				}
 			}
 		}
 		return dbDetails;
 	}
-
 }
