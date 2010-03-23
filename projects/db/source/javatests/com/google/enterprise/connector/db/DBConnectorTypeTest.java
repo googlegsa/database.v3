@@ -93,7 +93,7 @@ public class DBConnectorTypeTest extends TestCase {
 		LOG.info("Checking when all required fields are provided...");
 		configMap.put("dbName", LanguageResource.getPropertyValue("dbName"));
 		configRes = this.connectorType.validateConfig(this.configMap, Locale.ENGLISH, mdbConnectorFactory);
-		assertNull(configRes);
+		assertNotNull(configRes);
 		LOG.info("[ validateConfig() ] Test Passed.");
 
 	}
