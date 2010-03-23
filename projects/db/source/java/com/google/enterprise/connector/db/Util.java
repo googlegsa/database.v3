@@ -61,6 +61,7 @@ public class Util {
 		doc.setProperty(SpiConstants.PROPNAME_CONTENT, xmlRow);
 		String docId = generateDocId(primaryKeys, row);
 		doc.setProperty(SpiConstants.PROPNAME_DOCID, docId);
+		doc.setProperty(SpiConstants.PROPNAME_ACTION, SpiConstants.ActionType.ADD.toString());
 		// TODO(meghna): Look into which encoding/charset to use for getBytes()
 		doc.setProperty(DBDocument.ROW_CHECKSUM, getChecksum(xmlRow.getBytes()));
 		doc.setProperty(SpiConstants.PROPNAME_MIMETYPE, MIMETYPE);
