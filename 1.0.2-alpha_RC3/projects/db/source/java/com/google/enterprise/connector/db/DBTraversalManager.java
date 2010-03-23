@@ -219,6 +219,8 @@ public class DBTraversalManager implements TraversalManager {
 		for (Map<String, Object> row : rows) {
 			globalState.addDocument(Util.rowToDoc(dbClient.getDBContext().getDbName(), dbClient.getPrimaryKeys(), row, dbClient.getDBContext().getHostname(), xslt));
 		}
+		LOG.info(globalState.getDocQueue().size()
+				+ " document(s) to be fed to GSA");
 		return rows;
 	}
 }
