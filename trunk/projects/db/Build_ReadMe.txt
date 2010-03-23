@@ -13,8 +13,8 @@ Following are the steps to build Google Search Appliance Connector for Databases
    2g) Create directory structure "dist\jarfile" under Connector Manager home directory.
    2h) Copy jar files from "connector-manager\WEB-INF\lib"(created in step 2e) to "Connector Manager home directory\dist\jarfile" directory.
 
-3. Create a google-enterprise-connector-db.properties file in your home directory(where database connector project is downloaded ). Add a line to set the
-   connector-manager-projects.dir pointing to the Connector Manager Home directory(created in step 2f). You can use the line below as an example but must replace
+3. Add a line to set the connector-manager-projects.dir pointing to the Connector Manager Home directory(created in step 2f) in
+   "<database connector home>/google-enterprise-connector-db.properties" file. You can use the line below as an example but must replace
    ##.Connector Manager Home.## with the actual path to the connector manager home directory on your system.
    connector-manager-projects.dir=##.Connector Manager Home.##
 
@@ -35,6 +35,7 @@ Following are the steps to build Google Search Appliance Connector for Databases
             dbName=MyDB
             #Provide fully qualified connector host name
             hostname=machine.domain
+    Note: Do not modify the values of sqlQuery and primaryKeysString properties.
 
     5b) Copy database driver jar file to "third_party\prod\" directory of database connector home. User needs to download appropriate
         database driver jar file from the web. For details of different JDBC drivers for various databases you can refer to http://www.dbvis.com/products/dbvis/doc/supports.jsp
