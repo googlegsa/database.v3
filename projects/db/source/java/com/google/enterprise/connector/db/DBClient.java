@@ -22,10 +22,15 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
+import java.sql.Connection;
+import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
+
+import javax.sql.DataSource;
 
 import com.ibatis.sqlmap.client.SqlMapClient;
 import com.ibatis.sqlmap.client.SqlMapClientBuilder;
@@ -71,6 +76,10 @@ public class DBClient {
 			throw new DBException("Could not instantiate DBClient.", e);
 		}
 		this.sqlMapClient = SqlMapClientBuilder.buildSqlMapClient(resources);
+
+		LOG.info("DBClient for database " + getDatabaseInfo()
+				+ " is instantiated");
+
 	}
 
 	/**
@@ -148,9 +157,34 @@ public class DBClient {
 				+ "maxRows = " + maxRows);
 		try {
 			rows = sqlMapClient.queryForList("IbatisDBClient.getAll", skipRows, maxRows);
-		} catch (SQLException e) {
-			throw new DBException("Could not execute query on the database\n",
-					e);
+		} catch (Exception e) {
+			/*
+			 * Below code is added to handle scenarios when table is deleted or
+			 * connectivity with database is lost. In this scenario connector
+			 * first check the connectivity with database and if there is
+			 * connectivity it returns empty list of rows else throughs
+			 * RepositoryException.
+			 */
+			DataSource ds = sqlMapClient.getDataSource();
+			Connection conn = null;
+			try {
+				conn = ds.getConnection();
+				LOG.info("Could not execute SQL query on the database\n"
+						+ e.toString());
+				rows = new ArrayList<Map<String, Object>>();
+			} catch (SQLException e1) {
+				LOG.info("Unable to connect to the database\n" + e.toString());
+				throw new DBException(e);
+			} finally {
+				if (conn != null) {
+					try {
+						conn.close();
+					} catch (SQLException e1) {
+						LOG.info("Could not close database connection: "
+								+ e1.toString());
+					}
+				}
+			}
 		}
 		LOG.info("Rows returned : " + rows);
 		return rows;
@@ -193,7 +227,7 @@ public class DBClient {
 		String newString = " <property name=\"JDBC.Password\" value=\""
 				+ "*****" + "\" />";
 
-		LOG.info("Generated sqlMapConfig : \n"
+		LOG.config("Generated sqlMapConfig : \n"
 				+ sqlMapConfig.replace(oldString, newString));
 	}
 
@@ -215,7 +249,7 @@ public class DBClient {
 				+ "<sqlMap namespace=\"IbatisDBClient\">\n"
 				+ " <select id=\"getAll\" resultClass=\"java.util.HashMap\"> \n"
 				+ sqlQuery + "\n </select> \n" + " </sqlMap> \n";
-		LOG.info("Generated sqlMap : \n" + sqlMap);
+		LOG.config("Generated sqlMap : \n" + sqlMap);
 		File file = new File(googleConnectorWorkDir, "IbatisSqlMap.xml");
 		Writer output;
 		try {
@@ -226,5 +260,44 @@ public class DBClient {
 			throw new DBException("Could not write to/close Sql Map "
 					+ googleConnectorWorkDir + "/IbatisSqlMap.xml", e);
 		}
+	}
+
+	/**
+	 * This method return the database name and version details.
+	 * 
+	 * @author Suresh_Ghuge
+	 * @return database name and version details
+	 */
+	public String getDatabaseInfo() {
+		String dbDetails = "";
+		Connection conn = null;
+		DatabaseMetaData meta = null;
+		try {
+			SqlMapClient sqlClient = getSqlMapClient();
+			if (sqlClient != null) {
+				conn = sqlClient.getDataSource().getConnection();
+				if (conn != null) {
+					meta = conn.getMetaData();
+					if (meta != null) {
+						String productName = meta.getDatabaseProductName();
+						String productVersion = meta.getDatabaseProductVersion();
+						dbDetails = productName + " " + productVersion;
+					}
+				}
+			}
+		} catch (SQLException e) {
+			LOG.warning("Caught SQLException while fetching database details"
+					+ e.toString());
+		} finally {
+			if (conn != null) {
+				try {
+					conn.close();
+				} catch (SQLException e) {
+					LOG.warning("Caught SQLException while closing connection : "
+							+ e.toString());
+				}
+			}
+		}
+		return dbDetails;
 	}
 }
