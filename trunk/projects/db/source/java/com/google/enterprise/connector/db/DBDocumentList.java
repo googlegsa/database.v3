@@ -14,98 +14,99 @@
 
 package com.google.enterprise.connector.db;
 
+import java.util.Date;
+import java.util.LinkedList;
+import java.util.NoSuchElementException;
+import java.util.logging.Logger;
+
 import com.google.enterprise.connector.spi.Document;
 import com.google.enterprise.connector.spi.DocumentList;
 import com.google.enterprise.connector.spi.RepositoryException;
 
-import java.util.LinkedList;
-import java.util.NoSuchElementException;
-
 /**
  * Implementation of {@link DocumentList}.
- *
  */
 public class DBDocumentList implements DocumentList {
-  private final LinkedList<DBDocument> docList = new LinkedList<DBDocument>();
-  private GlobalState globalState;
+	private final LinkedList<DBDocument> docList = new LinkedList<DBDocument>();
+	private GlobalState globalState;
+	private static final Logger LOG = Logger.getLogger(DBDocumentList.class.getName());
 
-  /**
-   * Constructs an empty document list.
-   */
-  public DBDocumentList(GlobalState globalState) {
-    this.globalState = globalState;
-  }
+	/**
+	 * Constructs an empty document list.
+	 */
+	public DBDocumentList(GlobalState globalState) {
+		this.globalState = globalState;
+	}
 
-  public LinkedList<DBDocument> getDocList() {
-    return docList;
-  }
+	public LinkedList<DBDocument> getDocList() {
+		return docList;
+	}
 
-  /**
-   * Saves the current state on disk. And returns a checkpoint string to the
-   * Connector Manager.
-   */
-  /* @Override */
-  public String checkpoint() throws RepositoryException {
-    try {
-      globalState.saveState();
-    } catch (DBException e) {
-      throw new RepositoryException("Could not save checkpoint.", e);
-    }
-    String checkpointString;
-    try {
-      checkpointString  = Util.getCheckpointString(
-          globalState.getQueryExecutionTime(), docList.element());
-    } catch (NoSuchElementException e) {
-      checkpointString  = Util.getCheckpointString(
-          globalState.getQueryExecutionTime(), null);
-    }
-    return checkpointString;
-  }
+	/**
+	 * Saves the current state on disk. And returns a checkpoint string to the
+	 * Connector Manager.
+	 */
+	/* @Override */
+	public String checkpoint() throws RepositoryException {
+		LOG.info("Check point is called at: " + new Date());
+		try {
+			globalState.saveState();
+		} catch (DBException e) {
+			throw new RepositoryException("Could not save checkpoint.", e);
+		}
+		String checkpointString;
+		try {
+			checkpointString = Util.getCheckpointString(globalState.getQueryExecutionTime(), docList.element());
+		} catch (NoSuchElementException e) {
+			checkpointString = Util.getCheckpointString(globalState.getQueryExecutionTime(), null);
+		}
+		return checkpointString;
+	}
 
-  /**
-   * When this method is called by the CM, all the documents that the sent are
-   * also saved in docsInFlight.
-   *
-   * @return the next document or null if all have been processed.
-   */
-  /* @Override */
-  public Document nextDocument() {
-    DBDocument doc = docList.poll();
-    if (null != doc) {
-      if (globalState.getDocsInFlight().size() == 0) {
-        globalState.setQueryTimeForInFlightDocs(globalState.getQueryExecutionTime());
-      }
-      globalState.getDocsInFlight().add(doc);
-    }
-    return doc;
-  }
+	/**
+	 * When this method is called by the CM, all the documents that the sent are
+	 * also saved in docsInFlight.
+	 * 
+	 * @return the next document or null if all have been processed.
+	 */
+	/* @Override */
+	public Document nextDocument() {
+		DBDocument doc = docList.poll();
+		if (null != doc) {
+			if (globalState.getDocsInFlight().size() == 0) {
+				globalState.setQueryTimeForInFlightDocs(globalState.getQueryExecutionTime());
+			}
+			globalState.getDocsInFlight().add(doc);
+		}
+		return doc;
+	}
 
-  /**
-   * Add a document to the list.
-   *
-   * @param dbDoc document to add.
-   */
-  public void addDocument(DBDocument dbDoc) {
-    docList.add(dbDoc);
-  }
+	/**
+	 * Add a document to the list.
+	 * 
+	 * @param dbDoc document to add.
+	 */
+	public void addDocument(DBDocument dbDoc) {
+		docList.add(dbDoc);
+	}
 
-  /**
-   * Empties the docList.
-   */
-  public void clear() {
-    docList.clear();
-  }
+	/**
+	 * Empties the docList.
+	 */
+	public void clear() {
+		docList.clear();
+	}
 
-  /**
-   * Returns the size of the docList.
-   *
-   * @return size of the docList.
-   */
-  public int size() {
-    return docList.size();
-  }
+	/**
+	 * Returns the size of the docList.
+	 * 
+	 * @return size of the docList.
+	 */
+	public int size() {
+		return docList.size();
+	}
 
-  public void addDocsInFlight(LinkedList<DBDocument> list) {
-    docList.addAll(0, list);
-  }
+	public void addDocsInFlight(LinkedList<DBDocument> list) {
+		docList.addAll(0, list);
+	}
 }

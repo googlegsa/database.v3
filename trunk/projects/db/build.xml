@@ -54,12 +54,12 @@
             location="${connector.manager.home}" />
   <property name="connector-manager.dir"
             location="${connector-manager-projects.dir}" />
-  <property name="connector-manager-thirdparty-jar.dir"
-    location="${connector-manager-projects.dir}/third_party" />
-  <property name="connector-manager-thirdparty-prod-jar.dir"
-    location="${connector-manager-thirdparty-jar.dir}/prod" />
-  <property name="connector-manager-thirdparty-tests-jar.dir"
-    location="${connector-manager-thirdparty-jar.dir}/tests" />
+  <property name="connector-thirdparty-jar.dir"
+    location="./third_party" />
+  <property name="connector-thirdparty-prod-jar.dir"
+    location="${connector-thirdparty-jar.dir}/prod" />
+  <property name="connector-thirdparty-tests-jar.dir"
+    location="${connector-thirdparty-jar.dir}/tests" />
   <property name="spi.jar.dir" value="${connector-manager.dir}/dist/jarfile" />
 
 
@@ -111,10 +111,10 @@
            debuglevel="${COMPILE_DEBUG_LEVEL}"
            target="1.5" source="1.5">
       <classpath>
-        <fileset dir="${connector-manager-thirdparty-prod-jar.dir}">
+        <fileset dir="${connector-thirdparty-prod-jar.dir}">
           <include name="**/spring.jar" />
         </fileset>
-        <fileset dir="${connector-manager-thirdparty-tests-jar.dir}">
+        <fileset dir="${connector-thirdparty-tests-jar.dir}">
           <include name="**/junit.jar" />
         </fileset>
         <fileset dir="${spi.jar.dir}" includes="**/*.jar" />
@@ -135,11 +135,11 @@
       <assertions><enable/></assertions>
       <classpath>
         <pathelement location="${classes-tests.dir}" />
-        <fileset dir="${connector-manager-thirdparty-prod-jar.dir}">
+        <fileset dir="${connector-thirdparty-prod-jar.dir}">
           <include name="**/spring.jar" />
           <include name="**/commons-logging.jar" />
         </fileset>
-        <fileset dir="${connector-manager-thirdparty-tests-jar.dir}">
+        <fileset dir="${connector-thirdparty-tests-jar.dir}">
           <include name="**/junit.jar" />
         </fileset>
         <fileset dir="${spi.jar.dir}" includes="**/*.jar" />
