@@ -1,8 +1,0 @@
--- Creating Tables – Double hyphens are comment lines
-CREATE TABLE TestEmpTable (
-  id INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,
-  fname VARCHAR(45),
-  lname VARCHAR(45),
-  dept INTEGER UNSIGNED,
-  PRIMARY KEY (id)
-);
