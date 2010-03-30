@@ -1,0 +1,65 @@
+#summary DB connector configuration form field values for different databases
+
+== Introduction ==
+
+Following fields on the DB connector configuration page are dependent on which DB your connector needs to be configured:
+
+ 
+1. JDBC Connection URL
+
+2. JDBC Driver Classname
+ 
+
+
+== Details ==
+
+Here are the typical values used for different databases for these fields:
+
+
+*MY SQL server:*
+ 
+
+Driver Jar Used:mysql-connector-java-5.1.6-bin.jar 
+
+1. JDBC Connection URL: jdbc:mysql://DB_HOST_NAME_OR_IP:3306/SchemaNAME
+
+2. JDBC Driver Classname: com.mysql.jdbc.Driver
+ 
+
+*MS SQL server 2005:*
+ 
+
+Driver Jar Used:sqljdbc.jar
+
+1. JDBC Connection URL: jdbc:sqlserver://DB_HOST_NAME_OR_IP:1433;databaseName=DB_NAME
+
+2. JDBC Driver Classname: com.microsoft.sqlserver.jdbc.SQLServerDriver
+ 
+
+*Oracle:*
+ 
+
+Driver Jar Used: ojdbc14.jar
+
+1. JDBC Connection URL: jdbc:oracle:thin:@DB_HOST_NAME_OR_IP:1521:ORACLE_SERVICENAME
+
+2. JDBC Driver Classname: oracle.jdbc.OracleDriver
+ 
+
+*IBM DB2:*
+ 
+
+Driver Jar Used:db2jcc.jar
+
+1. JDBC Connection URL: jdbc:db2://DB_HOST_NAME_OR_IP:50000/DBNAME
+
+2. JDBC Driver Classname: com.ibm.db2.jcc.DB2Driver
+ 
+ 
+
+*Notes:*
+
+1. Ports used in the JDBC connection URLs above are the default Database installation TCP/IP ports. These may differ if user has custom installation.
+
+2. For JDBC driver jars and driver class names refer: http://www.dbvis.com/products/dbvis/doc/supports.jsp
+  
