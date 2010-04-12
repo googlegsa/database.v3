@@ -100,11 +100,6 @@ public class XmlUtils {
 			String key = it.next();
 			Element keyElement = doc.createElement(key);
 			Object value = row.get(key);
-			if ("image".equals(key)) {
-				System.out.println("key == " + key + "        "
-						+ "value length" + ((byte[]) value).length);
-			}
-
 			if (null == value) {
 				value = "";
 			}

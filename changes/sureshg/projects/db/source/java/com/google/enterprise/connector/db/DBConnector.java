@@ -32,19 +32,17 @@ public class DBConnector implements Connector {
 	private final String primaryKeysString;
 	private final String xslt;
 	private Map<String, String> dbTypeDriver = null;
-	private final String baseURL;
 
 	public DBConnector(String connectionUrl, String hostname,
 			String driverClassName, String login, String password,
 			String dbName, String sqlQuery, String googleConnectorWorkDir,
-			String primaryKeysString, String xslt, String baseURL) {
+			String primaryKeysString, String xslt) {
 		this.dbContext = new DBContext(connectionUrl, hostname,
 				driverClassName, login, password, dbName);
 		this.sqlQuery = sqlQuery;
 		this.googleConnectorWorkDir = googleConnectorWorkDir;
 		this.primaryKeysString = primaryKeysString;
 		this.xslt = xslt;
-		this.baseURL = baseURL;
 	}
 
 	public Map<String, String> getDbTypeDriver() {
@@ -57,8 +55,7 @@ public class DBConnector implements Connector {
 		try {
 			dbClient = new DBClient(dbContext, sqlQuery,
 					googleConnectorWorkDir,
-					primaryKeysString.split(Util.PRIMARY_KEYS_SEPARATOR),
-					baseURL);
+					primaryKeysString.split(Util.PRIMARY_KEYS_SEPARATOR));
 			return new DBSession(dbClient, xslt);
 		} catch (DBException e) {
 			throw new RepositoryException("Could not create DB client.",

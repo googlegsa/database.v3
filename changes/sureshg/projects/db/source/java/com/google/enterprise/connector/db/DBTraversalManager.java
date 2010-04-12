@@ -18,35 +18,25 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Logger;
 
 import org.joda.time.DateTime;
 
 import com.google.enterprise.connector.spi.DocumentList;
 import com.google.enterprise.connector.spi.RepositoryException;
-import com.google.enterprise.connector.spi.TraversalContext;
-import com.google.enterprise.connector.spi.TraversalContextAware;
 import com.google.enterprise.connector.spi.TraversalManager;
 
 /**
  * {@link TraversalManager} implementation for the DB connector.
  */
-public class DBTraversalManager implements TraversalManager,
-		TraversalContextAware {
+public class DBTraversalManager implements TraversalManager {
 	private static final Logger LOG = Logger.getLogger(DBTraversalManager.class.getName());
 	private DBClient dbClient;
 	private GlobalState globalState;
 	private String xslt;
-	private final AtomicReference<TraversalContext> traversalContext = new AtomicReference<TraversalContext>();
+
 	// Limit on the batch size.
 	private int batchHint = 100;
-
-	private static final int EXC_NORMAL = 1;
-	private static final int EXC_CLOB = 2;
-	private static final int EXC_BLOB = 3;
-	private static final int EXC_METADATA_URL = 4;
 
 	/**
 	 * Creates a DBTraversalManager.
@@ -98,6 +88,7 @@ public class DBTraversalManager implements TraversalManager,
 			} catch (NoSuchElementException e) {
 				currentCheckpointStr = Util.getCheckpointString(globalState.getQueryExecutionTime(), null);
 			}
+
 			/*
 			 * The currentCheckpointStr can contain NO_DOCID if the docQueue
 			 * does not have anymore docs. In this case if the checkpointStr has
@@ -225,75 +216,9 @@ public class DBTraversalManager implements TraversalManager,
 		List<Map<String, Object>> rows = dbClient.executePartialQuery(globalState.getCursorDB(), 3 * batchHint);
 		globalState.setCursorDB(globalState.getCursorDB() + rows.size());
 		globalState.setQueryExecutionTime(new DateTime());
-		int executionMode = EXC_NORMAL;
-		if (rows.size() > 0) {
-			executionMode = getExecutionMode(rows.get(0));
+		for (Map<String, Object> row : rows) {
+			globalState.addDocument(Util.rowToDoc(dbClient.getDBContext().getDbName(), dbClient.getPrimaryKeys(), row, dbClient.getDBContext().getHostname(), xslt));
 		}
-
-		LOG.info("Connector is running in " + executionMode + " execution mode");
-
-		switch (executionMode) {
-		/*
-		 * execute the connector for BLOB
-		 */
-		case EXC_BLOB:
-			for (Map<String, Object> row : rows) {
-				globalState.addDocument(Util.largeObjectToDoc(dbClient.getDBContext().getDbName(), dbClient.getPrimaryKeys(), row, dbClient.getDBContext().getHostname(), dbClient, ApplicationConstants.BLOB_COLUMN));
-			}
-
-			break;
-		/*
-		 * execute the connector for CLOB
-		 */
-		case EXC_CLOB:
-			for (Map<String, Object> row : rows) {
-				globalState.addDocument(Util.largeObjectToDoc(dbClient.getDBContext().getDbName(), dbClient.getPrimaryKeys(), row, dbClient.getDBContext().getHostname(), dbClient, ApplicationConstants.CLOB_COLUMN));
-			}
-
-			break;
-		/*
-		 * execute the connector for metadata-url feed
-		 */
-		case EXC_METADATA_URL:
-			for (Map<String, Object> row : rows) {
-				globalState.addDocument(Util.generateURLMetaFeed(dbClient.getDBContext().getDbName(), dbClient.getPrimaryKeys(), row, dbClient.getDBContext().getHostname(), dbClient));
-			}
-			break;
-		/*
-		 * execute the connector in normal mode
-		 */
-		default:
-			for (Map<String, Object> row : rows) {
-				globalState.addDocument(Util.rowToDoc(dbClient.getDBContext().getDbName(), dbClient.getPrimaryKeys(), row, dbClient.getDBContext().getHostname(), xslt));
-			}
-			break;
-		}
-
-		LOG.info(globalState.getDocQueue().size()
-				+ " document(s) to be fed to GSA");
 		return rows;
-	}
-
-	private int getExecutionMode(Map<String, Object> map) {
-
-		Set<String> columns = map.keySet();
-		LOG.info("Columns key set is: " + columns);
-		for (String column : columns) {
-
-			if (column.equalsIgnoreCase(ApplicationConstants.BLOB_COLUMN)) {
-				return EXC_BLOB;
-			} else if (column.equalsIgnoreCase(ApplicationConstants.CLOB_COLUMN)) {
-				return EXC_CLOB;
-			} else if (column.equalsIgnoreCase(ApplicationConstants.URL_COLUMN)) {
-				return EXC_METADATA_URL;
-			}
-		}
-
-		return EXC_NORMAL;
-	}
-
-	public void setTraversalContext(TraversalContext traversalContext) {
-		this.traversalContext.set(traversalContext);
-		Util.setTraversalContext(traversalContext);
 	}
 }

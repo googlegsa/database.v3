@@ -14,8 +14,6 @@
 
 package com.google.enterprise.connector.db;
 
-import java.sql.Timestamp;
-import java.util.Calendar;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -63,35 +61,9 @@ public class DBDocument implements Document {
 	 * @param propertyName
 	 * @param propertyValue
 	 */
-	public void setProperty(String propertyName, Object propertyValue) {
+	public void setProperty(String propertyName, String propertyValue) {
 		if (propertyValue != null) {
-			properties.put(propertyName, Collections.singletonList(Value.getStringValue(propertyValue.toString())));
+			properties.put(propertyName, Collections.singletonList(Value.getStringValue(propertyValue)));
 		}
-	}
-
-	public void setBinaryContent(String propertyName, Object propertyValue) {
-		if (propertyValue == null) {
-			return;
-		}
-		properties.put(propertyName, Collections.singletonList(Value.getBinaryValue((byte[]) propertyValue)));
-	}
-
-	public void setCharacterContent(String propertyName, Object propertyValue) {
-		if (propertyValue == null) {
-			return;
-		}
-		properties.put(propertyName, Collections.singletonList(Value.getStringValue(propertyValue.toString())));
-	}
-
-	public void setLastModified(String propertyName, Object propertyValue) {
-		Timestamp time = (Timestamp) propertyValue;
-		Calendar cal = Calendar.getInstance();
-		cal.setTimeInMillis(time.getTime());
-
-		if (propertyValue == null) {
-			return;
-		}
-		properties.put(propertyName, Collections.singletonList(Value.getDateValue(cal)));
-
 	}
 }
