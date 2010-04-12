@@ -24,45 +24,37 @@ import com.google.enterprise.connector.spi.TraversalManager;
  * AuthorizationManager
  */
 public class DBSession implements Session {
-	private final DBClient dbClient;
-	private final String xslt;
+  private final DBClient dbClient;
+  private final String xslt;
 
-	/**
-	 * @param dbClient
-	 * @param xslt
-	 */
-	public DBSession(DBClient dbClient, String xslt) {
-		this.dbClient = dbClient;
-		this.xslt = xslt;
-	}
+  /**
+   * @param dbClient
+   * @param xslt
+   */
+  public DBSession(DBClient dbClient, String xslt) {
+    this.dbClient = dbClient;
+    this.xslt = xslt;
+  }
 
-	/* @Override */
-	public AuthenticationManager getAuthenticationManager() {
+  /* @Override */
+  public AuthenticationManager getAuthenticationManager() {
+    // TODO(meghna): Implement this for GSA.
+    throw new UnsupportedOperationException(
+        "DBSession does not support getAuthenticationManager");
+  }
 
-		return new DBConnectorAuthenticationManager();
-		/*
-		 * // TODO(meghna): Implement this for GSA. throw new
-		 * UnsupportedOperationException(
-		 * "DBSession does not support getAuthenticationManager");
-		 */
-	}
+  /* @Override */
+  public AuthorizationManager getAuthorizationManager() {
+    // TODO(meghna): Implement this for GSA.
+    throw new UnsupportedOperationException(
+        "DBSession does not support getAuthorizationManager");
+  }
 
-	/* @Override */
-	public AuthorizationManager getAuthorizationManager() {
-		System.out.println("getAuthorizationManager() method is called");
-		return new DBConnectorAuthorizationManager();
-		// TODO(meghna): Implement this for GSA.
-		/*
-		 * throw new UnsupportedOperationException(
-		 * "DBSession does not support getAuthorizationManager");
-		 */
-	}
-
-	/**
-	 * @return traversal manager for this session.
-	 */
-	/* @Override */
-	public TraversalManager getTraversalManager() {
-		return new DBTraversalManager(dbClient, xslt);
-	}
+  /**
+   * @return traversal manager for this session.
+   */
+  /* @Override */
+  public TraversalManager getTraversalManager() {
+    return new DBTraversalManager(dbClient, xslt);
+  }
 }

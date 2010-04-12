@@ -15,5 +15,6 @@
         </constructor-arg>
         <constructor-arg index="8" value="${primaryKeysString}"></constructor-arg>
         <constructor-arg index="9" value="${xslt}"></constructor-arg>
+        <constructor-arg index="10" value="${baseURLField}"></constructor-arg>
   </bean>
 </beans>

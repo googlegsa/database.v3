@@ -50,6 +50,7 @@ public class DBClient {
 	private final String sqlQuery;
 	private final String googleConnectorWorkDir;
 	private final String[] primaryKeys;
+	private final String baseURLField;
 	private String sqlMapConfig = null;
 	private String sqlMap = null;
 
@@ -61,12 +62,13 @@ public class DBClient {
 	 * @throws DBException
 	 */
 	public DBClient(DBContext dbContext, String sqlQuery,
-			String googleConnectorWorkDir, String[] primaryKeys)
+			String googleConnectorWorkDir, String[] primaryKeys, String baseURL)
 			throws DBException {
 		this.dbContext = dbContext;
 		this.sqlQuery = sqlQuery;
 		this.googleConnectorWorkDir = googleConnectorWorkDir;
 		this.primaryKeys = primaryKeys;
+		this.baseURLField = baseURL;
 		generateSqlMapConfig();
 		generateSqlMap();
 		InputStream resources;
@@ -106,6 +108,13 @@ public class DBClient {
 	 */
 	public String[] getPrimaryKeys() {
 		return primaryKeys;
+	}
+
+	/**
+	 * @return baseURL 
+	 */
+	public String getBaseURLField() {
+		return baseURLField;
 	}
 
 	/**

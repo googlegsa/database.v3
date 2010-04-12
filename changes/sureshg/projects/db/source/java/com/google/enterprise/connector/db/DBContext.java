@@ -16,46 +16,47 @@ package com.google.enterprise.connector.db;
 
 /**
  * This is mostly a data holder class for a particular database connection.
+ *
  */
 public class DBContext {
-	private final String connectionUrl;
-	private final String hostname;
-	private final String login;
-	private final String password;
-	private final String dbName;
-	private final String driverClassName;
+  private final String connectionUrl;
+  private final String hostname;
+  private final String login;
+  private final String password;
+  private final String dbName;
+  private final String driverClassName;
 
-	public DBContext(String connectionUrl, String hostname,
-			String driverClassName, String login, String password, String dbName) {
-		this.connectionUrl = connectionUrl;
-		this.hostname = hostname;
-		this.driverClassName = driverClassName;
-		this.login = login;
-		this.password = password;
-		this.dbName = dbName;
-	}
+  public DBContext(String connectionUrl, String hostname, String driverClassName,
+      String login, String password, String dbName) {
+    this.connectionUrl = connectionUrl;
+    this.hostname = hostname;
+    this.driverClassName = driverClassName;
+    this.login = login;
+    this.password = password;
+    this.dbName = dbName;
+  }
 
-	public String getConnectionUrl() {
-		return connectionUrl;
-	}
+  public String getConnectionUrl() {
+    return connectionUrl;
+  }
 
-	public String getHostname() {
-		return hostname;
-	}
+  public String getHostname() {
+    return hostname;
+  }
 
-	public String getLogin() {
-		return login;
-	}
+  public String getLogin() {
+    return login;
+  }
 
-	public String getPassword() {
-		return password;
-	}
+  public String getPassword() {
+    return password;
+  }
 
-	public String getDbName() {
-		return dbName;
-	}
+  public String getDbName() {
+    return dbName;
+  }
 
-	public String getDriverClassName() {
-		return driverClassName;
-	}
+  public String getDriverClassName() {
+    return driverClassName;
+  }
 }
