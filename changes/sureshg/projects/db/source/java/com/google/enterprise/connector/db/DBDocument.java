@@ -14,6 +14,8 @@
 
 package com.google.enterprise.connector.db;
 
+import java.sql.Timestamp;
+import java.util.Calendar;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -61,9 +63,41 @@ public class DBDocument implements Document {
 	 * @param propertyName
 	 * @param propertyValue
 	 */
-	public void setProperty(String propertyName, String propertyValue) {
+	public void setProperty(String propertyName, Object propertyValue) {
 		if (propertyValue != null) {
-			properties.put(propertyName, Collections.singletonList(Value.getStringValue(propertyValue)));
+			properties.put(propertyName, Collections.singletonList(Value.getStringValue(propertyValue.toString())));
 		}
+	}
+
+	/**
+	 * In case of BLOB data iBATIS returns binary array for BLOB data-type. This
+	 * method sets the "binary array" as a content of DB Document.
+	 * 
+	 * @param propertyName
+	 * @param propertyValue
+	 */
+	public void setBinaryContent(String propertyName, Object propertyValue) {
+		if (propertyValue == null) {
+			return;
+		}
+		properties.put(propertyName, Collections.singletonList(Value.getBinaryValue((byte[]) propertyValue)));
+	}
+
+	/**
+	 * This method adds the last modified date property to the DB Document
+	 * 
+	 * @param propertyName
+	 * @param propertyValue
+	 */
+	public void setLastModified(String propertyName, Object propertyValue) {
+		Timestamp time = (Timestamp) propertyValue;
+		Calendar cal = Calendar.getInstance();
+		cal.setTimeInMillis(time.getTime());
+
+		if (propertyValue == null) {
+			return;
+		}
+		properties.put(propertyName, Collections.singletonList(Value.getDateValue(cal)));
+
 	}
 }

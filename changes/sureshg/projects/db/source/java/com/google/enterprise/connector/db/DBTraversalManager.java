@@ -18,25 +18,43 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Logger;
 
 import org.joda.time.DateTime;
 
 import com.google.enterprise.connector.spi.DocumentList;
 import com.google.enterprise.connector.spi.RepositoryException;
+import com.google.enterprise.connector.spi.TraversalContext;
+import com.google.enterprise.connector.spi.TraversalContextAware;
 import com.google.enterprise.connector.spi.TraversalManager;
 
 /**
  * {@link TraversalManager} implementation for the DB connector.
  */
-public class DBTraversalManager implements TraversalManager {
+public class DBTraversalManager implements TraversalManager,
+		TraversalContextAware {
 	private static final Logger LOG = Logger.getLogger(DBTraversalManager.class.getName());
 	private DBClient dbClient;
 	private GlobalState globalState;
 	private String xslt;
-
+	// traversalContext is Traversal COnext for DBTraversalManager
+	private final AtomicReference<TraversalContext> traversalContext = new AtomicReference<TraversalContext>();
 	// Limit on the batch size.
 	private int batchHint = 100;
+
+	// EXC_NORMAL represents that DB Connector is running in normal mode
+	private static final int MODE_NORMAL = 1;
+	// EXC_CLOB represents thats DB Connector is running for indexing CLOB
+	// data
+	private static final int MODE_CLOB = 2;
+	// EXC_BLOB represents that DB Connector is running for indexing BLOB
+	// data
+	private static final int MODE_BLOB = 3;
+	// EXC_METADATA_URL represents that DB Connector is running for indexing
+	// External Metadada
+	private static final int MODE_METADATA_URL = 4;
 
 	/**
 	 * Creates a DBTraversalManager.
@@ -88,7 +106,7 @@ public class DBTraversalManager implements TraversalManager {
 			} catch (NoSuchElementException e) {
 				currentCheckpointStr = Util.getCheckpointString(globalState.getQueryExecutionTime(), null);
 			}
-
+			
 			/*
 			 * The currentCheckpointStr can contain NO_DOCID if the docQueue
 			 * does not have anymore docs. In this case if the checkpointStr has
@@ -216,9 +234,81 @@ public class DBTraversalManager implements TraversalManager {
 		List<Map<String, Object>> rows = dbClient.executePartialQuery(globalState.getCursorDB(), 3 * batchHint);
 		globalState.setCursorDB(globalState.getCursorDB() + rows.size());
 		globalState.setQueryExecutionTime(new DateTime());
-		for (Map<String, Object> row : rows) {
-			globalState.addDocument(Util.rowToDoc(dbClient.getDBContext().getDbName(), dbClient.getPrimaryKeys(), row, dbClient.getDBContext().getHostname(), xslt));
+		int executionMode = MODE_NORMAL;
+		if (rows.size() > 0) {
+			executionMode = getExecutionMode(rows.get(0));
 		}
+
+		LOG.info("Connector is running in " + executionMode + " execution mode");
+
+		switch (executionMode) {
+
+		// execute the connector for BLOB data
+		case MODE_BLOB:
+			for (Map<String, Object> row : rows) {
+				globalState.addDocument(Util.largeObjectToDoc(dbClient.getDBContext().getDbName(), dbClient.getPrimaryKeys(), row, dbClient.getDBContext().getHostname(), dbClient, ApplicationConstants.BLOB_COLUMN));
+			}
+
+			break;
+
+		// execute the connector for CLOB data
+		case MODE_CLOB:
+			for (Map<String, Object> row : rows) {
+				globalState.addDocument(Util.largeObjectToDoc(dbClient.getDBContext().getDbName(), dbClient.getPrimaryKeys(), row, dbClient.getDBContext().getHostname(), dbClient, ApplicationConstants.CLOB_COLUMN));
+			}
+
+			break;
+
+		// execute the connector for metadata-url feed
+		case MODE_METADATA_URL:
+			for (Map<String, Object> row : rows) {
+				globalState.addDocument(Util.generateURLMetaFeed(dbClient.getDBContext().getDbName(), dbClient.getPrimaryKeys(), row, dbClient.getDBContext().getHostname(), dbClient));
+			}
+			break;
+
+		// execute the connector in normal mode
+		default:
+			for (Map<String, Object> row : rows) {
+				globalState.addDocument(Util.rowToDoc(dbClient.getDBContext().getDbName(), dbClient.getPrimaryKeys(), row, dbClient.getDBContext().getHostname(), xslt));
+			}
+			break;
+		}
+
+		LOG.info(globalState.getDocQueue().size()
+				+ " document(s) to be fed to GSA");
 		return rows;
+	}
+
+	/**
+	 * this method will detect the execution mode from the column names(Normal, CLOB, BLOB or
+	 * External Metadata) of the DB Connector and returns the integer value
+	 * representing execution mode()
+	 * 
+	 * @param map
+	 * @return
+	 */
+	private int getExecutionMode(Map<String, Object> map) {
+
+		Set<String> columns = map.keySet();
+		for (String column : columns) {
+
+			if (column.equalsIgnoreCase(ApplicationConstants.BLOB_COLUMN)) {
+				return MODE_BLOB;
+			} else if (column.equalsIgnoreCase(ApplicationConstants.CLOB_COLUMN)) {
+				return MODE_CLOB;
+			} else if (column.equalsIgnoreCase(ApplicationConstants.URL_COLUMN)) {
+				return MODE_METADATA_URL;
+			}
+		}
+
+		return MODE_NORMAL;
+	}
+
+	/**
+	 * this method sets the Traversal context
+	 */
+	public void setTraversalContext(TraversalContext traversalContext) {
+		this.traversalContext.set(traversalContext);
+		Util.setTraversalContext(traversalContext);
 	}
 }

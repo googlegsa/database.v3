@@ -148,15 +148,16 @@ public class GlobalState {
 	 * queue.
 	 */
 	private void addDocumentsToDelete() {
+		LOG.info(previousChecksumMap.size()
+				+ " document(s) are marked for delete feed");
 		for (String key : previousChecksumMap.keySet()) {
-			LOG.info(previousChecksumMap.size()
-					+ " document(s) are marked for delete feed");
 			DBDocument dbDoc = new DBDocument();
 			dbDoc.setProperty(SpiConstants.PROPNAME_DOCID, key);
 			dbDoc.setProperty(DBDocument.ROW_CHECKSUM, previousChecksumMap.get(key));
 			dbDoc.setProperty(SpiConstants.PROPNAME_ACTION, SpiConstants.ActionType.DELETE.toString());
 			docQueue.addDocument(dbDoc);
 		}
+
 		previousChecksumMap.clear();
 	}
 

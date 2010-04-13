@@ -14,10 +14,21 @@
 
 package com.google.enterprise.connector.db;
 
+/**
+ * This class holds the constants required by database connector
+ * 
+ * @author Suresh_Ghuge
+ */
 public class ApplicationConstants {
 
+	// represent the CLOB column of database table
 	public static final String CLOB_COLUMN = "dbconn_clob";
+	// represent the BLOB column of database table
 	public static final String BLOB_COLUMN = "dbconn_blob";
+	// represent the URL or DOC ID column of database table
 	public static final String URL_COLUMN = "dbconn_url";
+	// represent the "Last Modified Date" column of database table
 	public static final String LAST_MOD_COLUMN = "dbconn_last_mod";
+	// represent the "MIME Type" column of database table
+	public static final String MIME_TYPE_COLUMN = "mime_type";
 }

@@ -15,7 +15,6 @@
 package com.google.enterprise.connector.db;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
@@ -55,12 +54,6 @@ public class MimeTypeFinder {
 	 * Sets supported encodings for the mime-util library if they have not been
 	 * set. Since the supported encodings is stored as a static Set we
 	 * synchronize access.
-	 * <p>
-	 * Our assumptions are that only our code ever registers an encoding and
-	 * that no code will use the library before our code completes. The
-	 * synchronization assures that the first time a MimeDetector is created the
-	 * registration occurs. Additional threads will block until the registration
-	 * completes.
 	 */
 	private static synchronized void registerEncodingsIfNotSet() {
 		if (EncodingGuesser.getSupportedEncodings().size() == 0) {
@@ -78,19 +71,9 @@ public class MimeTypeFinder {
 	 * @throws IOException
 	 */
 
-	String find(byte[] file, TraversalContext traversalContext) { // We
-		// munge
-		// the file name we pass to getMimeTypes so that it will // not find the
-		// file exists, open it and perform content based // detection here.
+	String find(byte[] file, TraversalContext traversalContext) {
 		Collection<MimeType> mimeTypes = getMimeTypes(file);
 		String bestMimeType = pickBestMimeType(traversalContext, mimeTypes);
-		/*
-		 * if (UNKNOWN_MIME_TYPE.equals(bestMimeType)) { InputStream is =
-		 * inputStreamFactory.getInputStream(); try { byte[] bytes =
-		 * getBytes(is); mimeTypes = getMimeTypes(bytes); } finally {
-		 * is.close(); } bestMimeType = pickBestMimeType(traversalContext,
-		 * mimeTypes); }
-		 */
 		return bestMimeType;
 	}
 
@@ -117,34 +100,5 @@ public class MimeTypeFinder {
 
 	private String mimeTypeStringValue(MimeType mimeType) {
 		return mimeType.getMediaType() + "/" + mimeType.getSubType();
-	}
-
-	private static byte[] getBytes(InputStream is) throws IOException {
-		byte[] result = new byte[2056];
-		int bytesRead = 0;
-		int bytesThisTime = 0;
-		while ((bytesThisTime = is.read(result, bytesRead, result.length
-				- bytesRead)) > 0) {
-			bytesRead += bytesThisTime;
-		}
-		return trim(result, bytesRead);
-	}
-
-	/**
-	 * Trims the passed in array to the desired length and returns the result.
-	 * If the passed in array is already the desired length this simply returns
-	 * the passed in array.
-	 * <p>
-	 * When the FileConnector drops support for java 1.5 this can probably be
-	 * replaced with {@link Arrays#copyOf}.
-	 */
-	private static byte[] trim(byte[] input, int desiredLength) {
-		if (input.length == desiredLength) {
-			return input;
-		} else {
-			byte[] result = new byte[desiredLength];
-			System.arraycopy(input, 0, result, 0, desiredLength);
-			return result;
-		}
 	}
 }

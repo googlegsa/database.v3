@@ -16,6 +16,10 @@ package com.google.enterprise.connector.db;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.logging.Logger;
@@ -24,6 +28,7 @@ import org.joda.time.DateTime;
 
 import com.google.enterprise.connector.spi.RepositoryException;
 import com.google.enterprise.connector.spi.SpiConstants;
+import com.google.enterprise.connector.spi.TraversalContext;
 
 /**
  * Utility class for database connector.
@@ -38,6 +43,7 @@ public class Util {
 	private static final String MIMETYPE = "text/html";
 	private static final String DBCONNECTOR_PROTOCOL = "dbconnector://";
 	private static final String DATABASE_TITLE_PREFIX = "Database Connector Result";
+	private static TraversalContext context = null;
 
 	// This class should not be initialized.
 	private Util() {
@@ -66,6 +72,191 @@ public class Util {
 		doc.setProperty(DBDocument.ROW_CHECKSUM, getChecksum(xmlRow.getBytes()));
 		doc.setProperty(SpiConstants.PROPNAME_MIMETYPE, MIMETYPE);
 		doc.setProperty(SpiConstants.PROPNAME_DISPLAYURL, getDisplayUrl(hostname, dbName, docId));
+		return doc;
+	}
+
+	/**
+	 * This method converts Large Object(BLOB or CLOB) into equivalent
+	 * DBDocument.
+	 * 
+	 * @param dbName
+	 * @param primaryKeys
+	 * @param row
+	 * @param hostname
+	 * @param xslt
+	 * @param dbClient
+	 * @return DBDocument doc
+	 * @throws DBException
+	 */
+	public static DBDocument largeObjectToDoc(String dbName,
+			String[] primaryKeys, Map<String, Object> row, String hostname,
+			DBClient dbClient, String largeObjectField) throws DBException {
+
+		// get doc id from primary key values
+		String docId = generateDocId(primaryKeys, row);
+		Object largeObject = null;
+		String text = "";
+		DBDocument doc = new DBDocument();
+		String mimeType = "";
+		Map<String, Object> rowForXmlDoc = getRowForXmlDoc(row);
+		String xmlRow = XmlUtils.getXMLRow(dbName, rowForXmlDoc, primaryKeys, "");
+
+		/*
+		 * get the value of large object from map representing a row
+		 */
+		largeObject = row.get(largeObjectField);
+		LOG.config("Large object column name is : " + largeObjectField);
+		/*
+		 * check if large object data value for null.
+		 */
+		if (largeObject != null) {
+			/*
+			 * if large object value is of type byte array it means the large
+			 * object is of type BLOB. Get the MIME type of this binary
+			 * object(file) and send this doc as content to GSA. If it is of
+			 * type char array it means large object is of type CLOB. Retrieve
+			 * the content of this field and send the character data to GSA.
+			 */
+			if (ApplicationConstants.BLOB_COLUMN.equals(largeObjectField)) {
+				doc.setBinaryContent(SpiConstants.PROPNAME_CONTENT, (byte[]) largeObject);
+				/*
+				 * First try to get the MIME type of this file from the result
+				 * set. If it doesn't contain column for MIME type try to get
+				 * the MIME type of this document(file stored as BLOB in
+				 * database) using MIME type finder utility
+				 */
+				mimeType = (String) row.get(ApplicationConstants.MIME_TYPE_COLUMN);
+				if (mimeType == null || mimeType.trim().length() == 0) {
+					mimeType = new MimeTypeFinder().find((byte[]) largeObject, context);
+				}
+				LOG.info("Mime Type of doc " + docId + " is " + mimeType);
+				doc.setProperty(SpiConstants.PROPNAME_MIMETYPE, mimeType);
+			} else {
+
+				text = largeObject instanceof char[] ? new String(
+						(char[]) largeObject) : largeObject.toString();
+				doc.setProperty(SpiConstants.PROPNAME_CONTENT, text);
+				doc.setProperty(SpiConstants.PROPNAME_MIMETYPE, "text/plain");
+			}
+			/*
+			 * If large object is null then send empty value.
+			 */
+		} else {
+			LOG.warning("Conetent of Document " + docId + " has null value.");
+		}
+
+		/*
+		 * skipColumns maintain the list of column which needs to skip while
+		 * indexing. For example BLOB/CLOB column or document_id column.
+		 */
+		List<String> skipColumns = new ArrayList<String>();
+		skipColumns.addAll(Arrays.asList(primaryKeys));
+		skipColumns.add(largeObjectField);
+		setMetaInfo(doc, row, skipColumns);
+
+		// set doc id
+		doc.setProperty(SpiConstants.PROPNAME_DOCID, docId);
+		// set last modified
+		Object lastModified = row.get(ApplicationConstants.LAST_MOD_COLUMN);
+		if (lastModified != null) {
+			doc.setLastModified(SpiConstants.PROPNAME_LASTMODIFIED, lastModified);
+			skipColumns.add(ApplicationConstants.LAST_MOD_COLUMN);
+		}
+		// set action as add
+		doc.setProperty(SpiConstants.PROPNAME_ACTION, SpiConstants.ActionType.ADD.toString());
+		doc.setProperty(DBDocument.ROW_CHECKSUM, getChecksum(xmlRow.getBytes()));
+		// set display URL
+		doc.setProperty(SpiConstants.PROPNAME_DISPLAYURL, getDisplayUrl(hostname, dbName, docId));
+		return doc;
+	}
+
+	/**
+	 * this method copies all elements from map representing a row except BLOB
+	 * column and return the resultant map.
+	 * 
+	 * @param row
+	 * @return map representing a database table row.
+	 */
+	private static Map<String, Object> getRowForXmlDoc(Map<String, Object> row) {
+		Set<String> keySet = row.keySet();
+		Map<String, Object> map = new HashMap<String, Object>();
+		for (String key : keySet) {
+			if (!ApplicationConstants.BLOB_COLUMN.equals(key)
+					&& !ApplicationConstants.CLOB_COLUMN.equals(key)) {
+				map.put(key, row.get(key));
+			}
+		}
+		return map;
+	}
+
+	/**
+	 * This method convert given row into equivalent Metadata-URL feed. Value of
+	 * dbconn_url column is used as URL of document and value of other columns
+	 * is used as metadata.
+	 * 
+	 * @param dbName
+	 * @param primaryKeys
+	 * @param row
+	 * @param hostname
+	 * @param dbClient
+	 * @return DBDocument
+	 * @throws DBException
+	 */
+	public static DBDocument generateURLMetaFeed(String dbName,
+			String[] primaryKeys, Map<String, Object> row, String hostname,
+			DBClient dbClient) throws DBException {
+
+		DBDocument doc = new DBDocument();
+		// get doc id from primary key values
+		String docId = generateDocId(primaryKeys, row);
+
+		String baseURL = dbClient.getBaseURLField();
+		String xmlRow = XmlUtils.getXMLRow(dbName, row, primaryKeys, null);
+		/*
+		 * skipColumns maintain the list of column which needs to skip while
+		 * indexing. For example BLOB/CLOB column or document_id column
+		 */
+		List<String> skipColumns = new ArrayList<String>();
+
+		// get the value of url field from row
+		String urlValue = (String) row.get(ApplicationConstants.URL_COLUMN);
+
+		if (urlValue != null && urlValue.trim().length() > 0) {
+
+			// if the value of base URL is not empty, append the value of URL
+			// field column at the end of base IRL to get complete path of the
+			// document.
+			if (baseURL != null && baseURL.trim().length() > 0) {
+				urlValue = baseURL.trim() + urlValue;
+			}
+			LOG.info("PROPNAME_CONTENTURL and PROPNAME_DISPLAYURL is set");
+			doc.setProperty(SpiConstants.PROPNAME_SEARCHURL, urlValue);
+			doc.setProperty(SpiConstants.PROPNAME_DISPLAYURL, urlValue);
+		}
+
+		// set doc id
+		doc.setProperty(SpiConstants.PROPNAME_DOCID, docId);
+		doc.setProperty(SpiConstants.PROPNAME_MIMETYPE, row.get(ApplicationConstants.MIME_TYPE_COLUMN));
+		doc.setProperty(DBDocument.ROW_CHECKSUM, getChecksum(xmlRow.getBytes()));
+		// add action as add
+		doc.setProperty(SpiConstants.PROPNAME_ACTION, SpiConstants.ActionType.ADD.toString());
+
+		// set last modified
+		Object lastModified = row.get(ApplicationConstants.LAST_MOD_COLUMN);
+		if (lastModified != null) {
+			doc.setLastModified(SpiConstants.PROPNAME_LASTMODIFIED, lastModified);
+			skipColumns.add(ApplicationConstants.LAST_MOD_COLUMN);
+		}
+
+		/*
+		 * skipColumns maintain the list of column which needs to skip while
+		 * indexing. For example BLOB/CLOB column or document_id column
+		 */
+		skipColumns.add((String) row.get(ApplicationConstants.MIME_TYPE_COLUMN));
+		skipColumns.add(ApplicationConstants.URL_COLUMN);
+		skipColumns.addAll(Arrays.asList(primaryKeys));
+		setMetaInfo(doc, row, skipColumns);
+
 		return doc;
 	}
 
@@ -258,5 +449,30 @@ public class Util {
 			str.append(doc.findProperty(SpiConstants.PROPNAME_DOCID).nextValue().toString());
 		}
 		return str.toString();
+	}
+
+	public static void setTraversalContext(TraversalContext trContext) {
+		context = trContext;
+	}
+
+	/**
+	 * This method will add value of each column as metadata to Database
+	 * document except the values of column in skipColumns list.
+	 * 
+	 * @param doc
+	 * @param row
+	 * @param primaryKeyArray
+	 * @param largeObjectColumn
+	 */
+	private static void setMetaInfo(DBDocument doc, Map<String, Object> row,
+			List skipColumns) {
+		Set<String> keySet = row.keySet();
+		for (String key : keySet) {
+			if (!skipColumns.contains(key)) {
+				doc.setProperty(key, row.get(key));
+			} else {
+				LOG.info("skipping metadata indexing of column " + key);
+			}
+		}
 	}
 }
