@@ -10,7 +10,7 @@ issues and workarounds.
 
 Web Site: http://code.google.com/p/google-enterprise-connector-database/
 
-Release 1.0.2, ALPHA March 15,2010
+Release 1.0.2, ALPHA March 29,2010
 ===========================================
 
 Introduction
@@ -20,15 +20,22 @@ All users of 1.0.1, ALPHA release should upgrade to this release.
 
 Version Compatibility
 ---------------------
-This version works with Connector Manager version 2.4.0.
-Versions lower than 2.4.0 of the Connector Manager will not work correctly with this version of the connector.
+This version works with Connector Manager version 2.4.4.
+Versions lower than 2.4.4 of the Connector Manager will not work correctly with this version of the connector.
 
 Platform Support
 ------------------
-The connector can be installed on 32-bit Windows and Linux environments.
+The connector can be installed on x86/x64 Windows and Linux environments.
+
+This version of the GSA connector for databses is certified against following databases:
+
+1. MySQL 5.2.3
+2. Oracle Database 10g Enterprise Edition Release 10.2.0.4.0 
+3. MS SQL server 2005
+4. IBM DB2/NT SQL09050
 
 Issues fixed from last release
-----------------------------------
+-------------------------------
 1. Issue 2: On Windows, the path to the IbatisSqlMap.xml file is not resolved correctly and hence no crawling is initiated.
 2. Issue 4: "NullPointerException" is thrown when the column name is different from the value entered as primary key or they are
             in different case, during connector configuration.
@@ -39,6 +46,12 @@ Issues fixed from last release
 7. Issue 12: Same DocID is generated for different records in the database table when the column name is differed in case
             from the value entered as primary key during connector configuration.
 8. Issue 13: JUnit Test Case GlobalStateTest fails due to difference in actual string and expected because of spaces and invisible characters.
+
+Known Issues
+-------------
+
+1. Issue 1: Connector does not support serve time authentication and authorization.
+2. Issue 11: Connector does not support BLOB and CLOB data types in the database.
 
 Release 1.0.1, ALPHA December 2, 2009
 ==========================
