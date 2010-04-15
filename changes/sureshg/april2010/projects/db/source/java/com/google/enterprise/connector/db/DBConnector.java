@@ -14,51 +14,52 @@
 
 package com.google.enterprise.connector.db;
 
+import java.util.Map;
+
 import com.google.enterprise.connector.spi.Connector;
 import com.google.enterprise.connector.spi.RepositoryException;
 import com.google.enterprise.connector.spi.Session;
 
-import java.util.Map;
-
 /**
- * Implementation of {@link Connector} for the database connector.
- * This provides session to the connector manager.
- *
+ * Implementation of {@link Connector} for the database connector. This provides
+ * session to the connector manager.
  */
 
 public class DBConnector implements Connector {
-  private final DBContext dbContext;
-  private final String sqlQuery;
-  private final String googleConnectorWorkDir;
-  private final String primaryKeysString;
-  private final String xslt;
-  private Map<String, String> dbTypeDriver = null;
+	private final DBContext dbContext;
+	private final String sqlQuery;
+	private final String googleConnectorWorkDir;
+	private final String primaryKeysString;
+	private final String xslt;
+	private Map<String, String> dbTypeDriver = null;
 
-  public DBConnector(String connectionUrl, String hostname, String driverClassName, String login,
-      String password, String dbName, String sqlQuery,
-      String googleConnectorWorkDir, String primaryKeysString, String xslt) {
-    this.dbContext = new DBContext(connectionUrl, hostname, driverClassName, login, password,
-        dbName);
-    this.sqlQuery = sqlQuery;
-    this.googleConnectorWorkDir = googleConnectorWorkDir;
-    this.primaryKeysString = primaryKeysString;
-    this.xslt = xslt;
-  }
+	public DBConnector(String connectionUrl, String hostname,
+			String driverClassName, String login, String password,
+			String dbName, String sqlQuery, String googleConnectorWorkDir,
+			String primaryKeysString, String xslt) {
+		this.dbContext = new DBContext(connectionUrl, hostname,
+				driverClassName, login, password, dbName);
+		this.sqlQuery = sqlQuery;
+		this.googleConnectorWorkDir = googleConnectorWorkDir;
+		this.primaryKeysString = primaryKeysString;
+		this.xslt = xslt;
+	}
 
-  public Map<String, String> getDbTypeDriver() {
-    return dbTypeDriver;
-  }
+	public Map<String, String> getDbTypeDriver() {
+		return dbTypeDriver;
+	}
 
-
-  /* @Override */
-  public Session login() throws RepositoryException {
-    DBClient dbClient;
-    try {
-      dbClient = new DBClient(dbContext, sqlQuery, googleConnectorWorkDir,
-          primaryKeysString.split(Util.PRIMARY_KEYS_SEPARATOR));
-      return new DBSession(dbClient, xslt);
-    } catch (DBException e) {
-      throw new RepositoryException("Could not create DB client.", e.getCause());
-    }
-  }
+	/* @Override */
+	public Session login() throws RepositoryException {
+		DBClient dbClient;
+		try {
+			dbClient = new DBClient(dbContext, sqlQuery,
+					googleConnectorWorkDir,
+					primaryKeysString.split(Util.PRIMARY_KEYS_SEPARATOR));
+			return new DBSession(dbClient, xslt);
+		} catch (DBException e) {
+			throw new RepositoryException("Could not create DB client.",
+					e.getCause());
+		}
+	}
 }

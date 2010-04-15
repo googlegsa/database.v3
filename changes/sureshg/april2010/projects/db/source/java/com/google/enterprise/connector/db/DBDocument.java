@@ -14,16 +14,16 @@
 
 package com.google.enterprise.connector.db;
 
-import com.google.enterprise.connector.spi.Document;
-import com.google.enterprise.connector.spi.Property;
-import com.google.enterprise.connector.spi.SimpleProperty;
-import com.google.enterprise.connector.spi.Value;
-
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import com.google.enterprise.connector.spi.Document;
+import com.google.enterprise.connector.spi.Property;
+import com.google.enterprise.connector.spi.SimpleProperty;
+import com.google.enterprise.connector.spi.Value;
 
 /**
  * An implementation of Document for database records. Each row in the database
@@ -31,39 +31,39 @@ import java.util.Set;
  */
 public class DBDocument implements Document {
 
-  private final Map<String, List<Value>> properties = new HashMap<String, List<Value>>();
-  public static final String ROW_CHECKSUM = "dbconnector:checksum";
+	private final Map<String, List<Value>> properties = new HashMap<String, List<Value>>();
+	public static final String ROW_CHECKSUM = "dbconnector:checksum";
 
-  /**
-   * Constructs a document with no properties.
-   */
-  public DBDocument() {
-  }
+	/**
+	 * Constructs a document with no properties.
+	 */
+	public DBDocument() {
+	}
 
-  /* @Override */
-  public Property findProperty(String name) {
-    List<Value> property = properties.get(name);
-    return (property == null) ? null : new SimpleProperty(property);
-  }
+	/* @Override */
+	public Property findProperty(String name) {
+		List<Value> property = properties.get(name);
+		return (property == null) ? null : new SimpleProperty(property);
+	}
 
-  /**
-   * Returns all the property names.
-   */
-  /* @Override */
-  public Set<String> getPropertyNames() {
-    return Collections.unmodifiableSet(properties.keySet());
-  }
+	/**
+	 * Returns all the property names.
+	 */
+	/* @Override */
+	public Set<String> getPropertyNames() {
+		return Collections.unmodifiableSet(properties.keySet());
+	}
 
-  /**
-   * Set a property for this document. If propertyValue is null this does
-   * nothing.
-   *
-   * @param propertyName
-   * @param propertyValue
-   */
-  public void setProperty(String propertyName, String propertyValue) {
-    if (propertyValue != null) {
-      properties.put(propertyName, Collections.singletonList(Value.getStringValue(propertyValue)));
-    }
-  }
+	/**
+	 * Set a property for this document. If propertyValue is null this does
+	 * nothing.
+	 * 
+	 * @param propertyName
+	 * @param propertyValue
+	 */
+	public void setProperty(String propertyName, String propertyValue) {
+		if (propertyValue != null) {
+			properties.put(propertyName, Collections.singletonList(Value.getStringValue(propertyValue)));
+		}
+	}
 }
