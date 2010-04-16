@@ -16,6 +16,9 @@ package com.google.enterprise.connector.db;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.logging.Logger;
@@ -258,5 +261,103 @@ public class Util {
 			str.append(doc.findProperty(SpiConstants.PROPNAME_DOCID).nextValue().toString());
 		}
 		return str.toString();
+	}
+
+	/**
+	 * This method convert given row into equivalent Metadata-URL feed. Value of
+	 * dbconn_url column is used as URL or Doc_Id of document and value of other
+	 * columns is used as metadata(except doc_id colunm values). If the column
+	 * name is dbconn_last_mod , it is used as last modified date. MIME type of
+	 * the document is the value of "mime_type" column. It is assumed that
+	 * connector admin will use the required alias for columns in SQL query.
+	 * 
+	 * @param dbName
+	 * @param primaryKeys
+	 * @param row
+	 * @param hostname
+	 * @param dbClient
+	 * @return DBDocument
+	 * @throws DBException
+	 */
+	public static DBDocument generateURLMetaFeed(String dbName,
+			String[] primaryKeys, Map<String, Object> row, String hostname,
+			String baseURL) throws DBException {
+
+		DBDocument doc = new DBDocument();
+		// get doc id from primary key values
+		String docId = generateDocId(primaryKeys, row);
+
+		String xmlRow = XmlUtils.getXMLRow(dbName, row, primaryKeys, null);
+		/*
+		 * skipColumns maintain the list of column which needs to skip while
+		 * indexing as they are not part of metadata or they already considered
+		 * for indexing. For example document_id column, MIME type column, URL
+		 * columns.
+		 */
+		List<String> skipColumns = new ArrayList<String>();
+
+		// get the value of URL or doc_id field from row
+		String urlValue = (String) row.get(ApplicationConstants.DOC_COLUMN);
+
+		if (urlValue != null && urlValue.trim().length() > 0) {
+
+			// if the value of base URL is not empty, append the value of URL
+			// field column at the end of base URL to get complete path of the
+			// document.
+			if (baseURL != null && baseURL.trim().length() > 0) {
+				urlValue = baseURL.trim() + urlValue;
+			}
+			doc.setProperty(SpiConstants.PROPNAME_SEARCHURL, urlValue);
+			doc.setProperty(SpiConstants.PROPNAME_DISPLAYURL, urlValue);
+		}
+
+		// set doc id
+		doc.setProperty(SpiConstants.PROPNAME_DOCID, docId);
+		// get MIME type of this document from "mime_type" column.
+		Object mimeType = row.get(ApplicationConstants.MIME_TYPE_COLUMN);
+		if (mimeType != null) {
+			doc.setProperty(SpiConstants.PROPNAME_MIMETYPE, row.get(ApplicationConstants.MIME_TYPE_COLUMN).toString());
+		}
+		doc.setProperty(DBDocument.ROW_CHECKSUM, getChecksum(xmlRow.getBytes()));
+		// add action as add
+		doc.setProperty(SpiConstants.PROPNAME_ACTION, SpiConstants.ActionType.ADD.toString());
+
+		// set last modified
+		Object lastModified = row.get(ApplicationConstants.LAST_MOD_COLUMN);
+		if (lastModified != null) {
+			doc.setLastModified(SpiConstants.PROPNAME_LASTMODIFIED, lastModified);
+			skipColumns.add(ApplicationConstants.LAST_MOD_COLUMN);
+		}
+
+		skipColumns.add((String) row.get(ApplicationConstants.MIME_TYPE_COLUMN));
+		skipColumns.add(ApplicationConstants.DOC_COLUMN);
+		skipColumns.addAll(Arrays.asList(primaryKeys));
+		setMetaInfo(doc, row, skipColumns);
+
+		return doc;
+	}
+
+	/**
+	 * This method will add value of each column as metadata to Database
+	 * document except the values of column in skipColumns list.
+	 * 
+	 * @param doc
+	 * @param row
+	 * @param skipColumns list of columns needs to ignore while indexing
+	 */
+	private static void setMetaInfo(DBDocument doc, Map<String, Object> row,
+			List<String> skipColumns) {
+		// get all column names as key set
+		Set<String> keySet = row.keySet();
+		for (String key : keySet) {
+			// set column value as metadata and column name as meta-name.
+			if (!skipColumns.contains(key)) {
+				Object value = row.get(key);
+				if (value != null)
+					doc.setProperty(key, value.toString());
+			} else {
+				LOG.info("skipping metadata indexing of column " + key);
+			}
+		}
 	}
 }

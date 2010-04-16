@@ -18,6 +18,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Set;
 import java.util.logging.Logger;
 
 import org.joda.time.DateTime;
@@ -37,6 +38,13 @@ public class DBTraversalManager implements TraversalManager {
 
 	// Limit on the batch size.
 	private int batchHint = 100;
+
+	// EXC_NORMAL represents that DB Connector is running in normal mode
+	private static final int MODE_NORMAL = 1;
+
+	// EXC_METADATA_URL represents that DB Connector is running for indexing
+	// External Metadada
+	private static final int MODE_METADATA_URL = 2;
 
 	/**
 	 * Creates a DBTraversalManager.
@@ -216,11 +224,50 @@ public class DBTraversalManager implements TraversalManager {
 		List<Map<String, Object>> rows = dbClient.executePartialQuery(globalState.getCursorDB(), 3 * batchHint);
 		globalState.setCursorDB(globalState.getCursorDB() + rows.size());
 		globalState.setQueryExecutionTime(new DateTime());
-		for (Map<String, Object> row : rows) {
-			globalState.addDocument(Util.rowToDoc(dbClient.getDBContext().getDbName(), dbClient.getPrimaryKeys(), row, dbClient.getDBContext().getHostname(), xslt));
+		int executionMode = MODE_NORMAL;
+		if (rows.size() > 0) {
+			executionMode = getExecutionMode(rows.get(0));
 		}
+		switch (executionMode) {
+
+		// execute the connector for metadata-url feed
+		case MODE_METADATA_URL:
+			for (Map<String, Object> row : rows) {
+				globalState.addDocument(Util.generateURLMetaFeed(dbClient.getDBContext().getDbName(), dbClient.getPrimaryKeys(), row, dbClient.getDBContext().getHostname(), dbClient.getBaseURLField()));
+			}
+			break;
+
+		// execute the connector in normal mode
+		default:
+			for (Map<String, Object> row : rows) {
+				globalState.addDocument(Util.rowToDoc(dbClient.getDBContext().getDbName(), dbClient.getPrimaryKeys(), row, dbClient.getDBContext().getHostname(), xslt));
+			}
+			break;
+		}
+
 		LOG.info(globalState.getDocQueue().size()
 				+ " document(s) to be fed to GSA");
 		return rows;
+	}
+
+	/**
+	 * this method will detect the execution mode from the column names(Normal,
+	 * CLOB, BLOB or External Metadata) of the DB Connector and returns the
+	 * integer value representing execution mode
+	 * 
+	 * @param map
+	 * @return
+	 */
+	private int getExecutionMode(Map<String, Object> map) {
+
+		Set<String> columns = map.keySet();
+		for (String column : columns) {
+
+			if (column.equalsIgnoreCase(ApplicationConstants.DOC_COLUMN)) {
+				return MODE_METADATA_URL;
+			}
+		}
+
+		return MODE_NORMAL;
 	}
 }

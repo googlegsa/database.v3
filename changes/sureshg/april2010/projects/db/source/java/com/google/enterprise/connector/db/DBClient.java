@@ -50,6 +50,15 @@ public class DBClient {
 	private final String sqlQuery;
 	private final String googleConnectorWorkDir;
 	private final String[] primaryKeys;
+
+	// baseURL is a partial URL, when combined with the value of document id can
+	// return the URL of the document to be indexed. For example, when base URL
+	// is "http://<host-name>/<web-app>?doc_id=" is concatenated with document
+	// id stored in column of the database table you can get URL of the document
+	// to be crawled and indexed.
+	// http://<host-name>/<web-app>?doc_id=43567
+
+	private final String baseURLField;
 	private String sqlMapConfig = null;
 	private String sqlMap = null;
 
@@ -61,12 +70,13 @@ public class DBClient {
 	 * @throws DBException
 	 */
 	public DBClient(DBContext dbContext, String sqlQuery,
-			String googleConnectorWorkDir, String[] primaryKeys)
+			String googleConnectorWorkDir, String[] primaryKeys, String baseURL)
 			throws DBException {
 		this.dbContext = dbContext;
 		this.sqlQuery = sqlQuery;
 		this.googleConnectorWorkDir = googleConnectorWorkDir;
 		this.primaryKeys = primaryKeys;
+		this.baseURLField = baseURL;
 		generateSqlMapConfig();
 		generateSqlMap();
 		InputStream resources;
@@ -106,6 +116,13 @@ public class DBClient {
 	 */
 	public String[] getPrimaryKeys() {
 		return primaryKeys;
+	}
+
+	/**
+	 * @return baseURL
+	 */
+	public String getBaseURLField() {
+		return baseURLField;
 	}
 
 	/**

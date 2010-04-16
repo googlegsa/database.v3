@@ -14,6 +14,8 @@
 
 package com.google.enterprise.connector.db;
 
+import java.sql.Timestamp;
+import java.util.Calendar;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -65,5 +67,23 @@ public class DBDocument implements Document {
 		if (propertyValue != null) {
 			properties.put(propertyName, Collections.singletonList(Value.getStringValue(propertyValue)));
 		}
+	}
+
+	/**
+	 * This method adds the last modified date property to the DB Document
+	 * 
+	 * @param propertyName
+	 * @param propertyValue
+	 */
+	public void setLastModified(String propertyName, Object propertyValue) {
+		Timestamp time = (Timestamp) propertyValue;
+		Calendar cal = Calendar.getInstance();
+		cal.setTimeInMillis(time.getTime());
+
+		if (propertyValue == null) {
+			return;
+		}
+		properties.put(propertyName, Collections.singletonList(Value.getDateValue(cal)));
+
 	}
 }
