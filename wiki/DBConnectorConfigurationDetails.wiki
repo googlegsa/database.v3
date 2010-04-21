@@ -14,29 +14,37 @@ This document will provide you the details of various fields of configuration fo
   username of Database server user.  This field value is used to connect to the database. Please note that Windows authentication used in MS SQL server is not currently supported by the connector.
 
 
-   * * Password: * Password in not a mandatory field. But user must provide password     
-   associated with above mentioned username. This field value is used to establish 
-   connection with the database.
+   * * Password: *   Password is a mandatory field, but in case database user password is empty string then user can keep this field blank. This field value is used to establish connection with the database.
 
 
-   * * JDBC Connection URL: * This is a required field. Valid connection URL must be 
-   supplied to connect to the database. Connection URL must follow below format.
+   * * JDBC Connection URL: * This is a required field. Valid connection URL must be    
+       supplied to connect to the database. Database server should be accessible from 
+       remote host while configuring database connector. Connection URL must follow below 
+       format.
 
-   Protocol://db-server: port/DB
+       Protocol://db-server: port/DB
+       For example "jdbc:mysql://10.88.45.40:3306/MySQL" is JDBC Connection URL for      
+       connecting to the database “MySQL” which is running on server “10.88.45.40” and 
+       port 3306 using jdbc:mysql protocol.
 
-   For example
-   "jdbc:mysql://10.88.45.40:3306/MySQL" is JDBC Connection URL for connecting to the  
-   database “MySQL” which is running on server “10.88.45.40” and port 3306 using 
-   jdbc:mysql protocol.
+       If your database and connector are running on different servers, then database    
+       should be accessible from connector host for supplied user-name and password. For  
+       example, if "user1" and "password" are the user-name and password of database user 
+       respectively, then user "user1" should have remote access to the database. 
+       Database admin can grant remote access to database using below SQL script(this 
+       example is for MySQL database).
+
+       GRANT ALL PRIVILEGES ON *.* TO user1@'connector-host' IDENTIFIED BY 'user1-
+       password'.
  
-
    * * Database Name: * Database name is a required field. User must supply value of 
-   database name. This field valueis used in xslt , display UR and xml representation of  
-   a row.
+       database name. This field valueis used in xslt , display UR and xml representation 
+       of a row.
 
 
-   * * Hostname: * Hostname is a required field. Fully qualified Hostname should be  
-   provided. For Example hostname.domain. Hostname is used in display URL.
+   * * Connector Hostname: * Hostname is a required field. Fully qualified Hostname 
+       should be provided. For Example hostname.domain. Connector Hostname is used in 
+       display URL.
 
 
    * * JDBC Driver Classname: * This is a required field. Fully qualified type 4 driver 
@@ -57,13 +65,42 @@ This document will provide you the details of various fields of configuration fo
    For example,
    SELECT empid , first_name, last_name, manager , deptno FROM employee
 
+   Data from multiple tables can be crawled using JOIN or UNION. For example SQL query  
+   for crawling data from multiple tables(suppliers and orders): 
+   SELECT suppliers.supplier_id, suppliers.supplier_name, orders.order_date  FROM   
+   suppliers, orders WHERE suppliers.supplier_id = orders.supplier_id;
 
-    * * Primary Keys: * this is a required field. User must provide primary key column 
-    name as a primary key. If table is using composite primary key, then the columns 
-    forming primary key should be given with comma separated value. Value of this field 
-     is used in building DOC_ID.
+    * * Primary Keys: * This is a required field. User must provide primary key column name for given SQL crawl query. If table is using composite primary key, then the columns forming primary key should be given with comma separated value. If SQL query contain aliases for column names, then alias should be used as primary key value. Primary key field is not case sensitive. Value of this field is used in building DOC_ID.
 
 
-    * * Stylesheet for serving results: * This is not a required field. User can supply  
-    valid xslt for customized look and feel. If xslt value is not supplied, default  
-    Stylesheet will be used.
+    * * Stylesheet for serving results: * This is not a required field. User can provide valid xslt for customized look and feel. If xslt value is not supplied, default Stylesheet will be used
+
+       See below example of xslt for an employee table. Here firstName , lastName, email and id are column names and DB_Name is database name.
+{{{
+<?xml version="1.0" encoding="UTF-8"?><xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0
+<xsl:template match="/">
+  <html>
+  <body>
+  <xsl:for-each select="DB_Name">
+  <title><xsl:value-of select="title"/></title
+  </xsl:for-each>
+    <table border="1">
+      <tr bgcolor="#9acd32">
+        <th>First Name</th>
+        <th>Last Name</th>
+        <th>Email</th>
+        <th>Id</th>
+      </tr>
+      <xsl:for-each select="DB_Name">
+      <tr>
+        <td><xsl:value-of select="firstName"/></td>
+        <td><xsl:value-of select="lastName"/></td>
+        <td><xsl:value-of select="email"/></td>
+        <td><xsl:value-of select="id"/></td>
+      </tr>
+      </xsl:for-each>
+    </table>
+  </body>}}}
+  </html>
+</xsl:template>
+</xsl:stylesheet>
