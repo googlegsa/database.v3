@@ -63,6 +63,7 @@ public class DBTestBase extends TestCase {
 		System.out.println("Configuration map:======= " + configMap);
 		configMap.put("googleConnectorWorkDir", testDirManager.getTmpDir());
 		configMap.put("xslt", "");
+		configMap.put("baseURLField", "");
 		globalState = new GlobalState(testDirManager.getTmpDir());
 		runDBScript(CREATE_TEST_DB_TABLE);
 	}

@@ -75,7 +75,7 @@ public class DBDocument implements Document {
 	 * @param propertyName
 	 * @param propertyValue
 	 */
-	public void setLastModified(String propertyName, Object propertyValue) {
+	public void setLastModifiedDate(String propertyName, Object propertyValue) {
 		Timestamp time = (Timestamp) propertyValue;
 		Calendar cal = Calendar.getInstance();
 		cal.setTimeInMillis(time.getTime());
@@ -85,5 +85,19 @@ public class DBDocument implements Document {
 		}
 		properties.put(propertyName, Collections.singletonList(Value.getDateValue(cal)));
 
+	}
+
+	/**
+	 * In case of BLOB data iBATIS returns binary array for BLOB data-type. This
+	 * method sets the "binary array" as a content of DB Document.
+	 * 
+	 * @param propertyName
+	 * @param propertyValue
+	 */
+	public void setBinaryContent(String propertyName, Object propertyValue) {
+		if (propertyValue == null) {
+			return;
+		}
+		properties.put(propertyName, Collections.singletonList(Value.getBinaryValue((byte[]) propertyValue)));
 	}
 }

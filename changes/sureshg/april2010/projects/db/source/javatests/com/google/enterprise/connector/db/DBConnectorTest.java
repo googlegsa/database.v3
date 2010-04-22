@@ -35,6 +35,7 @@ public class DBConnectorTest extends TestCase {
 		configMap.put("primaryKeysString", "primaryKeysString_value");
 		configMap.put("googleConnectorWorkDir", testDirManager.getSrcDir());
 		configMap.put("xslt", "xslt");
+		configMap.put("baseURLField", "");
 	}
 
 	public void testMakeConnector() {
