@@ -16,12 +16,12 @@ Find the following section of the default stylesheet
 In that section, find the following line:
 
 
-*For 5.0 XSLT Version*
+For 5.0 XSLT Version
 {{{
 <xsl:variable name="display_url_tmp" select="substring-after(UD, ':')"/> 
 }}}
 
-*For 6.0 XSLT Version*
+For 6.0 XSLT Version
 {{{
 <xsl:variable name="display_url1" select="substring-after(UD, '://')"/>
 }}}
@@ -31,7 +31,7 @@ In that section, find the following line:
 Replace that line with the following. Make sure to add your own values for $rewrite_from and $rewrite_to.
 For display URL for your database connector configuration check feed log file.
 
-*For 5.0 XSLT Version*
+For 5.0 XSLT Version
 {{{
 <xsl:variable name="rewrite_from" select="'dbconnector://pseudo display URL'" />
 <xsl:variable name="rewrite_to" select="'http://actual-document-url/'"/>
@@ -48,7 +48,7 @@ For display URL for your database connector configuration check feed log file.
 <xsl:variable name="display_url_tmp" select="substring-after($rewritten_url, '//')"/>
 }}}
 
-*For 6.0 XSLT Version*
+For 6.0 XSLT Version
 {{{
 <xsl:variable name="rewrite_from" select="'dbconnector://pseudo display URL/'" />
 <xsl:variable name="rewrite_to" select="'http://actual-document-url/'"/>
@@ -85,4 +85,3 @@ Change it to the following.
 
 *Step 7:-*
 Save this new stylesheet and test it.
-
