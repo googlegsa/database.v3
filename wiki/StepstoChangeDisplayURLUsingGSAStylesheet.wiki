@@ -1,3 +1,4 @@
+#summary Steps to Change Display URL Using GSA Stylesheet
 #labels Phase-Deploy
 This document gives detail steps for changing Display URL using GSA front-end Stylesheet. In some cases database Connector uses pseudo display URL for its records. Connector admin can change this hypothetical display URL using from-end Stylesheet of GSA.
 
