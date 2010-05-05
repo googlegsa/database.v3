@@ -38,6 +38,24 @@ public class DBTraversalManager implements TraversalManager {
 	// Limit on the batch size.
 	private int batchHint = 100;
 
+	// EXC_NORMAL represents that DB Connector is running in normal mode
+	private static final int MODE_NORMAL = 1;
+
+	// EXC_METADATA_URL represents that DB Connector is running for indexing
+	// External Metadada
+	private static final int MODE_METADATA_URL = 2;
+
+	// EXC_BLOB represents that DB Connector is running for indexing BLOB
+	// data
+	private static final int MODE_METADATA_BASE_URL = 3;
+
+	// EXC_CLOB represents that DB Connector is running for indexing CLOB
+	// data
+	private static final int MODE_BLOB_CLOB = 4;
+
+	// current execution mode
+	private static int CURRENT_EX_MODE = -1;
+
 	/**
 	 * Creates a DBTraversalManager.
 	 * 
@@ -214,13 +232,82 @@ public class DBTraversalManager implements TraversalManager {
 	private List<Map<String, Object>> executeQueryAndAddDocs()
 			throws DBException {
 		List<Map<String, Object>> rows = dbClient.executePartialQuery(globalState.getCursorDB(), 3 * batchHint);
+
 		globalState.setCursorDB(globalState.getCursorDB() + rows.size());
 		globalState.setQueryExecutionTime(new DateTime());
-		for (Map<String, Object> row : rows) {
-			globalState.addDocument(Util.rowToDoc(dbClient.getDBContext().getDbName(), dbClient.getPrimaryKeys(), row, dbClient.getDBContext().getHostname(), xslt));
+
+		if (rows != null && rows.size() > 0) {
+
+			if (CURRENT_EX_MODE == -1) {
+				CURRENT_EX_MODE = getExecutionScenario(dbClient.getDBContext());
+				LOG.info("DB Connector is running in " + CURRENT_EX_MODE
+						+ " mode!");
+			}
+
+			switch (CURRENT_EX_MODE) {
+
+			// execute the connector for metadata-url feed
+			case MODE_METADATA_URL:
+				for (Map<String, Object> row : rows) {
+					globalState.addDocument(Util.generateMetadataURLFeed(dbClient.getDBContext().getDbName(), dbClient.getPrimaryKeys(), row, dbClient.getDBContext().getHostname(), dbClient.getDBContext(), ""));
+				}
+				break;
+
+			// execute the connector for BLOB data
+			case MODE_METADATA_BASE_URL:
+				for (Map<String, Object> row : rows) {
+					globalState.addDocument(Util.generateMetadataURLFeed(dbClient.getDBContext().getDbName(), dbClient.getPrimaryKeys(), row, dbClient.getDBContext().getHostname(), dbClient.getDBContext(), Util.WITH_BASE_URL));
+				}
+
+				break;
+
+			// execute the connector for CLOB data
+			case MODE_BLOB_CLOB:
+				for (Map<String, Object> row : rows) {
+					globalState.addDocument(Util.largeObjectToDoc(dbClient.getDBContext().getDbName(), dbClient.getPrimaryKeys(), row, dbClient.getDBContext().getHostname(), dbClient.getDBContext()));
+				}
+
+				break;
+
+			// execute the connector in normal mode
+			default:
+				for (Map<String, Object> row : rows) {
+					globalState.addDocument(Util.rowToDoc(dbClient.getDBContext().getDbName(), dbClient.getPrimaryKeys(), row, dbClient.getDBContext().getHostname(), xslt, dbClient.getDBContext()));
+				}
+				break;
+			}
 		}
+
 		LOG.info(globalState.getDocQueue().size()
 				+ " document(s) to be fed to GSA");
 		return rows;
+	}
+
+	/**
+	 * this method will detect the execution mode from the column names(Normal,
+	 * CLOB, BLOB or External Metadata) of the DB Connector and returns the
+	 * integer value representing execution mode
+	 * 
+	 * @param map
+	 * @return
+	 */
+	private int getExecutionScenario(DBContext dbContext) {
+
+		String extMetaType = dbContext.getExtMetadataType();
+
+		if (extMetaType != null && extMetaType.trim().length() > 0
+				&& !extMetaType.equals(DBConnectorType.NO_EXT_METADATA)) {
+			if (extMetaType.equalsIgnoreCase(DBConnectorType.COMPLETE_URL)) {
+				GlobalState.setMetadataURLFeed(true);
+				return MODE_METADATA_URL;
+			} else if (extMetaType.equalsIgnoreCase(DBConnectorType.DOC_ID)) {
+				GlobalState.setMetadataURLFeed(true);
+				return MODE_METADATA_BASE_URL;
+			} else {
+				return MODE_BLOB_CLOB;
+			}
+		} else {
+			return MODE_NORMAL;
+		}
 	}
 }

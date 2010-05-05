@@ -15,5 +15,13 @@
         </constructor-arg>
         <constructor-arg index="8" value="${primaryKeysString}"></constructor-arg>
         <constructor-arg index="9" value="${xslt}"></constructor-arg>
+        <constructor-arg index="10" value="${lastModifiedDate}"></constructor-arg>
+        <constructor-arg index="11" value="${documentTitle}"></constructor-arg>
+        <constructor-arg index="12" value="${documentURLField}"></constructor-arg>
+        <constructor-arg index="13" value="${documentIdField}"></constructor-arg>
+        <constructor-arg index="14" value="${baseURL}"></constructor-arg>
+        <constructor-arg index="15" value="${lobField}"></constructor-arg>
+        <constructor-arg index="16" value="${fetchURLField}"></constructor-arg>
+        <constructor-arg index="17" value="${extMetadataType}"></constructor-arg>
   </bean>
 </beans>

@@ -80,7 +80,7 @@ public class TestUtils {
 
 	public static DBDocument createDBDoc(int id, String firstName,
 			String lastName, String email) throws DBException {
-		DBDocument dbDoc = Util.rowToDoc("testdb_", TestUtils.getStandardPrimaryKeys(), getRow(id, firstName, lastName, email), "localhost", null);
+		DBDocument dbDoc = Util.rowToDoc("testdb_", TestUtils.getStandardPrimaryKeys(), getRow(id, firstName, lastName, email), "localhost", null, null);
 		return dbDoc;
 	}
 
@@ -93,5 +93,31 @@ public class TestUtils {
 		dbTypeDriver.put(DB_TYPE_ORACLE, "oracle.jdbc.OracleDriver");
 		dbTypeDriver.put(DB_TYPE_SYBASE, "com.sybase.jdbc2.jdbc.SybDriver");
 		return dbTypeDriver;
+	}
+
+	public static DBContext getDBContext() throws DBException {
+
+		String connectionUrl = "";
+		String hostname = "";
+		String driverClassName = "";
+		String login = "";
+		String password = "";
+		String dbName = "";
+		String lastModifiedDate = null;
+		String documentTitle = "title";
+		String documentURLField = "docURL";
+		String documentIdField = "docId";
+		String baseURL = "baseURL";
+		String lobField = "";
+		String fetchURLField = "";
+		String extMetadataType = "";
+
+		DBContext dbContext = new DBContext(connectionUrl, hostname,
+				driverClassName, login, password, dbName, lastModifiedDate,
+				documentTitle, documentURLField, documentIdField, baseURL,
+				lobField, fetchURLField, extMetadataType);
+
+		return dbContext;
+
 	}
 }

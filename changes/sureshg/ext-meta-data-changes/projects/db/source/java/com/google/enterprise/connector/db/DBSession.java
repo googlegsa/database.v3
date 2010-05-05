@@ -14,6 +14,10 @@
 
 package com.google.enterprise.connector.db;
 
+import com.google.enterprise.connector.spi.AuthenticationManager;
+import com.google.enterprise.connector.spi.AuthorizationManager;
+import com.google.enterprise.connector.spi.Session;
+import com.google.enterprise.connector.spi.TraversalManager;
 
 /**
  * This class provides the TraversalManager, AuthenticationManager and the

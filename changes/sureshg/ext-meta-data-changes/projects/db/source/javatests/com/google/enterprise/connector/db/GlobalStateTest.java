@@ -72,7 +72,7 @@ public class GlobalStateTest extends TestCase {
 		try {
 			// Add 4 documents.
 			for (Map<String, Object> row : TestUtils.getDBRows()) {
-				DBDocument dbDoc = Util.rowToDoc("testdb_", TestUtils.getStandardPrimaryKeys(), row, "localhost", null);
+				DBDocument dbDoc = Util.rowToDoc("testdb_", TestUtils.getStandardPrimaryKeys(), row, "localhost", null, null);
 				globalState.addDocument(dbDoc);
 			}
 
@@ -154,7 +154,7 @@ public class GlobalStateTest extends TestCase {
 
 		try {
 			for (Map<String, Object> row : TestUtils.getDBRows()) {
-				DBDocument dbDoc = Util.rowToDoc("testdb_", TestUtils.getStandardPrimaryKeys(), row, "localhost", null);
+				DBDocument dbDoc = Util.rowToDoc("testdb_", TestUtils.getStandardPrimaryKeys(), row, "localhost", null, null);
 				globalState.addDocument(dbDoc);
 			}
 			globalState.setCursorDB(4);
@@ -212,7 +212,7 @@ public class GlobalStateTest extends TestCase {
 	private void setUpInitialState() {
 		try {
 			for (Map<String, Object> row : TestUtils.getDBRows()) {
-				DBDocument dbDoc = Util.rowToDoc("testdb_", TestUtils.getStandardPrimaryKeys(), row, "localhost", null);
+				DBDocument dbDoc = Util.rowToDoc("testdb_", TestUtils.getStandardPrimaryKeys(), row, "localhost", null, null);
 				globalState.addDocument(dbDoc);
 			}
 		} catch (DBException e) {

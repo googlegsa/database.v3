@@ -63,6 +63,15 @@ public class DBTestBase extends TestCase {
 		System.out.println("Configuration map:======= " + configMap);
 		configMap.put("googleConnectorWorkDir", testDirManager.getTmpDir());
 		configMap.put("xslt", "");
+		configMap.put("lastModifiedDate", "");
+		configMap.put("documentTitle", "");
+		configMap.put("externalMetadata", "");
+		configMap.put("documentURLField", "");
+		configMap.put("documentIdField", "");
+		configMap.put("baseURL", "");
+		configMap.put("lobField", "");
+		configMap.put("fetchURLField", "");
+		configMap.put("extMetadataType", "");
 		globalState = new GlobalState(testDirManager.getTmpDir());
 		runDBScript(CREATE_TEST_DB_TABLE);
 	}
@@ -100,7 +109,7 @@ public class DBTestBase extends TestCase {
 		globalState.setQueryExecutionTime(queryExecutionTime);
 		try {
 			for (Map<String, Object> row : TestUtils.getDBRows()) {
-				DBDocument dbDoc = Util.rowToDoc("testdb_", TestUtils.getStandardPrimaryKeys(), row, "localhost", null);
+				DBDocument dbDoc = Util.rowToDoc("testdb_", TestUtils.getStandardPrimaryKeys(), row, "localhost", null, TestUtils.getDBContext());
 				globalState.addDocument(dbDoc);
 			}
 		} catch (DBException dbe) {

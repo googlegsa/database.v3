@@ -70,6 +70,7 @@ public class GlobalState {
 	private LinkedList<DBDocument> docsInFlight = new LinkedList<DBDocument>();
 	private DateTime queryExecutionTime = null;
 	private DateTime queryTimeForInFlightDocs = null;
+	private static boolean isMetadataURLFeed = false;
 
 	public GlobalState(String workDir) {
 		this.workDir = workDir;
@@ -128,10 +129,25 @@ public class GlobalState {
 	 * added to the doc queue for the deletion.
 	 */
 	public void markNewDBTraversal() {
-		addDocumentsToDelete();
+
+		// mark documents for DELETE only for Content feed. Otherwise just
+		// clear the entries from "previousChecksumMap".
+		if (!isMetadataURLFeed) {
+			addDocumentsToDelete();
+		} else {
+			previousChecksumMap.clear();
+		}
 		previousChecksumMap.putAll(currentChecksumMap);
 		currentChecksumMap.clear();
 		setCursorDB(0);
+	}
+
+	public static boolean isMetadataURLFeed() {
+		return isMetadataURLFeed;
+	}
+
+	public static void setMetadataURLFeed(boolean isMetadataURLFeed) {
+		GlobalState.isMetadataURLFeed = isMetadataURLFeed;
 	}
 
 	/**
@@ -148,9 +164,9 @@ public class GlobalState {
 	 * queue.
 	 */
 	private void addDocumentsToDelete() {
+		LOG.info(previousChecksumMap.size()
+				+ " document(s) are marked for delete feed");
 		for (String key : previousChecksumMap.keySet()) {
-			LOG.info(previousChecksumMap.size()
-					+ " document(s) are marked for delete feed");
 			DBDocument dbDoc = new DBDocument();
 			dbDoc.setProperty(SpiConstants.PROPNAME_DOCID, key);
 			dbDoc.setProperty(DBDocument.ROW_CHECKSUM, previousChecksumMap.get(key));

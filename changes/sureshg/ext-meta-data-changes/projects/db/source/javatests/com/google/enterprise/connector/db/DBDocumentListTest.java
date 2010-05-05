@@ -17,6 +17,12 @@ package com.google.enterprise.connector.db;
 import java.util.Map;
 import java.util.logging.Logger;
 
+import junit.framework.TestCase;
+
+import org.joda.time.DateTime;
+
+import com.google.enterprise.connector.spi.RepositoryException;
+
 public class DBDocumentListTest extends TestCase {
 	private static final Logger LOG = Logger.getLogger(DBDocumentListTest.class.getName());
 	private DBDocumentList docList;
@@ -29,7 +35,7 @@ public class DBDocumentListTest extends TestCase {
 		globalState = new GlobalState(testDirManager.getTmpDir());
 		docList = new DBDocumentList(globalState);
 		for (Map<String, Object> row : TestUtils.getDBRows()) {
-			DBDocument dbDoc = Util.rowToDoc("testdb_", TestUtils.getStandardPrimaryKeys(), row, "localhost", null);
+			DBDocument dbDoc = Util.rowToDoc("testdb_", TestUtils.getStandardPrimaryKeys(), row, "localhost", null, null);
 			docList.addDocument(dbDoc);
 		}
 		dt = new DateTime();

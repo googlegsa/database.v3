@@ -17,6 +17,8 @@ package com.google.enterprise.connector.db;
 import java.util.HashMap;
 import java.util.Map;
 
+import junit.framework.TestCase;
+
 public class DBConnectorTest extends TestCase {
 	Map<String, String> configMap = new HashMap<String, String>();
 
@@ -33,6 +35,15 @@ public class DBConnectorTest extends TestCase {
 		configMap.put("primaryKeysString", "primaryKeysString_value");
 		configMap.put("googleConnectorWorkDir", testDirManager.getSrcDir());
 		configMap.put("xslt", "xslt");
+		configMap.put("lastModifiedDate", "");
+		configMap.put("documentTitle", "");
+		configMap.put("externalMetadata", "");
+		configMap.put("documentURLField", "");
+		configMap.put("documentIdField", "");
+		configMap.put("baseURL", "");
+		configMap.put("lobField", "");
+		configMap.put("fetchURLField", "");
+		configMap.put("extMetadataType", "");
 	}
 
 	public void testMakeConnector() {

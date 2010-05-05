@@ -47,12 +47,15 @@ public class DBConnectorType implements ConnectorType {
 	private static final String TEST_DRIVER_CLASS = "TEST_DRIVER_CLASS";
 	private static final String TEST_SQL_QUERY = "TEST_SQL_QUERY";
 	private static final String TEST_PRIMARY_KEYS = "TEST_PRIMARY_KEYS";
+	private static final String INVALID_COLUMN_NAME = "INVALID_COLUMN_NAME";
 	private static final String FQDN_HOSTNAME = "FQDN_HOSTNAME";
 	private static final String MISSING_ATTRIBUTES = "MISSING_ATTRIBUTES";
 	private static final String REQ_FIELDS = "REQ_FIELDS";
 	private static final String VALUE = "value";
 	private static final String NAME = "name";
+	private static final String ID = "id";
 	private static final String TEXT = "text";
+
 	private static final String TYPE = "type";
 	private static final String INPUT = "input";
 	private static final String TEXT_AREA = "textarea";
@@ -75,6 +78,16 @@ public class DBConnectorType implements ConnectorType {
 	private static final String TD_START = "<td>";
 	private static final String TR_START = "<tr>\n";
 
+	private static final String RADIO = "radio";
+	private static final String ALIGN = "align";
+	private static final String CENTER = "center";
+	private static final String TD_OPEN = "<td";
+	private static final String GROUP = "extMetadataType";
+
+	public static final String COMPLETE_URL = "url";
+	public static final String DOC_ID = "docId";
+	public static final String BLOB_CLOB = "lob";
+
 	private static final String HOSTNAME = "hostname";
 	private static final String CONNECTION_URL = "connectionUrl";
 	private static final String LOGIN = "login";
@@ -84,8 +97,28 @@ public class DBConnectorType implements ConnectorType {
 	private static final String PRIMARY_KEYS_STRING = "primaryKeysString";
 	private static final String XSLT = "xslt";
 
+	private static final String EXT_METADATA = "externalMetadata";
+	private static final String DOCUMENT_URL_FIELD = "documentURLField";
+	private static final String DOCUMENT_ID_FIELD = "documentIdField";
+	private static final String BASE_URL = "baseURL";
+	private static final String CLOB_BLOB_FIELD = "lobField";
+	private static final String FETCH_URL_FIELD = "fetchURLField";
+	private static final String CHECKED = "checked";
+	private static final String DISABLED = "readonly";
+	private static final String HIDDEN = "hidden";
+	private static final String TRUE = "true";
+	private static final String ON_CLICK = "onClick";
+	public static final String NO_EXT_METADATA = "noExt";
+
+	private static final String COMPLETE_URL_SCRIPT = "'javascript:setReadOnlyProperties(false , true , true)'";
+	private static final String DOC_ID_SCRIPT = "'javascript:setReadOnlyProperties(true , false , true)'";
+	private static final String BLOB_CLOB_SCRIPT = "'javascript:setReadOnlyProperties(true , true , false)'";
+
 	private final Set<String> configKeys;
 	private String initialConfigForm = null;
+
+	private boolean isDocIdDisabled = false;
+	private boolean isLOBFieldDisable = false;
 
 	/**
 	 * @param configKeys names of required configuration variables.
@@ -109,7 +142,9 @@ public class DBConnectorType implements ConnectorType {
 		if (configKeys == null) {
 			throw new IllegalStateException();
 		}
+
 		this.initialConfigForm = makeConfigForm(null);
+
 		return initialConfigForm;
 	}
 
@@ -122,6 +157,9 @@ public class DBConnectorType implements ConnectorType {
 	 */
 	private String makeConfigForm(Map<String, String> configMap) {
 		StringBuilder buf = new StringBuilder();
+
+		buf.append(getJavaScript());
+
 		for (String key : configKeys) {
 			String value;
 			if (configMap != null) {
@@ -131,6 +169,7 @@ public class DBConnectorType implements ConnectorType {
 			}
 			buf.append(formSnippetWithColor(key, value, false));
 		}
+
 		return buf.toString();
 	}
 
@@ -145,33 +184,84 @@ public class DBConnectorType implements ConnectorType {
 	 */
 	private String formSnippetWithColor(String key, String value, boolean red) {
 		StringBuilder buf = new StringBuilder();
-		appendStartRow(buf, key, red);
-		buf.append(OPEN_ELEMENT);
-		if (key.equals(SQL_QUERY) || key.equals(XSLT)) {
-			buf.append(TEXT_AREA);
-			appendAttribute(buf, ROWS, ROWS_VALUE);
-			appendAttribute(buf, COLS, COLS_VALUE);
-			appendAttribute(buf, NAME, key);
-			buf.append(CLOSE_ELEMENT);
-			if (null != value) {
-				buf.append("<![CDATA[" + value + "]]>");
+
+		appendStartRow(buf, key, red, value);
+		if (!EXT_METADATA.equalsIgnoreCase(key)) {
+			buf.append(OPEN_ELEMENT);
+		}
+		if (!EXT_METADATA.equalsIgnoreCase(key)) {
+			if (key.equals(SQL_QUERY) || key.equals(XSLT)) {
+				buf.append(TEXT_AREA);
+				appendAttribute(buf, ROWS, ROWS_VALUE);
+				appendAttribute(buf, COLS, COLS_VALUE);
+				appendAttribute(buf, NAME, key);
+				appendAttribute(buf, ID, key);
+				buf.append(CLOSE_ELEMENT);
+				if (null != value) {
+					buf.append("<![CDATA[" + value + "]]>");
+				}
+				buf.append(OPEN_ELEMENT_SLASH);
+				buf.append(TEXT_AREA);
+				buf.append(CLOSE_ELEMENT);
+			} else if (GROUP.equals(key)) {
+				buf.append(INPUT);
+				appendAttribute(buf, NAME, GROUP);
+				appendAttribute(buf, TYPE, HIDDEN);
+				appendAttribute(buf, ID, key);
+				appendAttribute(buf, VALUE, NO_EXT_METADATA);
+				buf.append(CLOSE_ELEMENT_SLASH);
+
+			} else if (!EXT_METADATA.equals(key)) {
+				buf.append(INPUT);
+				if (key.equalsIgnoreCase(PASSWORD)) {
+					appendAttribute(buf, TYPE, PASSWORD);
+				} else {
+					appendAttribute(buf, TYPE, TEXT);
+				}
+				appendAttribute(buf, SIZE, SIZE_VALUE);
+				appendAttribute(buf, NAME, key);
+				appendAttribute(buf, ID, key);
+
+				if (null != value) {
+					appendAttribute(buf, VALUE, value);
+				}
+
+				if (DOCUMENT_URL_FIELD.equals(key)
+						|| DOCUMENT_ID_FIELD.equals(key)
+						|| CLOB_BLOB_FIELD.equals(key) || BASE_URL.equals(key)
+						|| FETCH_URL_FIELD.equals(key)) {
+
+					if (DOCUMENT_URL_FIELD.equals(key)) {
+						if (value == null || value.trim().length() == 0) {
+							appendAttribute(buf, DISABLED, TRUE);
+
+						}
+					}
+
+					if (DOCUMENT_ID_FIELD.equals(key)) {
+						if (value == null || value.trim().length() == 0) {
+							appendAttribute(buf, DISABLED, TRUE);
+							isDocIdDisabled = true;
+						}
+					}
+
+					if (BASE_URL.equals(key) && isDocIdDisabled) {
+						appendAttribute(buf, DISABLED, TRUE);
+					}
+
+					if (CLOB_BLOB_FIELD.equals(key)) {
+						if (value == null || value.trim().length() == 0) {
+							appendAttribute(buf, DISABLED, TRUE);
+							isLOBFieldDisable = true;
+						}
+					}
+					if (FETCH_URL_FIELD.equals(key) && isLOBFieldDisable) {
+						appendAttribute(buf, DISABLED, TRUE);
+					}
+				}
+
+				buf.append(CLOSE_ELEMENT_SLASH);
 			}
-			buf.append(OPEN_ELEMENT_SLASH);
-			buf.append(TEXT_AREA);
-			buf.append(CLOSE_ELEMENT);
-		} else {
-			buf.append(INPUT);
-			if (key.equalsIgnoreCase(PASSWORD)) {
-				appendAttribute(buf, TYPE, PASSWORD);
-			} else {
-				appendAttribute(buf, TYPE, TEXT);
-			}
-			appendAttribute(buf, SIZE, SIZE_VALUE);
-			appendAttribute(buf, NAME, key);
-			if (null != value) {
-				appendAttribute(buf, VALUE, value);
-			}
-			buf.append(CLOSE_ELEMENT_SLASH);
 		}
 		appendEndRow(buf);
 		return buf.toString();
@@ -216,16 +306,38 @@ public class DBConnectorType implements ConnectorType {
 		return buf.toString();
 	}
 
-	private void appendStartRow(StringBuilder buf, String key, boolean red) {
+	private void appendStartRow(StringBuilder buf, String key, boolean red,
+			String value) {
+		boolean isChecked = value != null && value.trim().length() > 0;
+
 		buf.append(TR_START);
-		buf.append(TD_START);
+
+		if (BASE_URL.equalsIgnoreCase(key)
+				|| FETCH_URL_FIELD.equalsIgnoreCase(key)) {
+			buf.append(TD_OPEN + " " + ALIGN + "='" + CENTER + "'"
+					+ CLOSE_ELEMENT);
+		} else {
+			buf.append(TD_START);
+		}
 		if (red) {
 			buf.append("<font color=\"red\">");
+		}
+		if (DOCUMENT_URL_FIELD.equals(key) || DOCUMENT_ID_FIELD.equals(key)
+				|| CLOB_BLOB_FIELD.equals(key)) {
+			if (DOCUMENT_URL_FIELD.equals(key)) {
+				buf.append(getRadio(COMPLETE_URL, isChecked));
+			} else if (DOCUMENT_ID_FIELD.equals(key)) {
+				buf.append(getRadio(DOC_ID, isChecked));
+			} else {
+				buf.append(getRadio(BLOB_CLOB, isChecked));
+			}
+
 		}
 		buf.append(resource.getString(key));
 		if (red) {
 			buf.append("</font>");
 		}
+
 		buf.append(TD_END);
 		buf.append(TD_START);
 	}
@@ -339,6 +451,7 @@ public class DBConnectorType implements ConnectorType {
 						conn.setAutoCommit(false);
 						conn.setReadOnly(true);
 						stmt = conn.createStatement();
+						stmt.setMaxRows(1);
 						result = stmt.execute(config.get(SQL_QUERY));
 						if (!result) {
 							message = res.getString(TEST_SQL_QUERY);
@@ -357,16 +470,27 @@ public class DBConnectorType implements ConnectorType {
 				 */
 				if (result) {
 					try {
+						List<String> columnNames = new ArrayList<String>();
 						resultSet = stmt.getResultSet();
 						if (resultSet != null) {
 							ResultSetMetaData rsMeta = resultSet.getMetaData();
 							int columnCount = rsMeta.getColumnCount();
+
+							// copy column names
+							for (int i = 1; i <= columnCount; i++) {
+								String colName = rsMeta.getColumnLabel(i);
+								columnNames.add(colName);
+							}
+
 							String[] primaryKeys = config.get(PRIMARY_KEYS_STRING).split(",");
 							boolean flag = false;
+
 							for (String key : primaryKeys) {
 								flag = false;
 								for (int i = 1; i <= columnCount; i++) {
-									if (key.trim().equalsIgnoreCase(rsMeta.getColumnLabel(i))) {
+									String colName = rsMeta.getColumnLabel(i);
+
+									if (key.trim().equalsIgnoreCase(colName)) {
 										flag = true;
 										break;
 									}
@@ -381,8 +505,66 @@ public class DBConnectorType implements ConnectorType {
 							if (flag) {
 								success = true;
 							}
+						}
+
+						/* validate external metadata columns */
+
+						// validate Document URL field
+						String documentURLField = config.get(DOCUMENT_URL_FIELD);
+
+						if (documentURLField != null
+								&& documentURLField.trim().length() > 0) {
+							if (!columnNames.contains(documentURLField.trim())) {
+								success = false;
+								message = res.getString(INVALID_COLUMN_NAME);
+								problemFields.add(DOCUMENT_URL_FIELD);
+							}
+						}
+
+						// validate DocID and Base URL fields
+
+						String documentIdField = config.get(DOCUMENT_ID_FIELD);
+						String baseURL = config.get(BASE_URL);
+						if (documentIdField != null
+								&& documentIdField.trim().length() > 0) {
+
+							if (!columnNames.contains(documentIdField)) {
+								success = false;
+								message = res.getString(INVALID_COLUMN_NAME);
+								problemFields.add(DOCUMENT_ID_FIELD);
+							}
+							if (baseURL == null || baseURL.trim().length() == 0) {
+								success = false;
+								message = res.getString(INVALID_COLUMN_NAME);
+								problemFields.add(BASE_URL);
+							}
+							if (!columnNames.contains(baseURL)) {
+								success = false;
+								message = res.getString(INVALID_COLUMN_NAME);
+								problemFields.add(BASE_URL);
+							}
 
 						}
+
+						// validate BLOB/CLOB and Fetch URL field
+						String blobClobField = config.get(CLOB_BLOB_FIELD);
+						String fetchURL = config.get(FETCH_URL_FIELD);
+
+						if (blobClobField != null
+								&& blobClobField.trim().length() > 0) {
+							if (!columnNames.contains(blobClobField)) {
+								success = false;
+								message = res.getString(INVALID_COLUMN_NAME);
+								problemFields.add(CLOB_BLOB_FIELD);
+							}
+
+							if (!columnNames.contains(fetchURL)) {
+								success = false;
+								message = res.getString(INVALID_COLUMN_NAME);
+								problemFields.add(FETCH_URL_FIELD);
+							}
+						}
+
 					} catch (SQLException e) {
 						LOG.warning("Caught SQLException while testing primary keys: "
 								+ "\n" + e.toString());
@@ -431,6 +613,8 @@ public class DBConnectorType implements ConnectorType {
 
 		public MissingAttributes(Map<String, String> config, ResourceBundle res) {
 			this.config = config;
+			this.config.remove("externalMetadata");
+
 			this.res = res;
 		}
 
@@ -445,7 +629,8 @@ public class DBConnectorType implements ConnectorType {
 		public boolean validate() {
 			List<String> missingAttributes = new ArrayList<String>();
 			for (Object configKey : configKeys) {
-				if (!config.containsKey(configKey)) {
+				if (!config.containsKey(configKey)
+						&& !configKey.toString().equalsIgnoreCase("externalMetadata")) {
 					missingAttributes.add((String) configKey);
 				}
 			}
@@ -628,5 +813,41 @@ public class DBConnectorType implements ConnectorType {
 		}
 		String form = makeValidatedForm(config);
 		return new ConfigureResponse(configValidation.getMessage(), form);
+	}
+
+	public String getRadio(String value, boolean isChecked) {
+
+		StringBuilder stringBuilder = new StringBuilder();
+
+		stringBuilder.append(OPEN_ELEMENT + INPUT + " " + TYPE + "=" + "'"
+				+ RADIO + "' " + NAME + "=" + "'" + GROUP + "' " + VALUE + "="
+				+ "'" + value + "' ");
+		if (isChecked) {
+			stringBuilder.append(CHECKED + "=" + "'" + CHECKED + "' ");
+		}
+
+		if (COMPLETE_URL.equals(value)) {
+			stringBuilder.append(ON_CLICK + "=" + COMPLETE_URL_SCRIPT);
+		} else if (DOC_ID.equals(value)) {
+			stringBuilder.append(ON_CLICK + "=" + DOC_ID_SCRIPT);
+		} else if (BLOB_CLOB.equals(value)) {
+			stringBuilder.append(ON_CLICK + "=" + BLOB_CLOB_SCRIPT);
+		}
+		stringBuilder.append(CLOSE_ELEMENT_SLASH);
+
+		return stringBuilder.toString();
+	}
+
+	private static String getJavaScript() {
+
+		String javascript = "<SCRIPT> function setReadOnlyProperties(urlField , docIdField , lobField){"
+				+ " document.getElementById('documentURLField').readOnly=urlField ;    "
+				+ "document.getElementById('documentIdField').readOnly=docIdField ;    "
+				+ "document.getElementById('baseURL').readOnly=docIdField ;    "
+				+ "document.getElementById('lobField').readOnly=lobField ;  "
+				+ "document.getElementById('fetchURLField').readOnly=lobField ;} "
+				+ "</SCRIPT>";
+
+		return javascript;
 	}
 }

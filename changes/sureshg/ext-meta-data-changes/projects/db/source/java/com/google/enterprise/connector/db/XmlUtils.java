@@ -79,7 +79,8 @@ public class XmlUtils {
 	 * @throws DBException
 	 */
 	public static String getXMLRow(String dbName, Map<String, Object> row,
-			String[] primaryKeys, String xslt) throws DBException {
+			String[] primaryKeys, String xslt, DBContext dbContext,
+			boolean isCompleteDoc) throws DBException {
 		DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
 		org.w3c.dom.Document doc;
 		try {
@@ -97,21 +98,37 @@ public class XmlUtils {
 		TreeSet<String> sortedKeySet = new TreeSet<String>(row.keySet());
 		Iterator<String> it = sortedKeySet.iterator();
 		while (it.hasNext()) {
-			String key = it.next();
-			Element keyElement = doc.createElement(key);
-			Object value = row.get(key);
-			if (null == value) {
-				value = "";
+			if (isCompleteDoc) {
+				String key = it.next();
+				System.out.println(key + "*************************");
+				Element keyElement = doc.createElement(key);
+				Object value = row.get(key);
+				if (null == value) {
+					value = "";
+				}
+				keyElement.appendChild(doc.createTextNode(value.toString()));
+				top.appendChild(keyElement);
+			} else {
+				String key = it.next();
+				if (dbContext != null
+						&& !key.equalsIgnoreCase(dbContext.getDocumentTitle())
+						&& !key.equalsIgnoreCase(dbContext.getLastModifiedDate())) {
+					Element keyElement = doc.createElement(key);
+					Object value = row.get(key);
+					if (null == value) {
+						value = "";
+					}
+					keyElement.appendChild(doc.createTextNode(value.toString()));
+					top.appendChild(keyElement);
+				}
 			}
-			keyElement.appendChild(doc.createTextNode(value.toString()));
-			top.appendChild(keyElement);
 		}
 		String xmlString;
 		try {
 			if (null == xslt) {
 				xmlString = getStringFromDomDocument(doc, null);
 			} else if (xslt.length() == 0) {
-				xmlString = getStringFromDomDocument(doc, getDomDocFromXslt(getDefaultStyleSheet(dbName, row)));
+				xmlString = getStringFromDomDocument(doc, getDomDocFromXslt(getDefaultStyleSheet(dbName, row, dbContext, isCompleteDoc)));
 			} else {
 				xmlString = getStringFromDomDocument(doc, getDomDocFromXslt(xslt));
 			}
@@ -123,7 +140,7 @@ public class XmlUtils {
 	}
 
 	private static String getDefaultStyleSheet(String dbName,
-			Map<String, Object> row) {
+			Map<String, Object> row, DBContext dbContext, boolean isCompleteDoc) {
 		StringBuffer buf = new StringBuffer();
 		Set<String> columnNames = row.keySet();
 		buf.append("<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>"
@@ -134,12 +151,28 @@ public class XmlUtils {
 		buf.append("<title><xsl:value-of select=\"title\"/></title>"
 				+ "</xsl:for-each><table border=\"1\"><tr bgcolor=\"#9acd32\">");
 		for (String column : columnNames) {
-			buf.append("<th>").append(column).append("</th>");
+			if (isCompleteDoc) {
+				buf.append("<th>").append(column).append("</th>");
+			} else {
+				if (dbContext != null
+						&& !column.equalsIgnoreCase(dbContext.getDocumentTitle())
+						&& !column.equalsIgnoreCase(dbContext.getLastModifiedDate())) {
+					buf.append("<th>").append(column).append("</th>");
+				}
+			}
 		}
 		buf.append("</tr><xsl:for-each select=\"");
 		buf.append(dbName).append("\"><tr>");
 		for (String column : columnNames) {
-			buf.append("<td><xsl:value-of select=\"").append(column).append("\"/></td>");
+			if (isCompleteDoc) {
+				buf.append("<td><xsl:value-of select=\"").append(column).append("\"/></td>");
+			} else {
+				if (dbContext != null
+						&& !column.equalsIgnoreCase(dbContext.getDocumentTitle())
+						&& !column.equalsIgnoreCase(dbContext.getLastModifiedDate())) {
+					buf.append("<td><xsl:value-of select=\"").append(column).append("\"/></td>");
+				}
+			}
 		}
 		buf.append("</tr></xsl:for-each></table></body></html>"
 				+ "</xsl:template></xsl:stylesheet>");

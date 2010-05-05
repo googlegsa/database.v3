@@ -16,6 +16,10 @@ package com.google.enterprise.connector.db;
 
 import java.util.Map;
 
+import com.google.enterprise.connector.spi.Connector;
+import com.google.enterprise.connector.spi.RepositoryException;
+import com.google.enterprise.connector.spi.Session;
+
 /**
  * Implementation of {@link Connector} for the database connector. This provides
  * session to the connector manager.
@@ -32,9 +36,15 @@ public class DBConnector implements Connector {
 	public DBConnector(String connectionUrl, String hostname,
 			String driverClassName, String login, String password,
 			String dbName, String sqlQuery, String googleConnectorWorkDir,
-			String primaryKeysString, String xslt) {
+			String primaryKeysString, String xslt, String lastModifiedDate,
+			String documentTitle, String documentURLField,
+			String documentIdField, String baseURL, String lobField,
+			String fetchURLField, String extMetadataType) {
+
 		this.dbContext = new DBContext(connectionUrl, hostname,
-				driverClassName, login, password, dbName);
+				driverClassName, login, password, dbName, lastModifiedDate,
+				documentTitle, documentURLField, documentIdField, baseURL,
+				lobField, fetchURLField, extMetadataType);
 		this.sqlQuery = sqlQuery;
 		this.googleConnectorWorkDir = googleConnectorWorkDir;
 		this.primaryKeysString = primaryKeysString;

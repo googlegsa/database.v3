@@ -16,6 +16,10 @@ package com.google.enterprise.connector.db;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.logging.Logger;
@@ -24,6 +28,7 @@ import org.joda.time.DateTime;
 
 import com.google.enterprise.connector.spi.RepositoryException;
 import com.google.enterprise.connector.spi.SpiConstants;
+import com.google.enterprise.connector.spi.TraversalContext;
 
 /**
  * Utility class for database connector.
@@ -39,6 +44,9 @@ public class Util {
 	private static final String DBCONNECTOR_PROTOCOL = "dbconnector://";
 	private static final String DATABASE_TITLE_PREFIX = "Database Connector Result";
 
+	private static TraversalContext context = null;
+	public static String WITH_BASE_URL = "withBaseURL";
+
 	// This class should not be initialized.
 	private Util() {
 	}
@@ -53,19 +61,31 @@ public class Util {
 	 * @throws DBException
 	 */
 	public static DBDocument rowToDoc(String dbName, String[] primaryKeys,
-			Map<String, Object> row, String hostname, String xslt)
-			throws DBException {
+			Map<String, Object> row, String hostname, String xslt,
+			DBContext dbContext) throws DBException {
+
 		// TODO(meghna): Look into what other document properties can be added.
 		DBDocument doc = new DBDocument();
-		String xmlRow = XmlUtils.getXMLRow(dbName, row, primaryKeys, xslt);
-		doc.setProperty(SpiConstants.PROPNAME_CONTENT, xmlRow);
+
+		String contentXMLRow = XmlUtils.getXMLRow(dbName, row, primaryKeys, xslt, dbContext, false);
+		doc.setProperty(SpiConstants.PROPNAME_CONTENT, contentXMLRow);
 		String docId = generateDocId(primaryKeys, row);
 		doc.setProperty(SpiConstants.PROPNAME_DOCID, docId);
 		doc.setProperty(SpiConstants.PROPNAME_ACTION, SpiConstants.ActionType.ADD.toString());
 		// TODO(meghna): Look into which encoding/charset to use for getBytes()
-		doc.setProperty(DBDocument.ROW_CHECKSUM, getChecksum(xmlRow.getBytes()));
+		String completeXMLRow = XmlUtils.getXMLRow(dbName, row, primaryKeys, xslt, dbContext, true);
+		doc.setProperty(DBDocument.ROW_CHECKSUM, getChecksum(completeXMLRow.getBytes()));
 		doc.setProperty(SpiConstants.PROPNAME_MIMETYPE, MIMETYPE);
 		doc.setProperty(SpiConstants.PROPNAME_DISPLAYURL, getDisplayUrl(hostname, dbName, docId));
+
+		// set feed type as content feed
+		doc.setProperty(SpiConstants.PROPNAME_FEEDTYPE, SpiConstants.FeedType.CONTENT.toString());
+
+		/*
+		 * Set other doc properties
+		 */
+		setOtherDocProperties(row, doc, dbContext);
+
 		return doc;
 	}
 
@@ -259,4 +279,323 @@ public class Util {
 		}
 		return str.toString();
 	}
+
+	/**
+	 * This method set the values for predefined Document properties in
+	 * DBDocument. For example PROPNAME_DISPLAYURL , PROPNAME_TITLE ,
+	 * PROPNAME_LASTMODIFIED.
+	 * 
+	 * @param row Map representing database row
+	 * @param doc DB Document
+	 * @param hostname connector host name
+	 * @param dbName database name
+	 * @param docId document id of DB doc
+	 * @param isContentFeed true if Feed type is content feed
+	 */
+	private static void setOtherDocProperties(Map<String, Object> row,
+			DBDocument doc, DBContext dbContext) {
+		if (dbContext == null) {
+			return;
+		}
+		// set Document Title
+		Object docTitle = row.get(dbContext.getDocumentTitle());
+		if (docTitle != null) {
+			doc.setProperty(SpiConstants.PROPNAME_TITLE, docTitle.toString());
+		}
+		// set last modified date
+		Object lastModified = row.get(dbContext.getLastModifiedDate());
+		if (lastModified != null) {
+			doc.setLastModifiedDate(SpiConstants.PROPNAME_LASTMODIFIED, lastModified);
+		}
+	}
+
+	/**
+	 * This method convert given row into equivalent Metadata-URL feed. Value of
+	 * dbconn_url column is used as URL or Doc_Id of document and value of other
+	 * columns is used as metadata(except doc_id colunm values). If the column
+	 * name is dbconn_last_mod , it is used as last modified date. MIME type of
+	 * the document is the value of "mime_type" column. It is assumed that
+	 * connector admin will use the required alias for columns in SQL query.
+	 * 
+	 * @param dbName
+	 * @param primaryKeys
+	 * @param row
+	 * @param hostname
+	 * @param dbClient
+	 * @return DBDocument
+	 * @throws DBException
+	 */
+	public static DBDocument generateMetadataURLFeed(String dbName,
+			String[] primaryKeys, Map<String, Object> row, String hostname,
+			DBContext dbContext, String type) throws DBException {
+
+		boolean isWithBaseURL = type.equalsIgnoreCase(Util.WITH_BASE_URL);
+
+		/*
+		 * skipColumns maintain the list of column which needs to skip while
+		 * indexing as they are not part of metadata or they already considered
+		 * for indexing. For example document_id column, MIME type column, URL
+		 * columns.
+		 */
+		List<String> skipColumns = new ArrayList<String>();
+
+		String baseURL = null;
+		String docIdColumn = null;
+		String finalURL = null;
+		if (isWithBaseURL) {
+			baseURL = (String) row.get(dbContext.getBaseURL());
+			baseURL = baseURL == null ? "" : baseURL;
+			docIdColumn = dbContext.getDocumentIdField();
+			finalURL = baseURL.trim() + row.get(docIdColumn);
+			skipColumns.add(dbContext.getDocumentIdField());
+		} else {
+			skipColumns.add(dbContext.getDocumentURLField());
+			finalURL = (String) row.get(dbContext.getDocumentURLField());
+		}
+
+		DBDocument doc = new DBDocument();
+		// get doc id from primary key values
+		String docId = generateDocId(primaryKeys, row);
+
+		String xmlRow = XmlUtils.getXMLRow(dbName, row, primaryKeys, null, dbContext, true);
+
+		skipOtherProperties(skipColumns, dbContext);
+
+		doc.setProperty(SpiConstants.PROPNAME_SEARCHURL, finalURL);
+		doc.setProperty(SpiConstants.PROPNAME_DISPLAYURL, finalURL);
+
+		// Set feed type as metadata_url
+		doc.setProperty(SpiConstants.PROPNAME_FEEDTYPE, SpiConstants.FeedType.WEB.toString());
+		// set doc id
+		doc.setProperty(SpiConstants.PROPNAME_DOCID, docId);
+
+		doc.setProperty(DBDocument.ROW_CHECKSUM, getChecksum(xmlRow.getBytes()));
+		// add action as add
+		doc.setProperty(SpiConstants.PROPNAME_ACTION, SpiConstants.ActionType.ADD.toString());
+
+		/*
+		 * Set other doc properties
+		 */
+		setOtherDocProperties(row, doc, dbContext);
+		skipColumns.addAll(Arrays.asList(primaryKeys));
+		setMetaInfo(doc, row, skipColumns);
+
+		return doc;
+	}
+
+	/**
+	 * This method will add value of each column as metadata to Database
+	 * document except the values of columns in skipColumns list.
+	 * 
+	 * @param doc
+	 * @param row
+	 * @param skipColumns list of columns needs to ignore while indexing
+	 */
+	private static void setMetaInfo(DBDocument doc, Map<String, Object> row,
+			List<String> skipColumns) {
+		// get all column names as key set
+		Set<String> keySet = row.keySet();
+		for (String key : keySet) {
+			// set column value as metadata and column name as meta-name.
+			if (!skipColumns.contains(key)) {
+				Object value = row.get(key);
+				if (value != null)
+					doc.setProperty(key, value.toString());
+			} else {
+				LOG.info("skipping metadata indexing of column " + key);
+			}
+		}
+	}
+
+	/**
+	 * This method converts Large Object(BLOB or CLOB) into equivalent
+	 * DBDocument.
+	 * 
+	 * @param dbName
+	 * @param primaryKeys
+	 * @param row
+	 * @param hostname
+	 * @param largeObjectField
+	 * @return DBDocument for BLOB/CLOB data
+	 * @throws DBException
+	 */
+	public static DBDocument largeObjectToDoc(String dbName,
+			String[] primaryKeys, Map<String, Object> row, String hostname,
+			DBContext dbContext) throws DBException {
+
+		// get doc id from primary key values
+		String docId = generateDocId(primaryKeys, row);
+
+		StringBuilder clobValue = null;
+		DBDocument doc = new DBDocument();
+		String mimeType = "";
+
+		/*
+		 * skipColumns maintain the list of column which needs to skip while
+		 * indexing as they are not part of metadata or they already considered
+		 * for indexing. For example document_id column, MIME type column, URL
+		 * columns.
+		 */
+		List<String> skipColumns = new ArrayList<String>();
+
+		/*
+		 * get the value of large object from map representing a row
+		 */
+		Object largeObject = row.get(dbContext.getLobField());
+		skipColumns.add(dbContext.getLobField());
+
+		/*
+		 * check if large object data value for null.
+		 */
+		if (largeObject != null) {
+			/*
+			 * check if large object is of type BLOB from the the column names.
+			 * If column name is "dbconn_blob" it means large object is of type
+			 * BLOB else it is CLOB.
+			 */
+			if (largeObject instanceof byte[]) {
+
+				doc.setBinaryContent(SpiConstants.PROPNAME_CONTENT, (byte[]) largeObject);
+				/*
+				 * First try to get the MIME type of this file from the result
+				 * set. If it does not maintain a column for MIME type try to
+				 * get the MIME type of this document(file stored as BLOB in
+				 * database) using MIME type finder utility.
+				 */
+
+				mimeType = new MimeTypeFinder().find((byte[]) largeObject, context);
+
+				// set mime type for this document
+				doc.setProperty(SpiConstants.PROPNAME_MIMETYPE, mimeType);
+
+				// get xml representation of document(exclude the BLOB column).
+				Map<String, Object> rowForXmlDoc = getRowForXmlDoc(row, dbContext);
+				String xmlRow = XmlUtils.getXMLRow(dbName, rowForXmlDoc, primaryKeys, "", dbContext, true);
+				// get checksum of blob
+				String blobCheckSum = Util.getChecksum((byte[]) largeObject);
+				// get checksum of other column
+				String otherColumnCheckSum = Util.getChecksum(xmlRow.getBytes());
+				// get checksum of blob object and other column
+				String docCheckSum = Util.getChecksum((otherColumnCheckSum + blobCheckSum).getBytes());
+				// set checksum of this document
+				doc.setProperty(DBDocument.ROW_CHECKSUM, docCheckSum);
+				LOG.info("BLOB Data found");
+
+			} else {
+				/*
+				 * get the value of CLOB as StringBuilder. iBATIS returns char
+				 * array or String for CLOB data depending upon Database.
+				 */
+				if (largeObject instanceof char[]) {
+					clobValue = new StringBuilder(new String(
+							(char[]) largeObject));
+				} else if (largeObject instanceof String) {
+					clobValue = new StringBuilder(largeObject.toString());
+				}
+				if (clobValue != null) {
+					doc.setProperty(SpiConstants.PROPNAME_CONTENT, clobValue.toString());
+				} else {
+					LOG.warning("Content of documnet " + docId + " is null");
+				}
+				doc.setProperty(SpiConstants.PROPNAME_MIMETYPE, MIMETYPE);
+
+				// get xml representation of document(exclude the CLOB column).
+				Map<String, Object> rowForXmlDoc = getRowForXmlDoc(row, dbContext);
+				String xmlRow = XmlUtils.getXMLRow(dbName, rowForXmlDoc, primaryKeys, "", dbContext, true);
+				// get checksum of CLOB
+				String clobCheckSum = Util.getChecksum(clobValue.toString().getBytes());
+				// get checksum of other column
+				String otherColumnCheckSum = Util.getChecksum(xmlRow.getBytes());
+				// get checksum of blob object and other column
+				String docCheckSum = Util.getChecksum((otherColumnCheckSum + clobCheckSum).getBytes());
+				// set checksum of this document
+				doc.setProperty(DBDocument.ROW_CHECKSUM, docCheckSum);
+				LOG.info("CLOB Data found");
+			}
+			/*
+			 * If large object is null then send empty value.
+			 */
+		} else {
+			Map<String, Object> rowForXmlDoc = getRowForXmlDoc(row, dbContext);
+			String xmlRow = XmlUtils.getXMLRow(dbName, rowForXmlDoc, primaryKeys, "", dbContext, true);
+			doc.setProperty(DBDocument.ROW_CHECKSUM, Util.getChecksum(xmlRow.getBytes()));
+			LOG.warning("Conetent of Document " + docId + " has null value.");
+		}
+
+		// set doc id
+		doc.setProperty(SpiConstants.PROPNAME_DOCID, docId);
+
+		// set feed type as content feed
+		doc.setProperty(SpiConstants.PROPNAME_FEEDTYPE, SpiConstants.FeedType.CONTENT.toString());
+
+		// set action as add
+		doc.setProperty(SpiConstants.PROPNAME_ACTION, SpiConstants.ActionType.ADD.toString());
+
+		/*
+		 * if results set contain "dbconn_lob_url" column, use the value of this
+		 * column as display URL. Else construct the display URL and use it.
+		 */
+		Object displayURL = row.get(dbContext.getFetchURLField());
+		if (displayURL != null && displayURL.toString().trim().length() > 0) {
+			doc.setProperty(SpiConstants.PROPNAME_DISPLAYURL, displayURL.toString().trim());
+			skipColumns.add(displayURL.toString());
+		} else {
+			doc.setProperty(SpiConstants.PROPNAME_DISPLAYURL, getDisplayUrl(hostname, dbName, docId));
+		}
+
+		skipOtherProperties(skipColumns, dbContext);
+		skipColumns.addAll(Arrays.asList(primaryKeys));
+
+		setOtherDocProperties(row, doc, dbContext);
+
+		setMetaInfo(doc, row, skipColumns);
+
+		/*
+		 * Set other doc properties
+		 */
+
+		return doc;
+	}
+
+	/**
+	 * this method copies all elements from map representing a row except BLOB
+	 * column and return the resultant map.
+	 * 
+	 * @param row
+	 * @return map representing a database table row.
+	 */
+	private static Map<String, Object> getRowForXmlDoc(Map<String, Object> row,
+			DBContext dbContext) {
+		Set<String> keySet = row.keySet();
+		Map<String, Object> map = new HashMap<String, Object>();
+		for (String key : keySet) {
+			if (!dbContext.getLobField().equals(key)) {
+				map.put(key, row.get(key));
+			}
+		}
+		return map;
+	}
+
+	/**
+	 * Set TraversalContext. TraversalContext is required for detecting
+	 * appropriate MIME type of document
+	 * 
+	 * @param trContext
+	 */
+	public static void setTraversalContext(TraversalContext trContext) {
+		context = trContext;
+	}
+
+	private static void skipOtherProperties(List<String> skipColumns,
+			DBContext dbContext) {
+		String lastModColumn = dbContext.getLastModifiedDate();
+		String docTitle = dbContext.getDocumentTitle();
+		if (lastModColumn != null && lastModColumn.trim().length() > 0) {
+			skipColumns.add(lastModColumn);
+		}
+		if (docTitle != null && docTitle.trim().length() > 0) {
+			skipColumns.add(docTitle);
+		}
+	}
+
 }

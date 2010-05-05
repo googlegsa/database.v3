@@ -25,14 +25,38 @@ public class DBContext {
 	private final String dbName;
 	private final String driverClassName;
 
+	private String documentURLField;
+	private String documentIdField;
+	private String baseURL;
+	private String lobField;
+	private String fetchURLField;
+	private String lastModifiedDate;
+	private String documentTitle;
+	private String extMetadataType;
+
 	public DBContext(String connectionUrl, String hostname,
-			String driverClassName, String login, String password, String dbName) {
+			String driverClassName, String login, String password,
+			String dbName, String lastModifiedDate, String documentTitle,
+			String documentURLField, String documentIdField, String baseURL,
+			String lobField, String fetchURLField, String extMetadataType) {
+
 		this.connectionUrl = connectionUrl;
 		this.hostname = hostname;
 		this.driverClassName = driverClassName;
 		this.login = login;
 		this.password = password;
 		this.dbName = dbName;
+
+		this.extMetadataType = extMetadataType;
+		this.documentURLField = documentURLField;
+		this.documentIdField = documentIdField;
+		this.baseURL = baseURL;
+		this.lobField = lobField;
+		this.fetchURLField = fetchURLField;
+
+		this.lastModifiedDate = lastModifiedDate;
+		this.documentTitle = documentTitle;
+
 	}
 
 	public String getConnectionUrl() {
@@ -58,4 +82,37 @@ public class DBContext {
 	public String getDriverClassName() {
 		return driverClassName;
 	}
+
+	public String getLastModifiedDate() {
+		return lastModifiedDate;
+	}
+
+	public String getDocumentTitle() {
+		return documentTitle;
+	}
+
+	public String getExtMetadataType() {
+		return extMetadataType;
+	}
+
+	public String getDocumentURLField() {
+		return documentURLField;
+	}
+
+	public String getDocumentIdField() {
+		return documentIdField;
+	}
+
+	public String getBaseURL() {
+		return baseURL;
+	}
+
+	public String getLobField() {
+		return lobField;
+	}
+
+	public String getFetchURLField() {
+		return fetchURLField;
+	}
+
 }
