@@ -14,45 +14,39 @@
 
 package com.google.enterprise.connector.db;
 
-import com.google.enterprise.connector.spi.Connector;
-import com.google.enterprise.connector.spi.ConnectorFactory;
-
-import org.springframework.beans.factory.config.PropertyPlaceholderConfigurer;
-import org.springframework.beans.factory.xml.XmlBeanFactory;
-import org.springframework.core.io.ClassPathResource;
-import org.springframework.core.io.Resource;
-
 import java.util.Map;
 import java.util.Properties;
 
+import sun.misc.Resource;
+
 public class MockDBConnectorFactory implements ConnectorFactory {
-  private final String connectorInstanceXmlFile;
+	private final String connectorInstanceXmlFile;
 
-  /**
-   * @param connectorInstanceXmlFile path to a "connectorInstance.xml" Spring
-   *        configuration file.
-   */
-  public MockDBConnectorFactory(String connectorInstanceXmlFile) {
-    this.connectorInstanceXmlFile = connectorInstanceXmlFile;
-  }
+	/**
+	 * @param connectorInstanceXmlFile path to a "connectorInstance.xml" Spring
+	 *            configuration file.
+	 */
+	public MockDBConnectorFactory(String connectorInstanceXmlFile) {
+		this.connectorInstanceXmlFile = connectorInstanceXmlFile;
+	}
 
-  /**
-   * Creates a database connector.
-   *
-   * @param config map of configuration values.
-   */
-  /*@Override*/
-  public Connector makeConnector(Map<String, String> config)  {
-    Properties props = new Properties();
-    props.putAll(config);
+	/**
+	 * Creates a database connector.
+	 * 
+	 * @param config map of configuration values.
+	 */
+	/* @Override */
+	public Connector makeConnector(Map<String, String> config) {
+		Properties props = new Properties();
+		props.putAll(config);
 
-    Resource res = new ClassPathResource(connectorInstanceXmlFile,
-          MockDBConnectorFactory.class);
-    XmlBeanFactory factory = new XmlBeanFactory(res);
-    PropertyPlaceholderConfigurer cfg = new PropertyPlaceholderConfigurer();
-    cfg.setProperties(props);
-    cfg.postProcessBeanFactory(factory);
-    DBConnector connector = (DBConnector) factory.getBean("db-connector");
-    return connector;
-  }
+		Resource res = new ClassPathResource(connectorInstanceXmlFile,
+				MockDBConnectorFactory.class);
+		XmlBeanFactory factory = new XmlBeanFactory(res);
+		PropertyPlaceholderConfigurer cfg = new PropertyPlaceholderConfigurer();
+		cfg.setProperties(props);
+		cfg.postProcessBeanFactory(factory);
+		DBConnector connector = (DBConnector) factory.getBean("db-connector");
+		return connector;
+	}
 }

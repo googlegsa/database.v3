@@ -16,29 +16,28 @@ package com.google.enterprise.connector.db;
 
 /**
  * This is a package level class for generic database connector exceptions.
- * 
  */
 public class DBException extends Exception {
 
-  /**
-   * @param message
-   */
-  public DBException(String message) {
-    super(message);
-  }
+	/**
+	 * @param message
+	 */
+	public DBException(String message) {
+		super(message);
+	}
 
-  /**
-   * @param cause
-   */
-  public DBException(Throwable cause) {
-    super(cause);
-  }
+	/**
+	 * @param cause
+	 */
+	public DBException(Throwable cause) {
+		super(cause);
+	}
 
-  /**
-   * @param message
-   * @param cause
-   */
-  public DBException(String message, Throwable cause) {
-    super(message, cause);
-  }
+	/**
+	 * @param message
+	 * @param cause
+	 */
+	public DBException(String message, Throwable cause) {
+		super(message, cause);
+	}
 }

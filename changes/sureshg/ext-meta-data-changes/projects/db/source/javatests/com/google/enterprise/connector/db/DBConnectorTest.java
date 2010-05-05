@@ -14,33 +14,31 @@
 
 package com.google.enterprise.connector.db;
 
-import junit.framework.TestCase;
-
 import java.util.HashMap;
 import java.util.Map;
 
 public class DBConnectorTest extends TestCase {
-  Map<String, String> configMap = new HashMap<String, String>();
+	Map<String, String> configMap = new HashMap<String, String>();
 
-  @Override
-  protected void setUp() throws Exception{
-    TestDirectoryManager testDirManager = new TestDirectoryManager(this);
-    configMap.put("login", "login_value");
-    configMap.put("password", "password_value");
-    configMap.put("connectionUrl", "connectionUrl_value");
-    configMap.put("dbName", "dbName_value");
-    configMap.put("hostname", "host_value");
-    configMap.put("driverClassName", "driverClassName_value");
-    configMap.put("sqlQuery", "sqlQuery_value");
-    configMap.put("primaryKeysString", "primaryKeysString_value");
-    configMap.put("googleConnectorWorkDir", testDirManager.getSrcDir());
-    configMap.put("xslt" , "xslt");
-  }
+	@Override
+	protected void setUp() throws Exception {
+		TestDirectoryManager testDirManager = new TestDirectoryManager(this);
+		configMap.put("login", "login_value");
+		configMap.put("password", "password_value");
+		configMap.put("connectionUrl", "connectionUrl_value");
+		configMap.put("dbName", "dbName_value");
+		configMap.put("hostname", "host_value");
+		configMap.put("driverClassName", "driverClassName_value");
+		configMap.put("sqlQuery", "sqlQuery_value");
+		configMap.put("primaryKeysString", "primaryKeysString_value");
+		configMap.put("googleConnectorWorkDir", testDirManager.getSrcDir());
+		configMap.put("xslt", "xslt");
+	}
 
-  public void testMakeConnector() {
-    MockDBConnectorFactory mdbConnectorFactory = new MockDBConnectorFactory
-        (TestUtils.TESTCONFIG_DIR + TestUtils.CONNECTOR_INSTANCE_XML);
-    DBConnector connector = (DBConnector) mdbConnectorFactory.makeConnector(configMap);
-    assertNotNull(connector);
-  }
+	public void testMakeConnector() {
+		MockDBConnectorFactory mdbConnectorFactory = new MockDBConnectorFactory(
+				TestUtils.TESTCONFIG_DIR + TestUtils.CONNECTOR_INSTANCE_XML);
+		DBConnector connector = (DBConnector) mdbConnectorFactory.makeConnector(configMap);
+		assertNotNull(connector);
+	}
 }
