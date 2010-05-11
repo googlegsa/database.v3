@@ -14,6 +14,16 @@
 
 package com.google.enterprise.connector.db;
 
+import com.google.enterprise.connector.spi.Document;
+import com.google.enterprise.connector.spi.Property;
+import com.google.enterprise.connector.spi.RepositoryException;
+import com.google.enterprise.connector.spi.SpiConstants;
+
+import org.joda.time.DateTime;
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
+import org.xml.sax.SAXException;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -27,16 +37,6 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
-
-import org.joda.time.DateTime;
-import org.w3c.dom.Element;
-import org.w3c.dom.NodeList;
-import org.xml.sax.SAXException;
-
-import com.google.enterprise.connector.spi.Document;
-import com.google.enterprise.connector.spi.Property;
-import com.google.enterprise.connector.spi.RepositoryException;
-import com.google.enterprise.connector.spi.SpiConstants;
 
 /**
  * This is the main class for maintaining the global state which can be
@@ -70,7 +70,7 @@ public class GlobalState {
 	private LinkedList<DBDocument> docsInFlight = new LinkedList<DBDocument>();
 	private DateTime queryExecutionTime = null;
 	private DateTime queryTimeForInFlightDocs = null;
-	private static boolean isMetadataURLFeed = false;
+	private boolean isMetadataURLFeed = false;
 
 	public GlobalState(String workDir) {
 		this.workDir = workDir;
@@ -142,12 +142,12 @@ public class GlobalState {
 		setCursorDB(0);
 	}
 
-	public static boolean isMetadataURLFeed() {
-		return isMetadataURLFeed;
+	public boolean isMetadataURLFeed() {
+		return this.isMetadataURLFeed;
 	}
 
-	public static void setMetadataURLFeed(boolean isMetadataURLFeed) {
-		GlobalState.isMetadataURLFeed = isMetadataURLFeed;
+	public void setMetadataURLFeed(boolean isMetadataURLFeed) {
+		this.isMetadataURLFeed = isMetadataURLFeed;
 	}
 
 	/**

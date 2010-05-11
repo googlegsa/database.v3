@@ -14,17 +14,17 @@
 
 package com.google.enterprise.connector.db;
 
+import com.google.enterprise.connector.spi.DocumentList;
+import com.google.enterprise.connector.spi.RepositoryException;
+import com.google.enterprise.connector.spi.TraversalManager;
+
+import org.joda.time.DateTime;
+
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.logging.Logger;
-
-import org.joda.time.DateTime;
-
-import com.google.enterprise.connector.spi.DocumentList;
-import com.google.enterprise.connector.spi.RepositoryException;
-import com.google.enterprise.connector.spi.TraversalManager;
 
 /**
  * {@link TraversalManager} implementation for the DB connector.
@@ -298,15 +298,17 @@ public class DBTraversalManager implements TraversalManager {
 		if (extMetaType != null && extMetaType.trim().length() > 0
 				&& !extMetaType.equals(DBConnectorType.NO_EXT_METADATA)) {
 			if (extMetaType.equalsIgnoreCase(DBConnectorType.COMPLETE_URL)) {
-				GlobalState.setMetadataURLFeed(true);
+				globalState.setMetadataURLFeed(true);
 				return MODE_METADATA_URL;
 			} else if (extMetaType.equalsIgnoreCase(DBConnectorType.DOC_ID)) {
-				GlobalState.setMetadataURLFeed(true);
+				globalState.setMetadataURLFeed(true);
 				return MODE_METADATA_BASE_URL;
 			} else {
+				globalState.setMetadataURLFeed(false);
 				return MODE_BLOB_CLOB;
 			}
 		} else {
+			globalState.setMetadataURLFeed(false);
 			return MODE_NORMAL;
 		}
 	}

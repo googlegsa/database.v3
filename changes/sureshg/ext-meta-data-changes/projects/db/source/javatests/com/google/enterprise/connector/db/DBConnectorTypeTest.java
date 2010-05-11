@@ -14,6 +14,8 @@
 
 package com.google.enterprise.connector.db;
 
+import com.google.enterprise.connector.spi.ConfigureResponse;
+
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -25,8 +27,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import junit.framework.TestCase;
-
-import com.google.enterprise.connector.spi.ConfigureResponse;
 
 /**
  * This is a JUNit test case for DBConnectorType class.
@@ -41,7 +41,10 @@ public class DBConnectorTypeTest extends TestCase {
 	private Set<String> configKeys;
 	private String[] keys = new String[] { "login", "password",
 			"connectionUrl", "dbName", "hostname", "driverClassName",
-			"sqlQuery", "primaryKeysString", "xslt" };
+			"sqlQuery", "primaryKeysString", "xslt", "lastModifiedDate",
+			"documentTitle", "externalMetadata", "externalMetadata",
+			"documentURLField", "documentIdField", "baseURL", "lobField",
+			"fetchURLField", "extMetadataType" };
 
 	private Map<String, String> configMap;
 
@@ -66,6 +69,15 @@ public class DBConnectorTypeTest extends TestCase {
 		configMap.put("dbName", "");
 		configMap.put("hostname", LanguageResource.getPropertyValue("hostname"));
 		configMap.put("xslt", "");
+		configMap.put("lastModifiedDate", "");
+		configMap.put("documentTitle", "");
+		configMap.put("externalMetadata", "");
+		configMap.put("documentURLField", "");
+		configMap.put("documentIdField", "");
+		configMap.put("baseURL", "");
+		configMap.put("lobField", "");
+		configMap.put("fetchURLField", "");
+		configMap.put("extMetadataType", "");
 		configMap.put("googleConnectorWorkDir", TestUtils.TESTCONFIG_DIR);
 	}
 
@@ -182,6 +194,35 @@ public class DBConnectorTypeTest extends TestCase {
 		match = pattern.matcher(configForm);
 		assertTrue(match.find());
 
+		LOG.info("Checking for radio buttons...");
+		strPattern = "<input.*type='radio'.*name='extMetadataType'.*value='url'.*onClick='.*'/>";
+		pattern = Pattern.compile(strPattern);
+		match = pattern.matcher(configForm);
+		assertTrue(match.find());
+
+		strPattern = "<input type='radio'.*name='extMetadataType'.*value='docId'.*onClick='.*'/>";
+		pattern = Pattern.compile(strPattern);
+		match = pattern.matcher(configForm);
+		assertTrue(match.find());
+
+		strPattern = "<input type='radio'.*name='extMetadataType' value='lob'.*onClick='.*'/>";
+		pattern = Pattern.compile(strPattern);
+		match = pattern.matcher(configForm);
+		assertTrue(match.find());
+
+		LOG.info("Checking for radio Last Modified date Field...");
+		strPattern = "<input.*size=\"40\".*name=\"lastModifiedDate\".*id=\"lastModifiedDate\".*/>";
+		pattern = Pattern.compile(strPattern);
+		match = pattern.matcher(configForm);
+		assertTrue(match.find());
+
+		LOG.info("Checking for radio Document Ttitle Field...");
+		strPattern = "<input.*size=\"40\" name=\"lastModifiedDate\".*id=\"lastModifiedDate\".*/>";
+		pattern = Pattern.compile(strPattern);
+		match = pattern.matcher(configForm);
+		assertTrue(match.find());
+
 		return true;
+
 	}
 }

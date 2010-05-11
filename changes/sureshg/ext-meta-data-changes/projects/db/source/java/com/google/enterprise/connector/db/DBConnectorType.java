@@ -14,6 +14,13 @@
 
 package com.google.enterprise.connector.db;
 
+import com.google.enterprise.connector.spi.ConfigureResponse;
+import com.google.enterprise.connector.spi.ConnectorFactory;
+import com.google.enterprise.connector.spi.ConnectorType;
+import com.google.enterprise.connector.spi.RepositoryException;
+
+import com.ibatis.common.jdbc.SimpleDataSource;
+
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
@@ -29,12 +36,6 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import com.google.enterprise.connector.spi.ConfigureResponse;
-import com.google.enterprise.connector.spi.ConnectorFactory;
-import com.google.enterprise.connector.spi.ConnectorType;
-import com.google.enterprise.connector.spi.RepositoryException;
-import com.ibatis.common.jdbc.SimpleDataSource;
 
 /**
  * Implementation of {@link ConnectorType} for {@link DBConnector}.
@@ -77,6 +78,8 @@ public class DBConnectorType implements ConnectorType {
 	private static final String TD_END = "</td>\n";
 	private static final String TD_START = "<td>";
 	private static final String TR_START = "<tr>\n";
+	public static final String BOLD_TEXT_START = "<b>";
+	public static final String BOLD_TEXT_END = "</b>";
 
 	private static final String RADIO = "radio";
 	private static final String ALIGN = "align";
@@ -188,8 +191,10 @@ public class DBConnectorType implements ConnectorType {
 		appendStartRow(buf, key, red, value);
 		if (!EXT_METADATA.equalsIgnoreCase(key)) {
 			buf.append(OPEN_ELEMENT);
-		}
-		if (!EXT_METADATA.equalsIgnoreCase(key)) {
+
+			/*
+			 * Create text area for SQL Query and XSLT fields.
+			 */
 			if (key.equals(SQL_QUERY) || key.equals(XSLT)) {
 				buf.append(TEXT_AREA);
 				appendAttribute(buf, ROWS, ROWS_VALUE);
@@ -211,7 +216,7 @@ public class DBConnectorType implements ConnectorType {
 				appendAttribute(buf, VALUE, NO_EXT_METADATA);
 				buf.append(CLOSE_ELEMENT_SLASH);
 
-			} else if (!EXT_METADATA.equals(key)) {
+			} else {
 				buf.append(INPUT);
 				if (key.equalsIgnoreCase(PASSWORD)) {
 					appendAttribute(buf, TYPE, PASSWORD);
@@ -226,42 +231,11 @@ public class DBConnectorType implements ConnectorType {
 					appendAttribute(buf, VALUE, value);
 				}
 
-				if (DOCUMENT_URL_FIELD.equals(key)
-						|| DOCUMENT_ID_FIELD.equals(key)
-						|| CLOB_BLOB_FIELD.equals(key) || BASE_URL.equals(key)
-						|| FETCH_URL_FIELD.equals(key)) {
-
-					if (DOCUMENT_URL_FIELD.equals(key)) {
-						if (value == null || value.trim().length() == 0) {
-							appendAttribute(buf, DISABLED, TRUE);
-
-						}
-					}
-
-					if (DOCUMENT_ID_FIELD.equals(key)) {
-						if (value == null || value.trim().length() == 0) {
-							appendAttribute(buf, DISABLED, TRUE);
-							isDocIdDisabled = true;
-						}
-					}
-
-					if (BASE_URL.equals(key) && isDocIdDisabled) {
-						appendAttribute(buf, DISABLED, TRUE);
-					}
-
-					if (CLOB_BLOB_FIELD.equals(key)) {
-						if (value == null || value.trim().length() == 0) {
-							appendAttribute(buf, DISABLED, TRUE);
-							isLOBFieldDisable = true;
-						}
-					}
-					if (FETCH_URL_FIELD.equals(key) && isLOBFieldDisable) {
-						appendAttribute(buf, DISABLED, TRUE);
-					}
-				}
+				setReadOnly(key, value, buf);
 
 				buf.append(CLOSE_ELEMENT_SLASH);
 			}
+
 		}
 		appendEndRow(buf);
 		return buf.toString();
@@ -286,7 +260,7 @@ public class DBConnectorType implements ConnectorType {
 			configValidation = new RequiredFields(config, resource);
 			success = configValidation.validate();
 			if (success) {
-				configValidation = new TestDbConnectivity(config, resource);
+				configValidation = new TestDbFields(config, resource);
 				success = configValidation.validate();
 				if (success) {
 					configValidation = new HostNameFQDNCheck(config, resource);
@@ -306,6 +280,15 @@ public class DBConnectorType implements ConnectorType {
 		return buf.toString();
 	}
 
+	/**
+	 * This method creates the 'TR' and 'TD' elements for Fields Labels. Field
+	 * labels are displayed in RED if there is any validation error.
+	 * 
+	 * @param buf
+	 * @param key
+	 * @param red
+	 * @param value
+	 */
 	private void appendStartRow(StringBuilder buf, String key, boolean red,
 			String value) {
 		boolean isChecked = value != null && value.trim().length() > 0;
@@ -318,26 +301,39 @@ public class DBConnectorType implements ConnectorType {
 					+ CLOSE_ELEMENT);
 		} else {
 			buf.append(TD_START);
+
+			if (EXT_METADATA.equalsIgnoreCase(key)) {
+				buf.append(BOLD_TEXT_START);
+			}
 		}
 		if (red) {
 			buf.append("<font color=\"red\">");
 		}
-		if (DOCUMENT_URL_FIELD.equals(key) || DOCUMENT_ID_FIELD.equals(key)
-				|| CLOB_BLOB_FIELD.equals(key)) {
-			if (DOCUMENT_URL_FIELD.equals(key)) {
-				buf.append(getRadio(COMPLETE_URL, isChecked));
-			} else if (DOCUMENT_ID_FIELD.equals(key)) {
-				buf.append(getRadio(DOC_ID, isChecked));
-			} else {
-				buf.append(getRadio(BLOB_CLOB, isChecked));
-			}
 
+		/*
+		 * add radio buttons before "Document URL Field", "Document Id Field"
+		 * and "BLOB/CLOB Field"
+		 */
+		if (DOCUMENT_URL_FIELD.equals(key)) {
+			buf.append(getRadio(COMPLETE_URL, isChecked));
+		} else if (DOCUMENT_ID_FIELD.equals(key)) {
+			buf.append(getRadio(DOC_ID, isChecked));
+		} else if (CLOB_BLOB_FIELD.equals(key)) {
+			buf.append(getRadio(BLOB_CLOB, isChecked));
 		}
-		buf.append(resource.getString(key));
+		/*
+		 * No label for External Metadata Type(Radio button)
+		 */
+		if (!GROUP.equalsIgnoreCase(key)) {
+			buf.append(resource.getString(key));
+		}
+
 		if (red) {
 			buf.append("</font>");
 		}
-
+		if (EXT_METADATA.equalsIgnoreCase(key)) {
+			buf.append(BOLD_TEXT_END);
+		}
 		buf.append(TD_END);
 		buf.append(TD_START);
 	}
@@ -371,7 +367,7 @@ public class DBConnectorType implements ConnectorType {
 	/**
 	 * Tests the connectivity to the database.
 	 */
-	private static class TestDbConnectivity implements ConfigValidation {
+	private static class TestDbFields implements ConfigValidation {
 		private static final String JDBC_DRIVER_STR = "JDBC.Driver";
 		private static final String JDBC_CONNECTION_URL_STR = "JDBC.ConnectionURL";
 		private static final String JDBC_USERNAME_STR = "JDBC.Username";
@@ -386,21 +382,20 @@ public class DBConnectorType implements ConnectorType {
 		private boolean success = false;
 		private List<String> problemFields = new ArrayList<String>();
 		private ResourceBundle res;
+		List<String> columnNames = new ArrayList<String>();
 
-		public TestDbConnectivity(Map<String, String> config, ResourceBundle res) {
+		Statement stmt = null;
+		Connection conn = null;
+		ResultSet resultSet = null;
+		boolean result = false;
+		SimpleDataSource sds = null;
+
+		public TestDbFields(Map<String, String> config, ResourceBundle res) {
 			this.config = config;
 			this.res = res;
 		}
 
-		public boolean validate() {
-			Statement stmt = null;
-			Connection conn = null;
-			ResultSet resultSet = null;
-			boolean result = false;
-			password = config.get(PASSWORD);
-			login = config.get(LOGIN);
-			connectionUrl = config.get(CONNECTION_URL);
-			driverClassName = config.get(DRIVER_CLASS_NAME);
+		private boolean testDriverClass() {
 			if (driverClassName != null && connectionUrl != null
 					&& login != null && password != null) {
 				Map<String, String> jdbcProps = new TreeMap<String, String>();
@@ -408,7 +403,6 @@ public class DBConnectorType implements ConnectorType {
 				jdbcProps.put(JDBC_DRIVER_STR, driverClassName);
 				jdbcProps.put(JDBC_USERNAME_STR, login);
 				jdbcProps.put(JDBC_PASSWORD_STR, password);
-				SimpleDataSource sds = null;
 
 				/*
 				 * to test JDBC driver class
@@ -421,157 +415,211 @@ public class DBConnectorType implements ConnectorType {
 					message = res.getString(TEST_DRIVER_CLASS);
 					problemFields.add(DRIVER_CLASS_NAME);
 				}
+			}
+			result = sds != null;
 
-				/*
-				 * below if block is for testing connection with the database
-				 * with given values of input parameters.
-				 */
-				if (sds != null) {
-					try {
-						conn = sds.getConnection();
-					} catch (SQLException e) {
-						LOG.warning("Caught SQLException while testing connection: "
-								+ "\n" + e.toString());
-						message = res.getString(TEST_CONNECTIVITY);
-						// TODO(meghna): See if there is a way to pin point the
-						// actual
-						// problematic fields.
-						problemFields.add(DRIVER_CLASS_NAME);
-						problemFields.add(LOGIN);
-						problemFields.add(PASSWORD);
-						problemFields.add(CONNECTION_URL);
-					}
+			return result;
+		}
+
+		private boolean testDBConnectivity() {
+
+			/*
+			 * below if block is for testing connection with the database with
+			 * given values of input parameters.
+			 */
+			if (sds != null) {
+				try {
+					conn = sds.getConnection();
+				} catch (SQLException e) {
+					LOG.warning("Caught SQLException while testing connection: "
+							+ "\n" + e.toString());
+					message = res.getString(TEST_CONNECTIVITY);
+					problemFields.add(DRIVER_CLASS_NAME);
+					problemFields.add(LOGIN);
+					problemFields.add(PASSWORD);
+					problemFields.add(CONNECTION_URL);
 				}
-				/*
-				 * Block to test SQL query. SQL query should be of type SELECT,
-				 * it should not be DML statement.
-				 */
-				if (conn != null) {
-					try {
-						conn.setAutoCommit(false);
-						conn.setReadOnly(true);
-						stmt = conn.createStatement();
-						stmt.setMaxRows(1);
-						result = stmt.execute(config.get(SQL_QUERY));
-						if (!result) {
-							message = res.getString(TEST_SQL_QUERY);
-							problemFields.add(SQL_QUERY);
-						}
-					} catch (SQLException e) {
-						LOG.warning("Caught SQLException while testing SQL crawl query : "
-								+ "\n" + e.toString());
+			}
+
+			result = conn != null;
+
+			return result;
+		}
+
+		private boolean validateSQLCrawlQuery() {
+
+			/*
+			 * Block to test SQL query. SQL query should be of type SELECT, it
+			 * should not be DML statement.
+			 */
+			if (conn != null) {
+				try {
+					conn.setAutoCommit(false);
+					conn.setReadOnly(true);
+					stmt = conn.createStatement();
+					stmt.setMaxRows(1);
+					result = stmt.execute(config.get(SQL_QUERY));
+					if (!result) {
 						message = res.getString(TEST_SQL_QUERY);
 						problemFields.add(SQL_QUERY);
 					}
-				}
-
-				/*
-				 * This block of code is to validate primary keys.
-				 */
-				if (result) {
-					try {
-						List<String> columnNames = new ArrayList<String>();
-						resultSet = stmt.getResultSet();
-						if (resultSet != null) {
-							ResultSetMetaData rsMeta = resultSet.getMetaData();
-							int columnCount = rsMeta.getColumnCount();
-
-							// copy column names
-							for (int i = 1; i <= columnCount; i++) {
-								String colName = rsMeta.getColumnLabel(i);
-								columnNames.add(colName);
-							}
-
-							String[] primaryKeys = config.get(PRIMARY_KEYS_STRING).split(",");
-							boolean flag = false;
-
-							for (String key : primaryKeys) {
-								flag = false;
-								for (int i = 1; i <= columnCount; i++) {
-									String colName = rsMeta.getColumnLabel(i);
-
-									if (key.trim().equalsIgnoreCase(colName)) {
-										flag = true;
-										break;
-									}
-								}
-								if (!flag) {
-									LOG.info("One or more primary keys are invalid");
-									message = res.getString(TEST_PRIMARY_KEYS);
-									problemFields.add(PRIMARY_KEYS_STRING);
-									break;
-								}
-							}
-							if (flag) {
-								success = true;
-							}
-						}
-
-						/* validate external metadata columns */
-
-						// validate Document URL field
-						String documentURLField = config.get(DOCUMENT_URL_FIELD);
-
-						if (documentURLField != null
-								&& documentURLField.trim().length() > 0) {
-							if (!columnNames.contains(documentURLField.trim())) {
-								success = false;
-								message = res.getString(INVALID_COLUMN_NAME);
-								problemFields.add(DOCUMENT_URL_FIELD);
-							}
-						}
-
-						// validate DocID and Base URL fields
-
-						String documentIdField = config.get(DOCUMENT_ID_FIELD);
-						String baseURL = config.get(BASE_URL);
-						if (documentIdField != null
-								&& documentIdField.trim().length() > 0) {
-
-							if (!columnNames.contains(documentIdField)) {
-								success = false;
-								message = res.getString(INVALID_COLUMN_NAME);
-								problemFields.add(DOCUMENT_ID_FIELD);
-							}
-							if (baseURL == null || baseURL.trim().length() == 0) {
-								success = false;
-								message = res.getString(INVALID_COLUMN_NAME);
-								problemFields.add(BASE_URL);
-							}
-							if (!columnNames.contains(baseURL)) {
-								success = false;
-								message = res.getString(INVALID_COLUMN_NAME);
-								problemFields.add(BASE_URL);
-							}
-
-						}
-
-						// validate BLOB/CLOB and Fetch URL field
-						String blobClobField = config.get(CLOB_BLOB_FIELD);
-						String fetchURL = config.get(FETCH_URL_FIELD);
-
-						if (blobClobField != null
-								&& blobClobField.trim().length() > 0) {
-							if (!columnNames.contains(blobClobField)) {
-								success = false;
-								message = res.getString(INVALID_COLUMN_NAME);
-								problemFields.add(CLOB_BLOB_FIELD);
-							}
-
-							if (!columnNames.contains(fetchURL)) {
-								success = false;
-								message = res.getString(INVALID_COLUMN_NAME);
-								problemFields.add(FETCH_URL_FIELD);
-							}
-						}
-
-					} catch (SQLException e) {
-						LOG.warning("Caught SQLException while testing primary keys: "
-								+ "\n" + e.toString());
-					}
-
+				} catch (SQLException e) {
+					LOG.warning("Caught SQLException while testing SQL crawl query : "
+							+ "\n" + e.toString());
+					message = res.getString(TEST_SQL_QUERY);
+					problemFields.add(SQL_QUERY);
 				}
 			}
+
+			return result;
+		}
+
+		/**
+		 * @return true if all primary key
+		 */
+
+		private boolean validatePrimaryKeyColumns() {
+			boolean flag = false;
+
+			try {
+				resultSet = stmt.getResultSet();
+				if (resultSet != null) {
+
+					ResultSetMetaData rsMeta = resultSet.getMetaData();
+					int columnCount = rsMeta.getColumnCount();
+
+					// copy column names
+					for (int i = 1; i <= columnCount; i++) {
+						String colName = rsMeta.getColumnLabel(i);
+						columnNames.add(colName);
+					}
+
+					String[] primaryKeys = config.get(PRIMARY_KEYS_STRING).split(",");
+
+					for (String key : primaryKeys) {
+						flag = false;
+						for (int i = 1; i <= columnCount; i++) {
+							if (key.trim().equalsIgnoreCase(rsMeta.getColumnLabel(i))) {
+								flag = true;
+								break;
+							}
+						}
+						if (!flag) {
+							LOG.info("One or more primary keys are invalid");
+							message = res.getString(TEST_PRIMARY_KEYS);
+							problemFields.add(PRIMARY_KEYS_STRING);
+							break;
+						}
+					}
+					if (flag) {
+						success = true;
+					}
+				}
+			} catch (SQLException e) {
+				LOG.warning("Caught SQLException while testing primary keys: "
+						+ "\n" + e.toString());
+			}
+			return flag;
+		}
+
+		/**
+		 * This method validate the names
+		 * 
+		 * @return true if external metadata related columns are there SQL crawl
+		 *         query.
+		 */
+		private boolean validateExternalMetadataFields() {
+
+			boolean result = true;
+
+			// validate Document URL field
+			String documentURLField = config.get(DOCUMENT_URL_FIELD);
+
+			if (documentURLField != null
+					&& documentURLField.trim().length() > 0) {
+				if (!columnNames.contains(documentURLField.trim())) {
+					result = false;
+					message = res.getString(INVALID_COLUMN_NAME);
+					problemFields.add(DOCUMENT_URL_FIELD);
+				}
+			}
+
+			// validate DocID and Base URL fields
+
+			String documentIdField = config.get(DOCUMENT_ID_FIELD);
+			String baseURL = config.get(BASE_URL);
+			if (documentIdField != null && documentIdField.trim().length() > 0) {
+
+				if (!columnNames.contains(documentIdField)) {
+					result = false;
+					message = res.getString(INVALID_COLUMN_NAME);
+					problemFields.add(DOCUMENT_ID_FIELD);
+				}
+				if (baseURL == null || baseURL.trim().length() == 0) {
+					result = false;
+					message = res.getString(INVALID_COLUMN_NAME);
+					problemFields.add(BASE_URL);
+				}
+
+			}
+
+			// validate BLOB/CLOB and Fetch URL field
+			String blobClobField = config.get(CLOB_BLOB_FIELD);
+			String fetchURL = config.get(FETCH_URL_FIELD);
+
+			if (blobClobField != null && blobClobField.trim().length() > 0) {
+				if (!columnNames.contains(blobClobField)) {
+					result = false;
+					message = res.getString(INVALID_COLUMN_NAME);
+					problemFields.add(CLOB_BLOB_FIELD);
+				}
+
+				if (!columnNames.contains(fetchURL)) {
+					result = false;
+					message = res.getString(INVALID_COLUMN_NAME);
+					problemFields.add(FETCH_URL_FIELD);
+				}
+			}
+
+			return result;
+		}
+
+		public boolean validate() {
+
+			password = config.get(PASSWORD);
+			login = config.get(LOGIN);
+			connectionUrl = config.get(CONNECTION_URL);
+			driverClassName = config.get(DRIVER_CLASS_NAME);
+
+			// Test JDBC driver class
+			success = testDriverClass();
+			if (!success) {
+				return success;
+			}
+			// test Database connectivity
+			success = testDBConnectivity();
+			if (!success) {
+				return success;
+			}
+
+			// validate SQL crawl Query
+			success = validateSQLCrawlQuery();
+			if (!success) {
+				return success;
+			}
+
+			// validate primary key column names
+			success = validatePrimaryKeyColumns();
+			if (!success) {
+				return success;
+			}
+
+			// validate external metadata fields
+			success = validateExternalMetadataFields();
+			if (!success) {
+				return success;
+			}
+
 			/*
 			 * close dabase connection, result set and statement
 			 */
@@ -613,8 +661,6 @@ public class DBConnectorType implements ConnectorType {
 
 		public MissingAttributes(Map<String, String> config, ResourceBundle res) {
 			this.config = config;
-			this.config.remove("externalMetadata");
-
 			this.res = res;
 		}
 
@@ -792,7 +838,7 @@ public class DBConnectorType implements ConnectorType {
 			configValidation = new RequiredFields(config, resource);
 			success = configValidation.validate();
 			if (success) {
-				configValidation = new TestDbConnectivity(config, resource);
+				configValidation = new TestDbFields(config, resource);
 				success = configValidation.validate();
 				if (success) {
 					configValidation = new HostNameFQDNCheck(config, resource);
@@ -849,5 +895,58 @@ public class DBConnectorType implements ConnectorType {
 				+ "</SCRIPT>";
 
 		return javascript;
+	}
+
+	/**
+	 * This method set readOnly='true' for External Metadata fields like
+	 * "Document URl Field", "Document Id Field" and "Base URL Field".
+	 * "Base URL" and "Fetch URL" fields are set read-only , only when
+	 * "Document ID Field" and "BLOB/CLOB Field" are read only respectively.
+	 * 
+	 * @param key
+	 * @param value
+	 * @param buf
+	 */
+	private void setReadOnly(String key, String value, StringBuilder buf) {
+		/*
+		 * Set fields non-editable only if they are empty
+		 */
+		if (value == null || value.trim().equals("")) {
+
+			if (DOCUMENT_URL_FIELD.equals(key)) {
+				/*
+				 * Set "Document URL Field" non-editable
+				 */
+				appendAttribute(buf, DISABLED, TRUE);
+			} else if (DOCUMENT_ID_FIELD.equals(key)) {
+				/*
+				 * Set "Document Id Field" non-editable
+				 */
+				appendAttribute(buf, DISABLED, TRUE);
+				isDocIdDisabled = true;
+			} else if (BASE_URL.equals(key) && isDocIdDisabled) {
+				/*
+				 * Set "Base URL" field non-editable if "Document Id Field"
+				 * field is non-editable.
+				 */
+				appendAttribute(buf, DISABLED, TRUE);
+				isDocIdDisabled = false;
+			} else if (CLOB_BLOB_FIELD.equals(key)) {
+				/*
+				 * Set "BLOB/CLOB Field" non-editable
+				 */
+				appendAttribute(buf, DISABLED, TRUE);
+				isLOBFieldDisable = true;
+
+			} else if (FETCH_URL_FIELD.equals(key) && isLOBFieldDisable) {
+				/*
+				 * Set "Fetch URL" field not editable if "BLOB/CLOB Field" field
+				 * is non-editable.
+				 */
+				appendAttribute(buf, DISABLED, TRUE);
+				isLOBFieldDisable = false;
+			}
+		}
+
 	}
 }

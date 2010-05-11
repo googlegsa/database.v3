@@ -14,6 +14,10 @@
 
 package com.google.enterprise.connector.db;
 
+import org.w3c.dom.Element;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
+
 import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
@@ -30,10 +34,6 @@ import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
-
-import org.w3c.dom.Element;
-import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
 
 /**
  * Utility class for dealing with Xml.
@@ -73,9 +73,14 @@ public class XmlUtils {
 	 *    &lt;/html&gt;
 	 * </pre>
 	 * 
-	 * @param dbName name of the database.
-	 * @param row row to convert to its xml representation.
-	 * @return xml string.
+	 * @param dbName Name of the Database instance
+	 * @param row map representing database row
+	 * @param primaryKeys array of primary key columns
+	 * @param xslt for rendering XML representing database row.
+	 * @param dbContext instance of DBContext
+	 * @param isCompleteDoc flag that tells whether to generate DB doc for
+	 *            entire row or skip doc title and last modified date columns.
+	 * @return
 	 * @throws DBException
 	 */
 	public static String getXMLRow(String dbName, Map<String, Object> row,
@@ -97,10 +102,10 @@ public class XmlUtils {
 		top.appendChild(title);
 		TreeSet<String> sortedKeySet = new TreeSet<String>(row.keySet());
 		Iterator<String> it = sortedKeySet.iterator();
-		while (it.hasNext()) {
-			if (isCompleteDoc) {
+
+		if (isCompleteDoc) {
+			while (it.hasNext()) {
 				String key = it.next();
-				System.out.println(key + "*************************");
 				Element keyElement = doc.createElement(key);
 				Object value = row.get(key);
 				if (null == value) {
@@ -108,7 +113,9 @@ public class XmlUtils {
 				}
 				keyElement.appendChild(doc.createTextNode(value.toString()));
 				top.appendChild(keyElement);
-			} else {
+			}
+		} else {
+			while (it.hasNext()) {
 				String key = it.next();
 				if (dbContext != null
 						&& !key.equalsIgnoreCase(dbContext.getDocumentTitle())
@@ -123,6 +130,7 @@ public class XmlUtils {
 				}
 			}
 		}
+
 		String xmlString;
 		try {
 			if (null == xslt) {
@@ -139,6 +147,16 @@ public class XmlUtils {
 		return xmlString;
 	}
 
+	/**
+	 * @param dbName name of the Database instance
+	 * @param row map representing database row
+	 * @param dbContext dbContext instance of DBContext
+	 * @param isCompleteDoc sCompleteDoc flag that tells whether to generate DB
+	 *            doc for entire row or skip doc title and last modified date
+	 *            columns.
+	 * @return default Stylesheet for rendering XML representation of database
+	 *         row.
+	 */
 	private static String getDefaultStyleSheet(String dbName,
 			Map<String, Object> row, DBContext dbContext, boolean isCompleteDoc) {
 		StringBuffer buf = new StringBuffer();

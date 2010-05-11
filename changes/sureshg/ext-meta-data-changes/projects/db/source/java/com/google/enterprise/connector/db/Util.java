@@ -14,8 +14,15 @@
 
 package com.google.enterprise.connector.db;
 
+import com.google.enterprise.connector.spi.RepositoryException;
+import com.google.enterprise.connector.spi.SpiConstants;
+import com.google.enterprise.connector.spi.TraversalContext;
+
+import org.joda.time.DateTime;
+
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -23,12 +30,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.logging.Logger;
-
-import org.joda.time.DateTime;
-
-import com.google.enterprise.connector.spi.RepositoryException;
-import com.google.enterprise.connector.spi.SpiConstants;
-import com.google.enterprise.connector.spi.TraversalContext;
 
 /**
  * Utility class for database connector.
@@ -84,7 +85,7 @@ public class Util {
 		/*
 		 * Set other doc properties
 		 */
-		setOtherDocProperties(row, doc, dbContext);
+		setOptionalProperties(row, doc, dbContext);
 
 		return doc;
 	}
@@ -292,7 +293,7 @@ public class Util {
 	 * @param docId document id of DB doc
 	 * @param isContentFeed true if Feed type is content feed
 	 */
-	private static void setOtherDocProperties(Map<String, Object> row,
+	private static void setOptionalProperties(Map<String, Object> row,
 			DBDocument doc, DBContext dbContext) {
 		if (dbContext == null) {
 			return;
@@ -304,24 +305,29 @@ public class Util {
 		}
 		// set last modified date
 		Object lastModified = row.get(dbContext.getLastModifiedDate());
-		if (lastModified != null) {
-			doc.setLastModifiedDate(SpiConstants.PROPNAME_LASTMODIFIED, lastModified);
+		if (lastModified != null && (lastModified instanceof Timestamp)) {
+			doc.setLastModifiedDate(SpiConstants.PROPNAME_LASTMODIFIED, (Timestamp) lastModified);
 		}
 	}
 
 	/**
-	 * This method convert given row into equivalent Metadata-URL feed. Value of
-	 * dbconn_url column is used as URL or Doc_Id of document and value of other
-	 * columns is used as metadata(except doc_id colunm values). If the column
-	 * name is dbconn_last_mod , it is used as last modified date. MIME type of
-	 * the document is the value of "mime_type" column. It is assumed that
-	 * connector admin will use the required alias for columns in SQL query.
+	 * This method convert given row into equivalent Metadata-URL feed. There
+	 * could be two scenarios depending upon how we get the URL of document. In
+	 * first scenario one of the column hold the complete URL of the document
+	 * and other columns holds the metadata of primary document. The name of URL
+	 * column is provided by user in configuration form. In second scenario the
+	 * URL of primary document is build by concatenating the base url and
+	 * document ID. COnnector admin provides the Base URL and document ID column
+	 * in DB connector configuration form.
 	 * 
-	 * @param dbName
-	 * @param primaryKeys
-	 * @param row
-	 * @param hostname
-	 * @param dbClient
+	 * @param dbName Name of database
+	 * @param primaryKeys array of primary key columns
+	 * @param row map representing database row.
+	 * @param hostname fully qualified connector hostname.
+	 * @param dbContext instance of DBContext.
+	 * @param type represent how to get URL of the document. If value is
+	 *            "withBaseURL" it means we have to build document URL using
+	 *            base URL and document ID.
 	 * @return DBDocument
 	 * @throws DBException
 	 */
@@ -344,7 +350,6 @@ public class Util {
 		String finalURL = null;
 		if (isWithBaseURL) {
 			baseURL = (String) row.get(dbContext.getBaseURL());
-			baseURL = baseURL == null ? "" : baseURL;
 			docIdColumn = dbContext.getDocumentIdField();
 			finalURL = baseURL.trim() + row.get(docIdColumn);
 			skipColumns.add(dbContext.getDocumentIdField());
@@ -359,6 +364,11 @@ public class Util {
 
 		String xmlRow = XmlUtils.getXMLRow(dbName, row, primaryKeys, null, dbContext, true);
 
+		/*
+		 * This method add addition database columns(last modified and doc
+		 * title) which needs to skip while sending as metadata as they are
+		 * already consider as metadata.
+		 */
 		skipOtherProperties(skipColumns, dbContext);
 
 		doc.setProperty(SpiConstants.PROPNAME_SEARCHURL, finalURL);
@@ -370,13 +380,17 @@ public class Util {
 		doc.setProperty(SpiConstants.PROPNAME_DOCID, docId);
 
 		doc.setProperty(DBDocument.ROW_CHECKSUM, getChecksum(xmlRow.getBytes()));
-		// add action as add
+		/*
+		 * set action as add. Even when contents are updated the we still we set
+		 * action as add and GSA overrides the old copy with new updated one.
+		 * Hence ADD action is applicable to both add and update
+		 */
 		doc.setProperty(SpiConstants.PROPNAME_ACTION, SpiConstants.ActionType.ADD.toString());
 
 		/*
-		 * Set other doc properties
+		 * Set other doc properties like Last Modified date and document title.
 		 */
-		setOtherDocProperties(row, doc, dbContext);
+		setOptionalProperties(row, doc, dbContext);
 		skipColumns.addAll(Arrays.asList(primaryKeys));
 		setMetaInfo(doc, row, skipColumns);
 
@@ -426,7 +440,7 @@ public class Util {
 		// get doc id from primary key values
 		String docId = generateDocId(primaryKeys, row);
 
-		StringBuilder clobValue = null;
+		String clobValue = null;
 		DBDocument doc = new DBDocument();
 		String mimeType = "";
 
@@ -487,10 +501,9 @@ public class Util {
 				 * array or String for CLOB data depending upon Database.
 				 */
 				if (largeObject instanceof char[]) {
-					clobValue = new StringBuilder(new String(
-							(char[]) largeObject));
+					clobValue = new String((char[]) largeObject);
 				} else if (largeObject instanceof String) {
-					clobValue = new StringBuilder(largeObject.toString());
+					clobValue = largeObject.toString();
 				}
 				if (clobValue != null) {
 					doc.setProperty(SpiConstants.PROPNAME_CONTENT, clobValue.toString());
@@ -532,8 +545,9 @@ public class Util {
 		doc.setProperty(SpiConstants.PROPNAME_ACTION, SpiConstants.ActionType.ADD.toString());
 
 		/*
-		 * if results set contain "dbconn_lob_url" column, use the value of this
-		 * column as display URL. Else construct the display URL and use it.
+		 * if connector admin has has provided Fetch URL column the use the
+		 * value of this column as a "Display URL". Else construct the display
+		 * URL and use it.
 		 */
 		Object displayURL = row.get(dbContext.getFetchURLField());
 		if (displayURL != null && displayURL.toString().trim().length() > 0) {
@@ -546,7 +560,7 @@ public class Util {
 		skipOtherProperties(skipColumns, dbContext);
 		skipColumns.addAll(Arrays.asList(primaryKeys));
 
-		setOtherDocProperties(row, doc, dbContext);
+		setOptionalProperties(row, doc, dbContext);
 
 		setMetaInfo(doc, row, skipColumns);
 
@@ -585,6 +599,14 @@ public class Util {
 	public static void setTraversalContext(TraversalContext trContext) {
 		context = trContext;
 	}
+
+	/**
+	 * This method extract the columns for Last Modified date and Document Title
+	 * and add in list of skip columns.
+	 * 
+	 * @param skipColumns list of columns to be skipped as metadata
+	 * @param dbContext
+	 */
 
 	private static void skipOtherProperties(List<String> skipColumns,
 			DBContext dbContext) {

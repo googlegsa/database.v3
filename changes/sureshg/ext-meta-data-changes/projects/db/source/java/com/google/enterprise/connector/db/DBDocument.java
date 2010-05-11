@@ -14,6 +14,11 @@
 
 package com.google.enterprise.connector.db;
 
+import com.google.enterprise.connector.spi.Document;
+import com.google.enterprise.connector.spi.Property;
+import com.google.enterprise.connector.spi.SimpleProperty;
+import com.google.enterprise.connector.spi.Value;
+
 import java.sql.Timestamp;
 import java.util.Calendar;
 import java.util.Collections;
@@ -21,11 +26,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import com.google.enterprise.connector.spi.Document;
-import com.google.enterprise.connector.spi.Property;
-import com.google.enterprise.connector.spi.SimpleProperty;
-import com.google.enterprise.connector.spi.Value;
 
 /**
  * An implementation of Document for database records. Each row in the database
@@ -75,8 +75,8 @@ public class DBDocument implements Document {
 	 * @param propertyName
 	 * @param propertyValue
 	 */
-	public void setLastModifiedDate(String propertyName, Object propertyValue) {
-		Timestamp time = (Timestamp) propertyValue;
+	public void setLastModifiedDate(String propertyName, Timestamp propertyValue) {
+		Timestamp time = propertyValue;
 		Calendar cal = Calendar.getInstance();
 		cal.setTimeInMillis(time.getTime());
 
