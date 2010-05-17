@@ -14,6 +14,14 @@
 
 package com.google.enterprise.connector.db;
 
+import com.google.enterprise.connector.spi.RepositoryException;
+import com.google.enterprise.connector.spi.Session;
+
+import org.joda.time.DateTime;
+
+import com.ibatis.common.jdbc.ScriptRunner;
+import com.ibatis.common.resources.Resources;
+
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -21,13 +29,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import junit.framework.TestCase;
-
-import org.joda.time.DateTime;
-
-import com.google.enterprise.connector.spi.RepositoryException;
-import com.google.enterprise.connector.spi.Session;
-import com.ibatis.common.jdbc.ScriptRunner;
-import com.ibatis.common.resources.Resources;
 
 /**
  * This is a base class for all test classes that requires interaction with
@@ -60,7 +61,6 @@ public class DBTestBase extends TestCase {
 		configMap.put("driverClassName", LanguageResource.getPropertyValue("driverClassName"));
 		configMap.put("sqlQuery", LanguageResource.getPropertyValue("sqlQuery"));
 		configMap.put("primaryKeysString", LanguageResource.getPropertyValue("primaryKeysString"));
-		System.out.println("Configuration map:======= " + configMap);
 		configMap.put("googleConnectorWorkDir", testDirManager.getTmpDir());
 		configMap.put("xslt", "");
 		configMap.put("lastModifiedDate", "");

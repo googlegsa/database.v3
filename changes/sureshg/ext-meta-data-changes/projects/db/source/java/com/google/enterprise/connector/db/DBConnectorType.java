@@ -189,54 +189,63 @@ public class DBConnectorType implements ConnectorType {
 		StringBuilder buf = new StringBuilder();
 
 		appendStartRow(buf, key, red, value);
-		if (!EXT_METADATA.equalsIgnoreCase(key)) {
-			buf.append(OPEN_ELEMENT);
 
-			/*
-			 * Create text area for SQL Query and XSLT fields.
-			 */
-			if (key.equals(SQL_QUERY) || key.equals(XSLT)) {
-				buf.append(TEXT_AREA);
-				appendAttribute(buf, ROWS, ROWS_VALUE);
-				appendAttribute(buf, COLS, COLS_VALUE);
-				appendAttribute(buf, NAME, key);
-				appendAttribute(buf, ID, key);
-				buf.append(CLOSE_ELEMENT);
-				if (null != value) {
-					buf.append("<![CDATA[" + value + "]]>");
-				}
-				buf.append(OPEN_ELEMENT_SLASH);
-				buf.append(TEXT_AREA);
-				buf.append(CLOSE_ELEMENT);
-			} else if (GROUP.equals(key)) {
-				buf.append(INPUT);
-				appendAttribute(buf, NAME, GROUP);
-				appendAttribute(buf, TYPE, HIDDEN);
-				appendAttribute(buf, ID, key);
-				appendAttribute(buf, VALUE, NO_EXT_METADATA);
-				buf.append(CLOSE_ELEMENT_SLASH);
+		/*
+		 * Check if key is "externalMetadata". For this label we don't have to
+		 * create corresponding Text Field/Area . End TD and TR elements and
+		 * return.
+		 */
+		if (EXT_METADATA.equalsIgnoreCase(key)) {
+			appendEndRow(buf);
+			return buf.toString();
+		}
 
+		buf.append(OPEN_ELEMENT);
+
+		/*
+		 * Create text area for SQL Query and XSLT fields.
+		 */
+		if (key.equals(SQL_QUERY) || key.equals(XSLT)) {
+			buf.append(TEXT_AREA);
+			appendAttribute(buf, ROWS, ROWS_VALUE);
+			appendAttribute(buf, COLS, COLS_VALUE);
+			appendAttribute(buf, NAME, key);
+			appendAttribute(buf, ID, key);
+			buf.append(CLOSE_ELEMENT);
+			if (null != value) {
+				buf.append("<![CDATA[" + value + "]]>");
+			}
+			buf.append(OPEN_ELEMENT_SLASH);
+			buf.append(TEXT_AREA);
+			buf.append(CLOSE_ELEMENT);
+		} else if (GROUP.equals(key)) {
+			buf.append(INPUT);
+			appendAttribute(buf, NAME, GROUP);
+			appendAttribute(buf, TYPE, HIDDEN);
+			appendAttribute(buf, ID, key);
+			appendAttribute(buf, VALUE, NO_EXT_METADATA);
+			buf.append(CLOSE_ELEMENT_SLASH);
+
+		} else {
+			buf.append(INPUT);
+			if (key.equalsIgnoreCase(PASSWORD)) {
+				appendAttribute(buf, TYPE, PASSWORD);
 			} else {
-				buf.append(INPUT);
-				if (key.equalsIgnoreCase(PASSWORD)) {
-					appendAttribute(buf, TYPE, PASSWORD);
-				} else {
-					appendAttribute(buf, TYPE, TEXT);
-				}
-				appendAttribute(buf, SIZE, SIZE_VALUE);
-				appendAttribute(buf, NAME, key);
-				appendAttribute(buf, ID, key);
+				appendAttribute(buf, TYPE, TEXT);
+			}
+			appendAttribute(buf, SIZE, SIZE_VALUE);
+			appendAttribute(buf, NAME, key);
+			appendAttribute(buf, ID, key);
 
-				if (null != value) {
-					appendAttribute(buf, VALUE, value);
-				}
-
-				setReadOnly(key, value, buf);
-
-				buf.append(CLOSE_ELEMENT_SLASH);
+			if (null != value) {
+				appendAttribute(buf, VALUE, value);
 			}
 
+			setReadOnly(key, value, buf);
+
+			buf.append(CLOSE_ELEMENT_SLASH);
 		}
+
 		appendEndRow(buf);
 		return buf.toString();
 	}
