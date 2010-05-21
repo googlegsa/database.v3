@@ -36,7 +36,7 @@ import junit.framework.TestCase;
  * 
  * @author Suresh_Ghuge
  */
-public class DBTestBase extends TestCase {
+public abstract class DBTestBase extends TestCase {
 
 	private Map<String, String> configMap = new HashMap<String, String>();
 	private GlobalState globalState;
@@ -49,6 +49,10 @@ public class DBTestBase extends TestCase {
 	public static final String LOAD_TEST_DATA = "com/google/enterprise/connector/db/config/loadTestData.sql";
 	public static final String TRUNCATE_TEST_DB_TABLE = "com/google/enterprise/connector/db/config/truncateTestTable.sql";
 	public static final String DROP_TEST_DB_TABLE = "com/google/enterprise/connector/db/config/dropdb.sql";
+
+	public static final String CREATE_USER_DOC_MAP_TABLE = "com/google/enterprise/connector/db/config/createUerDocMapTable.sql";
+	public static final String LOAD_USER_DOC_MAP_TEST_DATA = "com/google/enterprise/connector/db/config/loadUerDocMapTable.sql";
+	public static final String DROP_USER_DOC_MAP_TABLE = "com/google/enterprise/connector/db/config/dropUserDocMapTable.sql";
 
 	@Override
 	protected void setUp() throws Exception {
@@ -63,6 +67,7 @@ public class DBTestBase extends TestCase {
 		configMap.put("primaryKeysString", LanguageResource.getPropertyValue("primaryKeysString"));
 		configMap.put("googleConnectorWorkDir", testDirManager.getTmpDir());
 		configMap.put("xslt", "");
+		configMap.put("authZQuery", LanguageResource.getPropertyValue("authZQuery"));
 		configMap.put("lastModifiedDate", "");
 		configMap.put("documentTitle", "");
 		configMap.put("externalMetadata", "");
@@ -73,7 +78,6 @@ public class DBTestBase extends TestCase {
 		configMap.put("fetchURLField", "");
 		configMap.put("extMetadataType", "");
 		globalState = new GlobalState(testDirManager.getTmpDir());
-		runDBScript(CREATE_TEST_DB_TABLE);
 	}
 
 	protected DBConnector getConnector() {

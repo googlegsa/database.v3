@@ -14,6 +14,9 @@
 
 package com.google.enterprise.connector.db;
 
+import com.google.enterprise.connector.spi.RepositoryException;
+import com.google.enterprise.connector.spi.SpiConstants;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -25,9 +28,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import junit.framework.TestCase;
-
-import com.google.enterprise.connector.spi.RepositoryException;
-import com.google.enterprise.connector.spi.SpiConstants;
 
 public class GlobalStateTest extends TestCase {
 	private static final Logger LOG = Logger.getLogger(GlobalStateTest.class.getName());
@@ -142,15 +142,12 @@ public class GlobalStateTest extends TestCase {
 	}
 
 	public final void testSaveState() {
-		String[] expectedPatterns = new String[] {
-				"docid=\"1f81a76b56764180bdce3d3a55081c94338e0bd3\" ",
+		String[] expectedPatterns = new String[] { "docid=\"MyxsYXN0XzAz\" ",
 				"</currentChecksumMap><previousChecksumMap><checksumMapEntry ",
-				"docid=\"7796571db039cc272cf73197369e1d9fb1395696\"",
-				"<checksumMapEntry" };
+				"docid=\"NCxsYXN0XzA0\"", "<checksumMapEntry" };
 		String expectedCursorXml = "<dbCursor>0</dbCursor>";
 		String[] expectedDocToDeleteXml = new String[] {
-				"docid=\"2a61639c96ed45ec8f6e3d4e1ab79944cd1d1923\"",
-				"rowChecksum=.*" };
+				"docid=\"MSxsYXN0XzAx\"", "rowChecksum=.*" };
 
 		try {
 			for (Map<String, Object> row : TestUtils.getDBRows()) {

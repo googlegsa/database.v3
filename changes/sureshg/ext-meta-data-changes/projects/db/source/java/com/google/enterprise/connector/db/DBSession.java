@@ -45,9 +45,7 @@ public class DBSession implements Session {
 
 	/* @Override */
 	public AuthorizationManager getAuthorizationManager() {
-		// TODO(meghna): Implement this for GSA.
-		throw new UnsupportedOperationException(
-				"DBSession does not support getAuthorizationManager");
+		return new DBConnectorAuthorizationManager(dbClient);
 	}
 
 	/**

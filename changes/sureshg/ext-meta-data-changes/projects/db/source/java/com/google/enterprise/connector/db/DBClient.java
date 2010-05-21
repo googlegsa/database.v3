@@ -14,6 +14,9 @@
 
 package com.google.enterprise.connector.db;
 
+import com.ibatis.sqlmap.client.SqlMapClient;
+import com.ibatis.sqlmap.client.SqlMapClientBuilder;
+
 import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -26,14 +29,12 @@ import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 
 import javax.sql.DataSource;
-
-import com.ibatis.sqlmap.client.SqlMapClient;
-import com.ibatis.sqlmap.client.SqlMapClientBuilder;
 
 /**
  * A client which gets rows from a database corresponding to a given SQL query.
@@ -52,6 +53,7 @@ public class DBClient {
 	private final String[] primaryKeys;
 	private String sqlMapConfig = null;
 	private String sqlMap = null;
+	private final String authZQuery;
 
 	/**
 	 * @param dbContext holds the database context.
@@ -61,10 +63,11 @@ public class DBClient {
 	 * @throws DBException
 	 */
 	public DBClient(DBContext dbContext, String sqlQuery,
-			String googleConnectorWorkDir, String[] primaryKeys)
-			throws DBException {
+			String googleConnectorWorkDir, String[] primaryKeys,
+			String authZQuery) throws DBException {
 		this.dbContext = dbContext;
 		this.sqlQuery = sqlQuery;
+		this.authZQuery = authZQuery;
 		this.googleConnectorWorkDir = googleConnectorWorkDir;
 		this.primaryKeys = primaryKeys;
 		generateSqlMapConfig();
@@ -248,7 +251,24 @@ public class DBClient {
 				+ "\"http://ibatis.apache.org/dtd/sql-map-2.dtd\">\n"
 				+ "<sqlMap namespace=\"IbatisDBClient\">\n"
 				+ " <select id=\"getAll\" resultClass=\"java.util.HashMap\"> \n"
-				+ sqlQuery + "\n </select> \n" + " </sqlMap> \n";
+				+ sqlQuery + "\n </select> \n";
+
+		/*
+		 * check if authZ query is provided. If authZ query is there , add
+		 * 'select' element for getting authorized documents.
+		 */
+		if (authZQuery != null && authZQuery.trim().length() > 0) {
+			sqlMap = sqlMap
+					+ "<select id=\"getAuthorizedDocs\"  parameterClass=\"java.util.HashMap\"  resultClass=\"java.lang.String\"> \n "
+					+ authZQuery + "</select>";
+
+			dbContext.setPublicFeed(false);
+		} else {
+			dbContext.setPublicFeed(true);
+		}
+		// close 'sqlMap' element
+		sqlMap = sqlMap + " </sqlMap> \n";
+
 		LOG.config("Generated sqlMap : \n" + sqlMap);
 		File file = new File(googleConnectorWorkDir, "IbatisSqlMap.xml");
 		Writer output;
@@ -300,4 +320,35 @@ public class DBClient {
 		}
 		return dbDetails;
 	}
+
+	/**
+	 * This method executes the authZ query for given user-name and list of
+	 * documents and returns the list of authorized documents.
+	 * 
+	 * @param userName user-name
+	 * @param docIds List of documents to be authorized
+	 * @return list of authorized documents
+	 */
+	public List<String> executeAuthZQuery(String userName, String docIds) {
+
+		List<String> authorizedDocs = new ArrayList<String>();
+		/*
+		 * Create a hashmap as to provide input parameters user-name and list of
+		 * documents to authZ query.
+		 */
+		Map<String, Object> paramMap = new HashMap<String, Object>();
+		paramMap.put("username", userName);
+		paramMap.put("docIds", docIds);
+		/*
+		 * Execute the authZ query.
+		 */
+		try {
+			authorizedDocs = sqlMapClient.queryForList("IbatisDBClient.getAuthorizedDocs", paramMap);
+		} catch (Exception e) {
+			LOG.info("Could not execute AuthZ query on the database\n"
+					+ e.getMessage());
+		}
+		return authorizedDocs;
+	}
+
 }

@@ -70,12 +70,17 @@ public class Util {
 
 		String contentXMLRow = XmlUtils.getXMLRow(dbName, row, primaryKeys, xslt, dbContext, false);
 		doc.setProperty(SpiConstants.PROPNAME_CONTENT, contentXMLRow);
-		String docId = generateDocId(primaryKeys, row);
+		String docId = DocIdUtil.generateDocId(primaryKeys, row);
 		doc.setProperty(SpiConstants.PROPNAME_DOCID, docId);
 		doc.setProperty(SpiConstants.PROPNAME_ACTION, SpiConstants.ActionType.ADD.toString());
 		// TODO(meghna): Look into which encoding/charset to use for getBytes()
 		String completeXMLRow = XmlUtils.getXMLRow(dbName, row, primaryKeys, xslt, dbContext, true);
 		doc.setProperty(DBDocument.ROW_CHECKSUM, getChecksum(completeXMLRow.getBytes()));
+		// set "ispublic" false if authZ query is provided by the user.
+		if (dbContext != null && !dbContext.isPublicFeed()) {
+			doc.setProperty(SpiConstants.PROPNAME_ISPUBLIC, "false");
+		}
+
 		doc.setProperty(SpiConstants.PROPNAME_MIMETYPE, MIMETYPE);
 		doc.setProperty(SpiConstants.PROPNAME_DISPLAYURL, getDisplayUrl(hostname, dbName, docId));
 
@@ -154,72 +159,6 @@ public class Util {
 			throw new DBException(msg);
 		}
 		return title.toString();
-	}
-
-	/**
-	 * Generates the docId for a DB row. If the primary keys are id and lastName
-	 * and their corresponding values are 1 and last_01, then the docId would be
-	 * the SHA1 checksum of (1,7)1last_01. The key values are concatenated and
-	 * is prepended with their lengths in parentheses.
-	 * 
-	 * @return docId checksum generated using the primary key values.
-	 */
-	public static String generateDocId(String[] primaryKeys,
-			Map<String, Object> row) throws DBException {
-		StringBuilder length = new StringBuilder();
-		StringBuilder primaryKeyValues = new StringBuilder();
-		length.append("(");
-		if (row != null && (primaryKeys != null && primaryKeys.length > 0)) {
-			Set<String> keySet = row.keySet();
-
-			for (String primaryKey : primaryKeys) {
-				/*
-				 * Primary key value is mapped to the value of key of map row
-				 * before getting record. We need to do this because GSA admin
-				 * may entered primary key value which differed in case from
-				 * column name.
-				 */
-
-				for (String key : keySet) {
-					if (primaryKey.equalsIgnoreCase(key)) {
-						primaryKey = key;
-						break;
-					}
-				}
-				if (!keySet.contains(primaryKey)) {
-					String msg = "Primary Key does not match with any of the coulmn names";
-					LOG.info(msg);
-					throw new DBException(msg);
-				}
-				Object keyValue = row.get(primaryKey);
-				if (null == keyValue) {
-					length.append("-1" + PRIMARY_KEYS_SEPARATOR);
-				} else {
-					String keyValueStr = keyValue.toString();
-					length.append(keyValueStr.length() + PRIMARY_KEYS_SEPARATOR);
-					primaryKeyValues.append(keyValueStr);
-				}
-			}
-		} else {
-			String msg = "";
-			if (row != null && (primaryKeys != null && primaryKeys.length > 0)) {
-				msg = "row is null and primary key array is empty";
-			} else if (row != null) {
-				msg = "hash map row is null";
-			} else {
-				msg = "primary key array is empty or null";
-			}
-			LOG.info(msg);
-			throw new DBException(msg);
-		}
-		length.deleteCharAt(length.length() - 1);
-		length.append(")");
-		length.append(primaryKeyValues.toString());
-		LOG.info("Primary key values concatenated string : "
-				+ length.toString());
-		String docId = getChecksum(length.toString().getBytes());
-		LOG.info("DocId : " + docId);
-		return docId;
 	}
 
 	/**
@@ -360,7 +299,7 @@ public class Util {
 
 		DBDocument doc = new DBDocument();
 		// get doc id from primary key values
-		String docId = generateDocId(primaryKeys, row);
+		String docId = DocIdUtil.generateDocId(primaryKeys, row);
 
 		String xmlRow = XmlUtils.getXMLRow(dbName, row, primaryKeys, null, dbContext, true);
 
@@ -438,7 +377,7 @@ public class Util {
 			DBContext dbContext) throws DBException {
 
 		// get doc id from primary key values
-		String docId = generateDocId(primaryKeys, row);
+		String docId = DocIdUtil.generateDocId(primaryKeys, row);
 
 		String clobValue = null;
 		DBDocument doc = new DBDocument();
@@ -543,6 +482,11 @@ public class Util {
 
 		// set action as add
 		doc.setProperty(SpiConstants.PROPNAME_ACTION, SpiConstants.ActionType.ADD.toString());
+
+		// set "ispublic" false if authZ query is provided by the user.
+		if (dbContext != null && !dbContext.isPublicFeed()) {
+			doc.setProperty(SpiConstants.PROPNAME_ISPUBLIC, "false");
+		}
 
 		/*
 		 * if connector admin has has provided Fetch URL column the use the

@@ -14,11 +14,11 @@
 
 package com.google.enterprise.connector.db;
 
+import com.google.enterprise.connector.spi.RepositoryException;
+
 import java.util.Date;
 
 import junit.framework.Assert;
-
-import com.google.enterprise.connector.spi.RepositoryException;
 
 /**
  * This is JUnit test case for DBTraversalManager.
@@ -31,7 +31,9 @@ public class DBTraversalManagerTest extends DBTestBase {
 	@Override
 	protected void setUp() throws Exception {
 		super.setUp();
+		runDBScript(CREATE_TEST_DB_TABLE);
 		traversalMgr = getDBTraversalManager();
+
 	}
 
 	/*

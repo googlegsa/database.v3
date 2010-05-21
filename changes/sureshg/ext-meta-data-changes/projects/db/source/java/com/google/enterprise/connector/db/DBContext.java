@@ -34,6 +34,8 @@ public class DBContext {
 	private String documentTitle;
 	private String extMetadataType;
 
+	private boolean publicFeed = true;
+
 	public DBContext(String connectionUrl, String hostname,
 			String driverClassName, String login, String password,
 			String dbName, String lastModifiedDate, String documentTitle,
@@ -115,4 +117,11 @@ public class DBContext {
 		return fetchURLField;
 	}
 
+	public boolean isPublicFeed() {
+		return publicFeed;
+	}
+
+	public void setPublicFeed(boolean publicFeed) {
+		this.publicFeed = publicFeed;
+	}
 }

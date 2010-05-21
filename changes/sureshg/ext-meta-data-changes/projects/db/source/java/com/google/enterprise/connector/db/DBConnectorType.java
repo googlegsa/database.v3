@@ -99,6 +99,8 @@ public class DBConnectorType implements ConnectorType {
 	private static final String SQL_QUERY = "sqlQuery";
 	private static final String PRIMARY_KEYS_STRING = "primaryKeysString";
 	private static final String XSLT = "xslt";
+	// AuthZ Query
+	private static final String AUTHZ_QUERY = "authZQuery";
 
 	private static final String EXT_METADATA = "externalMetadata";
 	private static final String DOCUMENT_URL_FIELD = "documentURLField";
@@ -203,9 +205,10 @@ public class DBConnectorType implements ConnectorType {
 		buf.append(OPEN_ELEMENT);
 
 		/*
-		 * Create text area for SQL Query and XSLT fields.
+		 * Create text area for SQL Query, XSLT and AuthZ Query fields.
 		 */
-		if (key.equals(SQL_QUERY) || key.equals(XSLT)) {
+		if (key.equals(SQL_QUERY) || key.equals(XSLT)
+				|| AUTHZ_QUERY.equals(key)) {
 			buf.append(TEXT_AREA);
 			appendAttribute(buf, ROWS, ROWS_VALUE);
 			appendAttribute(buf, COLS, COLS_VALUE);
@@ -260,6 +263,7 @@ public class DBConnectorType implements ConnectorType {
 	 */
 	private String makeValidatedForm(Map<String, String> config) {
 		StringBuilder buf = new StringBuilder();
+		buf.append(getJavaScript());
 		List<String> problemfields;
 		boolean success = false;
 		ConfigValidation configValidation;
@@ -583,7 +587,8 @@ public class DBConnectorType implements ConnectorType {
 					problemFields.add(CLOB_BLOB_FIELD);
 				}
 
-				if (!columnNames.contains(fetchURL)) {
+				if (fetchURL != null && fetchURL.trim().length() > 0
+						&& !columnNames.contains(fetchURL)) {
 					result = false;
 					message = res.getString(INVALID_COLUMN_NAME);
 					problemFields.add(FETCH_URL_FIELD);
@@ -896,11 +901,18 @@ public class DBConnectorType implements ConnectorType {
 	private static String getJavaScript() {
 
 		String javascript = "<SCRIPT> function setReadOnlyProperties(urlField , docIdField , lobField){"
-				+ " document.getElementById('documentURLField').readOnly=urlField ;    "
+				+ "document.getElementById('documentURLField').readOnly=urlField ;    "
 				+ "document.getElementById('documentIdField').readOnly=docIdField ;    "
 				+ "document.getElementById('baseURL').readOnly=docIdField ;    "
 				+ "document.getElementById('lobField').readOnly=lobField ;  "
-				+ "document.getElementById('fetchURLField').readOnly=lobField ;} "
+				+ "document.getElementById('fetchURLField').readOnly=lobField ;"
+				+ "if(urlField){document.getElementById('documentURLField').value='';}"
+				+ "if(docIdField){document.getElementById('documentIdField').value='' ;"
+				+ "document.getElementById('baseURL').value=''}"
+				+ "if(lobField){document.getElementById('lobField').value='';"
+				+ "document.getElementById('fetchURLField').value='';}"
+				+ "if(!lobField){document.getElementById('authZQuery').readOnly=false}"
+				+ "else{document.getElementById('authZQuery').readOnly=true} }"
 				+ "</SCRIPT>";
 
 		return javascript;

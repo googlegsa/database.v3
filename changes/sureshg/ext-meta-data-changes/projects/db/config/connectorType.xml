@@ -16,6 +16,7 @@
                 <value>xslt</value>
                 <value>lastModifiedDate</value>
                 <value>documentTitle</value>
+                <value>authZQuery</value>
                 <value>externalMetadata</value>
                 <value>documentURLField</value>
                 <value>documentIdField</value>

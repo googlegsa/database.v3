@@ -14,14 +14,14 @@
 
 package com.google.enterprise.connector.db;
 
+import com.google.enterprise.connector.spi.RepositoryException;
+
+import org.joda.time.DateTime;
+
 import java.util.Map;
 import java.util.logging.Logger;
 
 import junit.framework.TestCase;
-
-import org.joda.time.DateTime;
-
-import com.google.enterprise.connector.spi.RepositoryException;
 
 public class DBDocumentListTest extends TestCase {
 	private static final Logger LOG = Logger.getLogger(DBDocumentListTest.class.getName());
@@ -46,7 +46,7 @@ public class DBDocumentListTest extends TestCase {
 		String checkpointStr = docList.checkpoint();
 		LOG.info(checkpointStr);
 		assertTrue(checkpointStr.contains(dt.toString()));
-		assertTrue(checkpointStr.contains("6fd5643953e6e60188c93b89c71bc1808eb7edc2"));
+		assertTrue(checkpointStr.contains("MSxsYXN0XzAx"));
 	}
 
 	public final void testNextDocument() {

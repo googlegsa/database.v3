@@ -41,10 +41,10 @@ public class DBConnectorTypeTest extends TestCase {
 	private Set<String> configKeys;
 	private String[] keys = new String[] { "login", "password",
 			"connectionUrl", "dbName", "hostname", "driverClassName",
-			"sqlQuery", "primaryKeysString", "xslt", "lastModifiedDate",
-			"documentTitle", "externalMetadata", "externalMetadata",
-			"documentURLField", "documentIdField", "baseURL", "lobField",
-			"fetchURLField", "extMetadataType" };
+			"sqlQuery", "primaryKeysString", "xslt", "authZQuery",
+			"lastModifiedDate", "documentTitle", "externalMetadata",
+			"externalMetadata", "documentURLField", "documentIdField",
+			"baseURL", "lobField", "fetchURLField", "extMetadataType" };
 
 	private Map<String, String> configMap;
 
@@ -69,6 +69,7 @@ public class DBConnectorTypeTest extends TestCase {
 		configMap.put("dbName", "");
 		configMap.put("hostname", LanguageResource.getPropertyValue("hostname"));
 		configMap.put("xslt", "");
+		configMap.put("authZQuery", "");
 		configMap.put("lastModifiedDate", "");
 		configMap.put("documentTitle", "");
 		configMap.put("externalMetadata", "");
@@ -182,6 +183,12 @@ public class DBConnectorTypeTest extends TestCase {
 		match = pattern.matcher(configForm);
 		assertTrue(match.find());
 
+		LOG.info("Checking for 'authZ Query' field...");
+		strPattern = "<textarea .*name=\"authZQuery\".*>";
+		pattern = Pattern.compile(strPattern);
+		match = pattern.matcher(configForm);
+		assertTrue(match.find());
+
 		LOG.info("Checking for Hostname field...");
 		strPattern = "<input.*size=\"40\" name=\"hostname\".*>";
 		pattern = Pattern.compile(strPattern);
@@ -210,13 +217,13 @@ public class DBConnectorTypeTest extends TestCase {
 		match = pattern.matcher(configForm);
 		assertTrue(match.find());
 
-		LOG.info("Checking for radio Last Modified date Field...");
+		LOG.info("Checking for Last Modified date Field...");
 		strPattern = "<input.*size=\"40\".*name=\"lastModifiedDate\".*id=\"lastModifiedDate\".*/>";
 		pattern = Pattern.compile(strPattern);
 		match = pattern.matcher(configForm);
 		assertTrue(match.find());
 
-		LOG.info("Checking for radio Document Ttitle Field...");
+		LOG.info("Checking for Document Ttitle Field...");
 		strPattern = "<input.*size=\"40\" name=\"lastModifiedDate\".*id=\"lastModifiedDate\".*/>";
 		pattern = Pattern.compile(strPattern);
 		match = pattern.matcher(configForm);

@@ -28,6 +28,7 @@ import com.google.enterprise.connector.spi.Session;
 public class DBConnector implements Connector {
 	private final DBContext dbContext;
 	private final String sqlQuery;
+	private final String authZQuery;
 	private final String googleConnectorWorkDir;
 	private final String primaryKeysString;
 	private final String xslt;
@@ -36,7 +37,7 @@ public class DBConnector implements Connector {
 	public DBConnector(String connectionUrl, String hostname,
 			String driverClassName, String login, String password,
 			String dbName, String sqlQuery, String googleConnectorWorkDir,
-			String primaryKeysString, String xslt, String lastModifiedDate,
+			String primaryKeysString, String xslt, String authZQuery, String lastModifiedDate,
 			String documentTitle, String documentURLField,
 			String documentIdField, String baseURL, String lobField,
 			String fetchURLField, String extMetadataType) {
@@ -49,6 +50,7 @@ public class DBConnector implements Connector {
 		this.googleConnectorWorkDir = googleConnectorWorkDir;
 		this.primaryKeysString = primaryKeysString;
 		this.xslt = xslt;
+		this.authZQuery = authZQuery;
 	}
 
 	public Map<String, String> getDbTypeDriver() {
@@ -61,7 +63,8 @@ public class DBConnector implements Connector {
 		try {
 			dbClient = new DBClient(dbContext, sqlQuery,
 					googleConnectorWorkDir,
-					primaryKeysString.split(Util.PRIMARY_KEYS_SEPARATOR));
+					primaryKeysString.split(Util.PRIMARY_KEYS_SEPARATOR)  ,
+					authZQuery);
 			return new DBSession(dbClient, xslt);
 		} catch (DBException e) {
 			throw new RepositoryException("Could not create DB client.",
