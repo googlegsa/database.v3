@@ -14,8 +14,9 @@
 
 package com.google.enterprise.connector.db;
 
-import sun.misc.BASE64Decoder;
-import sun.misc.BASE64Encoder;
+import com.google.enterprise.connector.common.Base64DecoderException;
+
+import org.apache.commons.codec.binary.Base64;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -24,6 +25,13 @@ import java.util.Map;
 import java.util.Set;
 import java.util.logging.Logger;
 
+/**
+ * Utility class for generating ,encoding and decoding doc Id generated for
+ * DBDocumnet. It also has other utility methods for handling collections of doc
+ * Ids.
+ * 
+ * @author Suresh_Ghuge
+ */
 public class DocIdUtil {
 	private static final Logger LOG = Logger.getLogger(DocIdUtil.class.getName());
 	public static final String PRIMARY_KEYS_SEPARATOR = ",";
@@ -57,7 +65,7 @@ public class DocIdUtil {
 		for (String docId : docIds) {
 			try {
 				docIdMap.put(decodeBase64String(docId), docId);
-			} catch (IOException e) {
+			} catch (Base64DecoderException e) {
 				LOG.warning("Exception occured while decoding doc Id : "
 						+ docId + e.toString());
 			}
@@ -69,19 +77,20 @@ public class DocIdUtil {
 	 * This method decode the Base64 encoded input string.
 	 * 
 	 * @param inputString
-	 * @return
+	 * @return BASE64 decoded string
 	 * @throws IOException
+	 * @throws Base64DecoderException
 	 */
 
 	public static String decodeBase64String(String inputString)
-			throws IOException {
-		byte[] docId = new BASE64Decoder().decodeBuffer(inputString);
+			throws Base64DecoderException {
+
+		byte[] docId = Base64.decodeBase64(inputString);
 		return new String(docId);
 	}
 
 	public static String getBase64EncodedString(String inputString) {
-		String base64EncodedString = new BASE64Encoder().encode(inputString.getBytes());
-
+		String base64EncodedString = Base64.encodeBase64String(inputString.getBytes());
 		return base64EncodedString;
 	}
 
@@ -91,8 +100,11 @@ public class DocIdUtil {
 	 * and lastName and their corresponding values are 1 and last_01, then the
 	 * docId would be the BASE64 encoded of "1,last_01" i.e "MSxmaXJzdF8wMQ==".
 	 * 
-	 * @return docId Base 64 encoded values of comma separated primary key
+	 * @param primaryKeys : array of primary key columns
+	 * @param row : map representing a row in database table.
+	 * @return docId :- Base 64 encoded values of comma separated primary key
 	 *         columns.
+	 * @throws DBException
 	 */
 
 	public static String generateDocId(String[] primaryKeys,
@@ -104,10 +116,11 @@ public class DocIdUtil {
 
 			for (String primaryKey : primaryKeys) {
 				/*
-				 * Primary key value is mapped to the value of key of map row
-				 * before getting record. We need to do this because GSA admin
-				 * may entered primary key value which differed in case from
-				 * column name.
+				 * If user enters primary key column names in different case in
+				 * database connector config form, we need to map primary key
+				 * column names entered by user with actual column names in
+				 * query. Below block of code map the primary key column names
+				 * entered by user with actual column names in result set(map).
 				 */
 
 				for (String key : keySet) {
@@ -118,7 +131,7 @@ public class DocIdUtil {
 				}
 				if (!keySet.contains(primaryKey)) {
 					String msg = "Primary Key does not match with any of the coulmn names";
-					LOG.info(msg);
+					LOG.warning(msg);
 					throw new DBException(msg);
 				}
 				Object keyValue = row.get(primaryKey);
@@ -129,21 +142,22 @@ public class DocIdUtil {
 			}
 		} else {
 			String msg = "";
-			if (row == null && (primaryKeys == null || primaryKeys.length == 0)) {
-				msg = "row is null and primary key array is empty";
-			} else if (row == null) {
-				msg = "hash map row is null";
+			if (row == null) {
+				msg = "Database row is null";
 			} else {
-				msg = "primary key array is empty or null";
+				msg = "List of primary keys is empty or null";
 			}
-			LOG.info(msg);
+			LOG.warning(msg);
 			throw new DBException(msg);
 		}
 		/*
-		 * substring docId String to remove extra "," at the end on docId
-		 * String.
+		 * If doc Id has last character as ",", then substring docId to remove
+		 * extra "," at the end on docId String.
 		 */
-		docIdString.deleteCharAt(docIdString.length() - 1);
+		char lastChar = docIdString.charAt(docIdString.length() - 1);
+		if (lastChar == ',') {
+			docIdString.deleteCharAt(docIdString.length() - 1);
+		}
 		// encode doc Id.
 		String encodedDocId = getBase64EncodedString(docIdString.toString());
 		return encodedDocId;

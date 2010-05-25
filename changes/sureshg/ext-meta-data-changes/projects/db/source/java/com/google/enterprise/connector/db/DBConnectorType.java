@@ -101,6 +101,7 @@ public class DBConnectorType implements ConnectorType {
 	private static final String XSLT = "xslt";
 	// AuthZ Query
 	private static final String AUTHZ_QUERY = "authZQuery";
+	private static final String INVALID_AUTH_QUERY = "INVALID_AUTH_QUERY";
 
 	private static final String EXT_METADATA = "externalMetadata";
 	private static final String DOCUMENT_URL_FIELD = "documentURLField";
@@ -397,6 +398,9 @@ public class DBConnectorType implements ConnectorType {
 		private ResourceBundle res;
 		List<String> columnNames = new ArrayList<String>();
 
+		private static final String USERNAME_PLACEHOLDER = "#username#";
+		private static final String DOCI_IDS_PLACEHOLDER = "$docIds$";
+
 		Statement stmt = null;
 		Connection conn = null;
 		ResultSet resultSet = null;
@@ -536,6 +540,66 @@ public class DBConnectorType implements ConnectorType {
 		}
 
 		/**
+		 * This method search for expected placeholders(#username# and $docIds$)
+		 * in authZ query and validates authZ query syntax.
+		 * 
+		 * @param authZQuery authZ query provided by connector admin.
+		 * @return true if authZ query has expected placeholders and valid
+		 *         syntax.
+		 */
+		private boolean validateAuthZQuery(String authZQuery) {
+			Connection conn = null;
+			Statement stmt = null;
+			boolean flag = false;
+			/*
+			 * search for expected placeholders in authZquery.
+			 */
+			if (authZQuery.contains(USERNAME_PLACEHOLDER)
+					&& authZQuery.contains(DOCI_IDS_PLACEHOLDER)) {
+				/*
+				 * replace placeholders with empty values.
+				 */
+				authZQuery = authZQuery.replace(USERNAME_PLACEHOLDER, "''");
+				authZQuery = authZQuery.replace(DOCI_IDS_PLACEHOLDER, "''");
+				try {
+					conn = sds.getConnection();
+					stmt = conn.createStatement();
+					/*
+					 * Try to execute authZ query. It will throw an exception if
+					 * it is not a valid SQL query.
+					 */
+					stmt.execute(authZQuery);
+					flag = true;
+				} catch (Exception e) {
+					LOG.warning("Caught SQLException while testing AuthZ query : "
+							+ "\n" + e.toString());
+					message = res.getString(INVALID_AUTH_QUERY);
+					problemFields.add(AUTHZ_QUERY);
+				}
+				/*
+				 * close database connection and statement
+				 */
+				try {
+					if (conn != null) {
+						conn.close();
+					}
+					if (stmt != null) {
+						stmt.close();
+					}
+
+				} catch (SQLException e) {
+					LOG.warning("Caught SQLException " + e.toString());
+				}
+
+			} else {
+				message = res.getString(INVALID_AUTH_QUERY);
+				problemFields.add(AUTHZ_QUERY);
+			}
+
+			return flag;
+		}
+
+		/**
 		 * This method validate the names
 		 * 
 		 * @return true if external metadata related columns are there SQL crawl
@@ -634,8 +698,16 @@ public class DBConnectorType implements ConnectorType {
 				return success;
 			}
 
+			String authZQuery = config.get(AUTHZ_QUERY);
 			/*
-			 * close dabase connection, result set and statement
+			 * validate authZ query if connector admin has provided one.
+			 */
+			if (authZQuery != null && authZQuery.trim().length() > 0) {
+				success = validateAuthZQuery(authZQuery);
+			}
+
+			/*
+			 * close database connection, result set and statement
 			 */
 			try {
 				if (conn != null) {
@@ -898,8 +970,26 @@ public class DBConnectorType implements ConnectorType {
 		return stringBuilder.toString();
 	}
 
+	/**
+	 * This method builds the JavaScript for making External metadata related
+	 * fields (Document URL Field , Document Id Field , Base URL , BLOB/CLOB
+	 * Field and Fetch URL Field) and "AuthZ Query" field editable/non-editable
+	 * depending upon user selection. When user selects any of the external
+	 * metadata radio button other fields becomes non-editable and previous
+	 * value will be cleared. When user selects "Document URL Field" OR
+	 * "Document Id Field" "AuthZ Query" will become non-editable.
+	 * 
+	 * @return JavaScript for making External Metadta fields and authZ query
+	 *         field editable/non-editable depending upon context.
+	 */
 	private static String getJavaScript() {
 
+		/*
+		 * urlField , docIdField , lobField are boolean values for making
+		 * external metadata fields readOnly. "AuthZ Field" will become editable
+		 * when user selects BLOB/CLOB Field i.e when BLOB/CLOB field is
+		 * editable.
+		 */
 		String javascript = "<SCRIPT> function setReadOnlyProperties(urlField , docIdField , lobField){"
 				+ "document.getElementById('documentURLField').readOnly=urlField ;    "
 				+ "document.getElementById('documentIdField').readOnly=docIdField ;    "

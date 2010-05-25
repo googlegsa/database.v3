@@ -65,9 +65,7 @@ public class Util {
 			Map<String, Object> row, String hostname, String xslt,
 			DBContext dbContext) throws DBException {
 
-		// TODO(meghna): Look into what other document properties can be added.
 		DBDocument doc = new DBDocument();
-
 		String contentXMLRow = XmlUtils.getXMLRow(dbName, row, primaryKeys, xslt, dbContext, false);
 		doc.setProperty(SpiConstants.PROPNAME_CONTENT, contentXMLRow);
 		String docId = DocIdUtil.generateDocId(primaryKeys, row);

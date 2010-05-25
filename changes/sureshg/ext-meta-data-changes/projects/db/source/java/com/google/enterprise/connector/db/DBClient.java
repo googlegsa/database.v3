@@ -345,7 +345,7 @@ public class DBClient {
 		try {
 			authorizedDocs = sqlMapClient.queryForList("IbatisDBClient.getAuthorizedDocs", paramMap);
 		} catch (Exception e) {
-			LOG.info("Could not execute AuthZ query on the database\n"
+			LOG.warning("Could not execute AuthZ query on the database\n"
 					+ e.getMessage());
 		}
 		return authorizedDocs;

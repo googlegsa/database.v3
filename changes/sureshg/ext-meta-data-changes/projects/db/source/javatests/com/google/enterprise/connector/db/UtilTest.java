@@ -41,7 +41,8 @@ public class UtilTest extends TestCase {
 				Property prop = doc.findProperty(propName);
 				LOG.info(propName + ":    " + prop.nextValue().toString());
 			}
-			assertEquals("MSxsYXN0XzAx", doc.findProperty(SpiConstants.PROPNAME_DOCID).nextValue().toString());
+			String docId = doc.findProperty(SpiConstants.PROPNAME_DOCID).nextValue().toString();
+			assertTrue(docId.contains("MSxsYXN0XzAx"));
 			assertEquals("eb476c046da8b3e83081e3195923aba1dd9c6045", doc.findProperty(DBDocument.ROW_CHECKSUM).nextValue().toString());
 		} catch (DBException e) {
 			fail("Could not generate DB document from row.");

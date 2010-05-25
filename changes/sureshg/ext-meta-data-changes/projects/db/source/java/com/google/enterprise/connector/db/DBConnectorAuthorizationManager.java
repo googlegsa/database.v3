@@ -64,8 +64,8 @@ public class DBConnectorAuthorizationManager implements AuthorizationManager {
 			if (encodedDocId != null) {
 				encodedDocuments.add(new AuthorizationResponse(Status.PERMIT,
 						encodedDocId));
+				docIdMap.remove(docId);
 			}
-			docIdMap.remove(docId);
 		}
 
 		/*

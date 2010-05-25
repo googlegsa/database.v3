@@ -36,6 +36,11 @@ public class DBTraversalManagerTest extends DBTestBase {
 
 	}
 
+	@Override
+	protected void tearDown() throws Exception {
+		super.tearDown();
+	}
+
 	/*
 	 * Test for startTraversal method. startTravrsal should return null when
 	 * database is empty or crawl cycle is finished. This should return
