@@ -14,8 +14,6 @@
 
 package com.google.enterprise.connector.db;
 
-import com.google.enterprise.connector.common.Base64DecoderException;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -55,11 +53,7 @@ public class DocIdUtilTest extends TestCase {
 		String encodedString = "MSxtYXJjaA==";
 		String expectedString = "1,march";
 		String decodedString = null;
-		try {
-			decodedString = DocIdUtil.decodeBase64String(encodedString);
-		} catch (Base64DecoderException e) {
-			fail("Exception occured while decoding input String");
-		}
+		decodedString = DocIdUtil.decodeBase64String(encodedString);
 		assertNotNull(decodedString);
 		assertEquals(expectedString, decodedString);
 	}
@@ -72,7 +66,7 @@ public class DocIdUtilTest extends TestCase {
 		String encodedString = DocIdUtil.getBase64EncodedString(testString);
 		String expectedString = "MSxtYXJjaA==";
 		assertNotNull(encodedString);
-		assertTrue(encodedString.contains(expectedString));
+		assertEquals(expectedString, encodedString);
 	}
 
 	/**
@@ -117,6 +111,6 @@ public class DocIdUtilTest extends TestCase {
 			fail("Exception occured while generating doc Id");
 		}
 		assertNotNull(actualDocId);
-		assertTrue(actualDocId.contains(expectedDocId));
+		assertEquals(expectedDocId, actualDocId);
 	}
 }

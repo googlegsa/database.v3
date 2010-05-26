@@ -14,8 +14,6 @@
 
 package com.google.enterprise.connector.db;
 
-import com.google.enterprise.connector.common.Base64DecoderException;
-
 import org.apache.commons.codec.binary.Base64;
 
 import java.io.IOException;
@@ -63,12 +61,7 @@ public class DocIdUtil {
 	public static Map<String, String> getDocIdMap(Collection<String> docIds) {
 		Map<String, String> docIdMap = new HashMap<String, String>();
 		for (String docId : docIds) {
-			try {
-				docIdMap.put(decodeBase64String(docId), docId);
-			} catch (Base64DecoderException e) {
-				LOG.warning("Exception occured while decoding doc Id : "
-						+ docId + e.toString());
-			}
+			docIdMap.put(decodeBase64String(docId), docId);
 		}
 		return docIdMap;
 	}
@@ -79,19 +72,16 @@ public class DocIdUtil {
 	 * @param inputString
 	 * @return BASE64 decoded string
 	 * @throws IOException
-	 * @throws Base64DecoderException
 	 */
 
-	public static String decodeBase64String(String inputString)
-			throws Base64DecoderException {
-
-		byte[] docId = Base64.decodeBase64(inputString);
+	public static String decodeBase64String(String inputString) {
+		byte[] docId = Base64.decodeBase64(inputString.getBytes());
 		return new String(docId);
 	}
 
 	public static String getBase64EncodedString(String inputString) {
-		String base64EncodedString = Base64.encodeBase64String(inputString.getBytes());
-		return base64EncodedString;
+		byte[] base64Encoded = Base64.encodeBase64(inputString.getBytes());
+		return new String(base64Encoded);
 	}
 
 	/**
@@ -144,7 +134,7 @@ public class DocIdUtil {
 			String msg = "";
 			if (row == null) {
 				msg = "Database row is null";
-			} else {
+			} else if (primaryKeys == null || primaryKeys.length == 0) {
 				msg = "List of primary keys is empty or null";
 			}
 			LOG.warning(msg);

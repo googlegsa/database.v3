@@ -99,6 +99,8 @@ public class DBConnectorType implements ConnectorType {
 	private static final String SQL_QUERY = "sqlQuery";
 	private static final String PRIMARY_KEYS_STRING = "primaryKeysString";
 	private static final String XSLT = "xslt";
+	private static final String LAST_MODIFIED_DATE_FIELD = "lastModifiedDate";
+	private static final String DOC_TITLE_FIELD = "documentTitle";
 	// AuthZ Query
 	private static final String AUTHZ_QUERY = "authZQuery";
 	private static final String INVALID_AUTH_QUERY = "INVALID_AUTH_QUERY";
@@ -662,6 +664,40 @@ public class DBConnectorType implements ConnectorType {
 			return result;
 		}
 
+		/**
+		 *This method validates the name of the document title column
+		 * 
+		 * @return true if result set contains the document title column entered
+		 *         by connector admin, false otherwise.
+		 */
+		private boolean validateDocTitleField() {
+			boolean result = true;
+			String docTitleField = config.get(DOC_TITLE_FIELD);
+			if (!columnNames.contains(docTitleField)) {
+				result = false;
+				message = res.getString(INVALID_COLUMN_NAME);
+				problemFields.add(DOC_TITLE_FIELD);
+			}
+			return result;
+		}
+
+		/**
+		 * This method validates the name of last modified date column
+		 * 
+		 * @return true if result set contains the last modified date column
+		 *         entered by connector admin, false otherwise.
+		 */
+		private boolean validateLastModifiedField() {
+			boolean result = true;
+			String lastModifiedDateField = config.get(LAST_MODIFIED_DATE_FIELD);
+			if (!columnNames.contains(lastModifiedDateField)) {
+				result = false;
+				message = res.getString(INVALID_COLUMN_NAME);
+				problemFields.add(LAST_MODIFIED_DATE_FIELD);
+			}
+			return result;
+		}
+
 		public boolean validate() {
 
 			password = config.get(PASSWORD);
@@ -696,6 +732,25 @@ public class DBConnectorType implements ConnectorType {
 			success = validateExternalMetadataFields();
 			if (!success) {
 				return success;
+			}
+
+			// validate last modified date column name
+			String lastModDateColumn = config.get(LAST_MODIFIED_DATE_FIELD);
+			if (lastModDateColumn != null
+					&& lastModDateColumn.trim().length() > 0) {
+				success = validateLastModifiedField();
+				if (!success) {
+					return success;
+				}
+			}
+
+			// validate document title column name
+			String docTitleColumn = config.get(DOC_TITLE_FIELD);
+			if (docTitleColumn != null && docTitleColumn.trim().length() > 0) {
+				success = validateDocTitleField();
+				if (!success) {
+					return success;
+				}
 			}
 
 			String authZQuery = config.get(AUTHZ_QUERY);

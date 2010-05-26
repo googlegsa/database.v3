@@ -142,12 +142,12 @@ public class GlobalStateTest extends TestCase {
 	}
 
 	public final void testSaveState() {
-		String[] expectedPatterns = new String[] { "docid=\"MyxsYXN0XzAz.*\" ",
+		String[] expectedPatterns = new String[] { "docid=\"MyxsYXN0XzAz\" ",
 				"</currentChecksumMap><previousChecksumMap><checksumMapEntry ",
-				"docid=\"NCxsYXN0XzA0.*\"", "<checksumMapEntry" };
+				"docid=\"NCxsYXN0XzA0\"", "<checksumMapEntry" };
 		String expectedCursorXml = "<dbCursor>0</dbCursor>";
 		String[] expectedDocToDeleteXml = new String[] {
-				"docid=\"MSxsYXN0XzAx.*\"", "rowChecksum=.*" };
+				"docid=\"MSxsYXN0XzAx\"", "rowChecksum=.*" };
 
 		try {
 			for (Map<String, Object> row : TestUtils.getDBRows()) {
