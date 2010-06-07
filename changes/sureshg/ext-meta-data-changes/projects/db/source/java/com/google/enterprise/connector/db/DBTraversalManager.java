@@ -54,7 +54,7 @@ public class DBTraversalManager implements TraversalManager {
 	private static final int MODE_BLOB_CLOB = 4;
 
 	// current execution mode
-	private static int CURRENT_EX_MODE = -1;
+	private int currentExcMode = -1;
 
 	/**
 	 * Creates a DBTraversalManager.
@@ -235,28 +235,34 @@ public class DBTraversalManager implements TraversalManager {
 
 		globalState.setCursorDB(globalState.getCursorDB() + rows.size());
 		globalState.setQueryExecutionTime(new DateTime());
-
+		DBDocument dbDoc = null;
 		if (rows != null && rows.size() > 0) {
 
-			if (CURRENT_EX_MODE == -1) {
-				CURRENT_EX_MODE = getExecutionScenario(dbClient.getDBContext());
-				LOG.info("DB Connector is running in " + CURRENT_EX_MODE
-						+ " mode!");
-			}
+			currentExcMode = getExecutionScenario(dbClient.getDBContext());
+			String logMessage = getExcLogMessage(currentExcMode);
+			LOG.info(logMessage);
 
-			switch (CURRENT_EX_MODE) {
+			switch (currentExcMode) {
 
 			// execute the connector for metadata-url feed
 			case MODE_METADATA_URL:
+
 				for (Map<String, Object> row : rows) {
-					globalState.addDocument(Util.generateMetadataURLFeed(dbClient.getDBContext().getDbName(), dbClient.getPrimaryKeys(), row, dbClient.getDBContext().getHostname(), dbClient.getDBContext(), ""));
+					dbDoc = Util.generateMetadataURLFeed(dbClient.getDBContext().getDbName(), dbClient.getPrimaryKeys(), row, dbClient.getDBContext().getHostname(), dbClient.getDBContext(), "");
+					if (dbDoc != null) {
+						globalState.addDocument(dbDoc);
+					}
 				}
 				break;
 
 			// execute the connector for BLOB data
 			case MODE_METADATA_BASE_URL:
+				dbDoc = null;
 				for (Map<String, Object> row : rows) {
-					globalState.addDocument(Util.generateMetadataURLFeed(dbClient.getDBContext().getDbName(), dbClient.getPrimaryKeys(), row, dbClient.getDBContext().getHostname(), dbClient.getDBContext(), Util.WITH_BASE_URL));
+					dbDoc = Util.generateMetadataURLFeed(dbClient.getDBContext().getDbName(), dbClient.getPrimaryKeys(), row, dbClient.getDBContext().getHostname(), dbClient.getDBContext(), Util.WITH_BASE_URL);
+					if (dbDoc != null) {
+						globalState.addDocument(dbDoc);
+					}
 				}
 
 				break;
@@ -294,22 +300,72 @@ public class DBTraversalManager implements TraversalManager {
 	private int getExecutionScenario(DBContext dbContext) {
 
 		String extMetaType = dbContext.getExtMetadataType();
-
+		String lobField = dbContext.getLobField();
+		String docURLField = dbContext.getDocumentURLField();
+		String docIdField = dbContext.getDocumentIdField();
 		if (extMetaType != null && extMetaType.trim().length() > 0
 				&& !extMetaType.equals(DBConnectorType.NO_EXT_METADATA)) {
-			if (extMetaType.equalsIgnoreCase(DBConnectorType.COMPLETE_URL)) {
+			if (extMetaType.equalsIgnoreCase(DBConnectorType.COMPLETE_URL)
+					&& (docURLField != null && docURLField.trim().length() > 0)) {
 				globalState.setMetadataURLFeed(true);
 				return MODE_METADATA_URL;
-			} else if (extMetaType.equalsIgnoreCase(DBConnectorType.DOC_ID)) {
+			} else if (extMetaType.equalsIgnoreCase(DBConnectorType.DOC_ID)
+					&& (docIdField != null && docIdField.trim().length() > 0)) {
 				globalState.setMetadataURLFeed(true);
 				return MODE_METADATA_BASE_URL;
-			} else {
+			} else if (extMetaType.equalsIgnoreCase(DBConnectorType.BLOB_CLOB)
+					&& (lobField != null && lobField.trim().length() > 0)) {
 				globalState.setMetadataURLFeed(false);
 				return MODE_BLOB_CLOB;
+			} else {
+				globalState.setMetadataURLFeed(false);
+				dbContext.setExtMetadataType(DBConnectorType.NO_EXT_METADATA);
+				return MODE_NORMAL;
 			}
 		} else {
 			globalState.setMetadataURLFeed(false);
+			dbContext.setExtMetadataType(DBConnectorType.NO_EXT_METADATA);
 			return MODE_NORMAL;
 		}
+	}
+
+	/**
+	 * this method return appropriate log message as per current execution mode.
+	 * 
+	 * @param excMode current execution mode
+	 * @return
+	 */
+	private static String getExcLogMessage(int excMode) {
+
+		switch (excMode) {
+
+		case MODE_METADATA_URL: {
+			/*
+			 * execution mode: Externam Metadata feed using complete document
+			 * URL
+			 */
+			return " DB Connector is running in External Metadata feed mode with complete document URL";
+		}
+		case MODE_METADATA_BASE_URL: {
+			/*
+			 * execution mode: Externam Metadata feed using Base URL and
+			 * document Id
+			 */
+			return " DB Connector is running in External Metadata feed mode with Base URL and document ID";
+		}
+		case MODE_BLOB_CLOB: {
+			/*
+			 * execution mode: Content feed mode for BLOB/CLOB data.
+			 */
+			return " DB Connector is running in Content Feed Mode for BLOB/CLOB data";
+		}
+
+		default: {
+			/*
+			 * execution mode: Content feed mode for Text data.
+			 */return " DB Connector is running in content feed mode for text data";
+		}
+		}
+
 	}
 }

@@ -107,7 +107,7 @@ public class TestUtils {
 		String documentTitle = "title";
 		String documentURLField = "docURL";
 		String documentIdField = "docId";
-		String baseURL = "baseURL";
+		String baseURL = "http://myhost/app/";
 		String lobField = "";
 		String fetchURLField = "";
 		String extMetadataType = "";

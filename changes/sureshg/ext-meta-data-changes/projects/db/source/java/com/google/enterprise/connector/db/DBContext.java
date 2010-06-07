@@ -61,6 +61,10 @@ public class DBContext {
 
 	}
 
+	public void setExtMetadataType(String extMetadataType) {
+		this.extMetadataType = extMetadataType;
+	}
+
 	public String getConnectionUrl() {
 		return connectionUrl;
 	}

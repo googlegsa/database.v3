@@ -284,15 +284,30 @@ public class Util {
 
 		String baseURL = null;
 		String docIdColumn = null;
-		String finalURL = null;
+		String finalURL = "";
 		if (isWithBaseURL) {
-			baseURL = (String) row.get(dbContext.getBaseURL());
+			baseURL = dbContext.getBaseURL();
 			docIdColumn = dbContext.getDocumentIdField();
-			finalURL = baseURL.trim() + row.get(docIdColumn);
+			Object docId = row.get(docIdColumn);
+			/*
+			 * build final document URL if docId is not null. Send null
+			 * DBDocument if document id is null.
+			 */
+			if (docId != null) {
+
+				finalURL = baseURL.trim() + docId.toString();
+			} else {
+				return null;
+			}
 			skipColumns.add(dbContext.getDocumentIdField());
 		} else {
 			skipColumns.add(dbContext.getDocumentURLField());
-			finalURL = (String) row.get(dbContext.getDocumentURLField());
+			Object docURL = row.get(dbContext.getDocumentURLField());
+			if (docURL != null) {
+				finalURL = row.get(dbContext.getDocumentURLField()).toString();
+			} else {
+				return null;
+			}
 		}
 
 		DBDocument doc = new DBDocument();
@@ -469,7 +484,7 @@ public class Util {
 			Map<String, Object> rowForXmlDoc = getRowForXmlDoc(row, dbContext);
 			String xmlRow = XmlUtils.getXMLRow(dbName, rowForXmlDoc, primaryKeys, "", dbContext, true);
 			doc.setProperty(DBDocument.ROW_CHECKSUM, Util.getChecksum(xmlRow.getBytes()));
-			LOG.warning("Conetent of Document " + docId + " has null value.");
+			LOG.warning("Content of Document " + docId + " has null value.");
 		}
 
 		// set doc id

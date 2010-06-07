@@ -106,7 +106,6 @@ public class UtilTest extends TestCase {
 			rowMapWithBaseURL.put(primaryKeyColumn, 2);
 			rowMapWithBaseURL.put(dbContext.getDocumentIdField(), docId);
 			rowMapWithBaseURL.put(versionColumn, versionValue);
-			rowMapWithBaseURL.put(dbContext.getBaseURL(), baseURL);
 
 			DBDocument docWithBaseURL = Util.generateMetadataURLFeed("testdb", primaryKeys, rowMapWithBaseURL, "localhost", dbContext, Util.WITH_BASE_URL);
 

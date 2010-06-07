@@ -27,6 +27,7 @@ import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -52,10 +53,15 @@ public class DBConnectorType implements ConnectorType {
 	private static final String FQDN_HOSTNAME = "FQDN_HOSTNAME";
 	private static final String MISSING_ATTRIBUTES = "MISSING_ATTRIBUTES";
 	private static final String REQ_FIELDS = "REQ_FIELDS";
+	private static final String TEST_DOCUMENT_ID_FIELD = "DOCUMENT_ID_FIELD";
 	private static final String VALUE = "value";
 	private static final String NAME = "name";
 	private static final String ID = "id";
 	private static final String TEXT = "text";
+	private static final String RIGHT_ALIGN = "right";
+	private static final String DIV = "div";
+	// Red asterisk for required fields.
+	public static final String RED_ASTERISK = "<font color=\"RED\">*</font>";
 
 	private static final String TYPE = "type";
 	private static final String INPUT = "input";
@@ -127,6 +133,12 @@ public class DBConnectorType implements ConnectorType {
 
 	private boolean isDocIdDisabled = false;
 	private boolean isLOBFieldDisable = false;
+	/*
+	 * List of required fields.
+	 */
+	List<String> requiredFields = Arrays.asList(new String[] { HOSTNAME,
+			CONNECTION_URL, DB_NAME, LOGIN, DRIVER_CLASS_NAME, SQL_QUERY,
+			PRIMARY_KEYS_STRING });
 
 	/**
 	 * @param configKeys names of required configuration variables.
@@ -175,7 +187,7 @@ public class DBConnectorType implements ConnectorType {
 			} else {
 				value = null;
 			}
-			buf.append(formSnippetWithColor(key, value, false));
+			buf.append(formSnippetWithColor(key, value, false, configMap));
 		}
 
 		return buf.toString();
@@ -190,10 +202,11 @@ public class DBConnectorType implements ConnectorType {
 	 * @param red indicates whether this field is required or not
 	 * @return database connector configuration form snippet
 	 */
-	private String formSnippetWithColor(String key, String value, boolean red) {
+	private String formSnippetWithColor(String key, String value, boolean red,
+			Map<String, String> config) {
 		StringBuilder buf = new StringBuilder();
 
-		appendStartRow(buf, key, red, value);
+		appendStartRow(buf, key, red, value, config);
 
 		/*
 		 * Check if key is "externalMetadata". For this label we don't have to
@@ -247,7 +260,7 @@ public class DBConnectorType implements ConnectorType {
 				appendAttribute(buf, VALUE, value);
 			}
 
-			setReadOnly(key, value, buf);
+			setReadOnly(key, value, buf, config);
 
 			buf.append(CLOSE_ELEMENT_SLASH);
 		}
@@ -288,9 +301,9 @@ public class DBConnectorType implements ConnectorType {
 		for (String key : configKeys) {
 			String value = config.get(key);
 			if (problemfields.contains(key)) {
-				buf.append(formSnippetWithColor(key, value, true));
+				buf.append(formSnippetWithColor(key, value, true, config));
 			} else {
-				buf.append(formSnippetWithColor(key, value, false));
+				buf.append(formSnippetWithColor(key, value, false, config));
 			}
 		}
 		return buf.toString();
@@ -306,8 +319,7 @@ public class DBConnectorType implements ConnectorType {
 	 * @param value
 	 */
 	private void appendStartRow(StringBuilder buf, String key, boolean red,
-			String value) {
-		boolean isChecked = value != null && value.trim().length() > 0;
+			String value, Map<String, String> config) {
 
 		buf.append(TR_START);
 
@@ -327,14 +339,36 @@ public class DBConnectorType implements ConnectorType {
 		}
 
 		/*
-		 * add radio buttons before "Document URL Field", "Document Id Field"
-		 * and "BLOB/CLOB Field"
+		 * add radio buttons before "Stylesheet", "Document URL Field",
+		 * "Document Id Field" and "BLOB/CLOB Field"
 		 */
+
 		if (DOCUMENT_URL_FIELD.equals(key)) {
+			/*
+			 * set isChecked flag true only if value of Document URL Field is
+			 * not empty.
+			 */
+			boolean isChecked = value != null && value.trim().length() > 0;
 			buf.append(getRadio(COMPLETE_URL, isChecked));
 		} else if (DOCUMENT_ID_FIELD.equals(key)) {
+			String baseURL = null;
+			if (config != null) {
+				baseURL = config.get(BASE_URL);
+			}
+			/*
+			 * set isChecked flag true if value of Document Id field is not
+			 * empty or if user has entered value for base URL.
+			 */
+			boolean isChecked = (value != null && value.trim().length() > 0)
+					|| (baseURL != null && baseURL.trim().length() > 0);
 			buf.append(getRadio(DOC_ID, isChecked));
 		} else if (CLOB_BLOB_FIELD.equals(key)) {
+			String fetchURL = null;
+			if (config != null) {
+				fetchURL = config.get(FETCH_URL_FIELD);
+			}
+			boolean isChecked = (value != null && value.trim().length() > 0)
+					|| (fetchURL != null && fetchURL.trim().length() > 0);
 			buf.append(getRadio(BLOB_CLOB, isChecked));
 		}
 		/*
@@ -350,6 +384,20 @@ public class DBConnectorType implements ConnectorType {
 		if (EXT_METADATA.equalsIgnoreCase(key)) {
 			buf.append(BOLD_TEXT_END);
 		}
+		/*
+		 * add red asterisk for required fields.
+		 */
+		if (requiredFields.contains(key)) {
+			buf.append(OPEN_ELEMENT);
+			buf.append(DIV);
+			buf.append(" " + ALIGN + "=" + "'" + RIGHT_ALIGN + "'");
+			buf.append(CLOSE_ELEMENT);
+			buf.append(RED_ASTERISK);
+			buf.append(OPEN_ELEMENT_SLASH);
+			buf.append(DIV);
+			buf.append(CLOSE_ELEMENT);
+		}
+
 		buf.append(TD_END);
 		buf.append(TD_START);
 	}
@@ -624,9 +672,18 @@ public class DBConnectorType implements ConnectorType {
 			}
 
 			// validate DocID and Base URL fields
-
 			String documentIdField = config.get(DOCUMENT_ID_FIELD);
 			String baseURL = config.get(BASE_URL);
+
+			// check if Base URL field exists without DocId Field
+			if ((baseURL != null && baseURL.trim().length() > 0)
+					&& (documentIdField == null || documentIdField.trim().length() == 0)) {
+				result = false;
+				message = res.getString(MISSING_ATTRIBUTES) + " : "
+						+ res.getString(DOCUMENT_ID_FIELD);
+				problemFields.add(DOCUMENT_ID_FIELD);
+			}
+			// Validate documnet ID column name
 			if (documentIdField != null && documentIdField.trim().length() > 0) {
 
 				if (!columnNames.contains(documentIdField)) {
@@ -636,7 +693,8 @@ public class DBConnectorType implements ConnectorType {
 				}
 				if (baseURL == null || baseURL.trim().length() == 0) {
 					result = false;
-					message = res.getString(INVALID_COLUMN_NAME);
+					message = res.getString(MISSING_ATTRIBUTES) + " : "
+							+ res.getString(BASE_URL);
 					problemFields.add(BASE_URL);
 				}
 
@@ -646,6 +704,16 @@ public class DBConnectorType implements ConnectorType {
 			String blobClobField = config.get(CLOB_BLOB_FIELD);
 			String fetchURL = config.get(FETCH_URL_FIELD);
 
+			// check if Fetch URL field exists without BLOB/CLOB Field
+			if ((fetchURL != null && fetchURL.trim().length() > 0)
+					&& (blobClobField == null || blobClobField.trim().length() == 0)) {
+				result = false;
+				message = res.getString(MISSING_ATTRIBUTES) + " : "
+						+ res.getString(CLOB_BLOB_FIELD);
+				problemFields.add(CLOB_BLOB_FIELD);
+			}
+
+			// check for valid BLOB/CLOB column name
 			if (blobClobField != null && blobClobField.trim().length() > 0) {
 				if (!columnNames.contains(blobClobField)) {
 					result = false;
@@ -825,7 +893,7 @@ public class DBConnectorType implements ConnectorType {
 				success = true;
 			} else {
 				StringBuilder buf = new StringBuilder();
-				buf.append(res.getString(MISSING_ATTRIBUTES));
+				buf.append(res.getString(MISSING_ATTRIBUTES) + " : ");
 				boolean first = true;
 				for (String attribute : missingAttributes) {
 					if (!first) {
@@ -877,7 +945,7 @@ public class DBConnectorType implements ConnectorType {
 				success = true;
 			} else {
 				StringBuilder buf = new StringBuilder();
-				buf.append(res.getString(REQ_FIELDS));
+				buf.append(res.getString(REQ_FIELDS) + " : ");
 				boolean first = true;
 				for (String attribute : missingFields) {
 					if (!first) {
@@ -1073,7 +1141,8 @@ public class DBConnectorType implements ConnectorType {
 	 * @param value
 	 * @param buf
 	 */
-	private void setReadOnly(String key, String value, StringBuilder buf) {
+	private void setReadOnly(String key, String value, StringBuilder buf,
+			Map<String, String> config) {
 		/*
 		 * Set fields non-editable only if they are empty
 		 */
@@ -1086,10 +1155,18 @@ public class DBConnectorType implements ConnectorType {
 				appendAttribute(buf, DISABLED, TRUE);
 			} else if (DOCUMENT_ID_FIELD.equals(key)) {
 				/*
-				 * Set "Document Id Field" non-editable
+				 * Set "Document Id Field" non-editable only if user has not
+				 * entered value for base URL
 				 */
-				appendAttribute(buf, DISABLED, TRUE);
-				isDocIdDisabled = true;
+				String baseURL = null;
+				if (config != null) {
+					baseURL = config.get(BASE_URL);
+				}
+				if (baseURL == null || baseURL.trim().length() == 0) {
+					appendAttribute(buf, DISABLED, TRUE);
+					isDocIdDisabled = true;
+				}
+
 			} else if (BASE_URL.equals(key) && isDocIdDisabled) {
 				/*
 				 * Set "Base URL" field non-editable if "Document Id Field"
@@ -1099,10 +1176,18 @@ public class DBConnectorType implements ConnectorType {
 				isDocIdDisabled = false;
 			} else if (CLOB_BLOB_FIELD.equals(key)) {
 				/*
-				 * Set "BLOB/CLOB Field" non-editable
+				 * Set "BLOB/CLOB Field" non-editable only if user has not
+				 * entered value for fetch URL.
 				 */
-				appendAttribute(buf, DISABLED, TRUE);
-				isLOBFieldDisable = true;
+				String fetchURL = null;
+				if (config != null) {
+					fetchURL = config.get(FETCH_URL_FIELD);
+				}
+
+				if (fetchURL == null || fetchURL.trim().length() == 0) {
+					appendAttribute(buf, DISABLED, TRUE);
+					isLOBFieldDisable = true;
+				}
 
 			} else if (FETCH_URL_FIELD.equals(key) && isLOBFieldDisable) {
 				/*
