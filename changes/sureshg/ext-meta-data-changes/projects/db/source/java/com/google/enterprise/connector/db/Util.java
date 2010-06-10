@@ -20,8 +20,13 @@ import com.google.enterprise.connector.spi.TraversalContext;
 
 import org.joda.time.DateTime;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.sql.Blob;
+import java.sql.Clob;
+import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -294,7 +299,6 @@ public class Util {
 			 * DBDocument if document id is null.
 			 */
 			if (docId != null) {
-
 				finalURL = baseURL.trim() + docId.toString();
 			} else {
 				return null;
@@ -419,9 +423,36 @@ public class Util {
 			 * If column name is "dbconn_blob" it means large object is of type
 			 * BLOB else it is CLOB.
 			 */
-			if (largeObject instanceof byte[]) {
+			if (largeObject instanceof byte[] || largeObject instanceof Blob) {
+				byte[] blobContent = null;
+				if (largeObject instanceof byte[]) {
+					doc.setBinaryContent(SpiConstants.PROPNAME_CONTENT, (byte[]) largeObject);
+					blobContent = (byte[]) largeObject;
+				} else {
+					int length;
 
-				doc.setBinaryContent(SpiConstants.PROPNAME_CONTENT, (byte[]) largeObject);
+					try {
+						length = (int) ((Blob) largeObject).length();
+						blobContent = ((Blob) largeObject).getBytes(0, length);
+					} catch (SQLException e) {
+						// try to get byte array of blob content from input
+						// stream
+						InputStream contentStream;
+						try {
+							length = (int) ((Blob) largeObject).length();
+							contentStream = ((Blob) largeObject).getBinaryStream();
+							if (contentStream != null) {
+								blobContent = getBytes(length, contentStream);
+							}
+
+						} catch (SQLException e1) {
+							LOG.warning("Exception occured while retrivieving Blob content:\n"
+									+ e.toString());
+							return null;
+						}
+					}
+					doc.setBinaryContent(SpiConstants.PROPNAME_CONTENT, blobContent);
+				}
 				/*
 				 * First try to get the MIME type of this file from the result
 				 * set. If it does not maintain a column for MIME type try to
@@ -429,7 +460,7 @@ public class Util {
 				 * database) using MIME type finder utility.
 				 */
 
-				mimeType = new MimeTypeFinder().find((byte[]) largeObject, context);
+				mimeType = new MimeTypeFinder().find(blobContent, context);
 
 				// set mime type for this document
 				doc.setProperty(SpiConstants.PROPNAME_MIMETYPE, mimeType);
@@ -438,7 +469,7 @@ public class Util {
 				Map<String, Object> rowForXmlDoc = getRowForXmlDoc(row, dbContext);
 				String xmlRow = XmlUtils.getXMLRow(dbName, rowForXmlDoc, primaryKeys, "", dbContext, true);
 				// get checksum of blob
-				String blobCheckSum = Util.getChecksum((byte[]) largeObject);
+				String blobCheckSum = Util.getChecksum((blobContent));
 				// get checksum of other column
 				String otherColumnCheckSum = Util.getChecksum(xmlRow.getBytes());
 				// get checksum of blob object and other column
@@ -456,11 +487,21 @@ public class Util {
 					clobValue = new String((char[]) largeObject);
 				} else if (largeObject instanceof String) {
 					clobValue = largeObject.toString();
+				} else if (largeObject instanceof Clob) {
+					try {
+						int length = (int) ((Clob) largeObject).length();
+						InputStream clobStream = ((Clob) largeObject).getAsciiStream();
+						clobValue = new String(getBytes(length, clobStream));
+					} catch (SQLException e) {
+						LOG.warning("Exception occured while retrivieving Clob content:\n"
+								+ e.toString());
+					}
 				}
 				if (clobValue != null) {
 					doc.setProperty(SpiConstants.PROPNAME_CONTENT, clobValue.toString());
 				} else {
 					LOG.warning("Content of documnet " + docId + " is null");
+					return null;
 				}
 				doc.setProperty(SpiConstants.PROPNAME_MIMETYPE, MIMETYPE);
 
@@ -481,10 +522,8 @@ public class Util {
 			 * If large object is null then send empty value.
 			 */
 		} else {
-			Map<String, Object> rowForXmlDoc = getRowForXmlDoc(row, dbContext);
-			String xmlRow = XmlUtils.getXMLRow(dbName, rowForXmlDoc, primaryKeys, "", dbContext, true);
-			doc.setProperty(DBDocument.ROW_CHECKSUM, Util.getChecksum(xmlRow.getBytes()));
 			LOG.warning("Content of Document " + docId + " has null value.");
+			return null;
 		}
 
 		// set doc id
@@ -575,6 +614,33 @@ public class Util {
 		if (docTitle != null && docTitle.trim().length() > 0) {
 			skipColumns.add(docTitle);
 		}
+	}
+
+	/**
+	 * This method converts the Input AStream into byte array.
+	 * 
+	 * @param length
+	 * @param inStream
+	 * @return byte array of Input Stream
+	 */
+	private static byte[] getBytes(int length, InputStream inStream) {
+
+		int bytesRead = 0;
+		byte[] content = new byte[length];
+		while (bytesRead < length) {
+			int result;
+			try {
+				result = inStream.read(content, bytesRead, length - bytesRead);
+				if (result == -1)
+					break;
+				bytesRead += result;
+			} catch (IOException e) {
+				LOG.warning("Exception occurred while converting InputStream into byte array"
+						+ e.toString());
+				return null;
+			}
+		}
+		return content;
 	}
 
 }

@@ -269,8 +269,12 @@ public class DBTraversalManager implements TraversalManager {
 
 			// execute the connector for CLOB data
 			case MODE_BLOB_CLOB:
+				dbDoc = null;
 				for (Map<String, Object> row : rows) {
-					globalState.addDocument(Util.largeObjectToDoc(dbClient.getDBContext().getDbName(), dbClient.getPrimaryKeys(), row, dbClient.getDBContext().getHostname(), dbClient.getDBContext()));
+					dbDoc = Util.largeObjectToDoc(dbClient.getDBContext().getDbName(), dbClient.getPrimaryKeys(), row, dbClient.getDBContext().getHostname(), dbClient.getDBContext());
+					if (dbDoc != null) {
+						globalState.addDocument(dbDoc);
+					}
 				}
 
 				break;
@@ -319,11 +323,21 @@ public class DBTraversalManager implements TraversalManager {
 				return MODE_BLOB_CLOB;
 			} else {
 				globalState.setMetadataURLFeed(false);
+				/*
+				 * Explicitly change the mode of execution as user may switch
+				 * from "External Metadata Feed" mode to
+				 * "Content Feed(for text data)" mode.
+				 */
 				dbContext.setExtMetadataType(DBConnectorType.NO_EXT_METADATA);
 				return MODE_NORMAL;
 			}
 		} else {
 			globalState.setMetadataURLFeed(false);
+			/*
+			 * Explicitly change the mode of execution as user may switch from
+			 * "External Metadata Feed" mode to "Content Feed(for text data)"
+			 * mode.
+			 */
 			dbContext.setExtMetadataType(DBConnectorType.NO_EXT_METADATA);
 			return MODE_NORMAL;
 		}
