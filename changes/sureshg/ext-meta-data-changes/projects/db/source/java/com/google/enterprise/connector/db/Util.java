@@ -50,7 +50,6 @@ public class Util {
 	private static final String DBCONNECTOR_PROTOCOL = "dbconnector://";
 	private static final String DATABASE_TITLE_PREFIX = "Database Connector Result";
 
-	private static TraversalContext context = null;
 	public static String WITH_BASE_URL = "withBaseURL";
 
 	// This class should not be initialized.
@@ -391,14 +390,13 @@ public class Util {
 	 */
 	public static DBDocument largeObjectToDoc(String dbName,
 			String[] primaryKeys, Map<String, Object> row, String hostname,
-			DBContext dbContext) throws DBException {
+			DBContext dbContext, TraversalContext context) throws DBException {
 
 		// get doc id from primary key values
 		String docId = DocIdUtil.generateDocId(primaryKeys, row);
 
 		String clobValue = null;
 		DBDocument doc = new DBDocument();
-		String mimeType = "";
 
 		/*
 		 * skipColumns maintain the list of column which needs to skip while
@@ -419,77 +417,108 @@ public class Util {
 		 */
 		if (largeObject != null) {
 			/*
-			 * check if large object is of type BLOB from the the column names.
-			 * If column name is "dbconn_blob" it means large object is of type
-			 * BLOB else it is CLOB.
+			 * check if large object is of type BLOB from the the type of
+			 * largeObject. If the largeObject is of type java.sql.Blob or byte
+			 * array means large object is of type BLOB else it is CLOB.
 			 */
-			if (largeObject instanceof byte[] || largeObject instanceof Blob) {
-				byte[] blobContent = null;
-				if (largeObject instanceof byte[]) {
-					doc.setBinaryContent(SpiConstants.PROPNAME_CONTENT, (byte[]) largeObject);
-					blobContent = (byte[]) largeObject;
-				} else {
-					int length;
+			byte[] blobContent = null;
+			// Maximum document size that connector manager supports.
+			long maxDocSize = context.maxDocumentSize();
 
+			if (largeObject instanceof byte[]) {
+				blobContent = (byte[]) largeObject;
+				setBlobContent(blobContent, doc, dbName, row, dbContext, primaryKeys, context);
+
+			} else if (largeObject instanceof Blob) {
+				int length;
+
+				try {
+					length = (int) ((Blob) largeObject).length();
+					/*
+					 * Check if the size of document exceeds Max document size
+					 * that Connector manager supports. Skip document if it
+					 * exceeds.
+					 */
+					if (length > maxDocSize) {
+						LOG.info("Size of the document '" + docId
+								+ "' is larger than supported");
+						return null;
+					}
+					blobContent = ((Blob) largeObject).getBytes(0, length);
+				} catch (SQLException e) {
+					// try to get byte array of blob content from input
+					// stream
+					InputStream contentStream;
 					try {
 						length = (int) ((Blob) largeObject).length();
-						blobContent = ((Blob) largeObject).getBytes(0, length);
-					} catch (SQLException e) {
-						// try to get byte array of blob content from input
-						// stream
-						InputStream contentStream;
-						try {
-							length = (int) ((Blob) largeObject).length();
-							contentStream = ((Blob) largeObject).getBinaryStream();
-							if (contentStream != null) {
-								blobContent = getBytes(length, contentStream);
-							}
-
-						} catch (SQLException e1) {
-							LOG.warning("Exception occured while retrivieving Blob content:\n"
-									+ e.toString());
+						/*
+						 * Check if the size of document exceeds Max document
+						 * size that Connector manager supports. Skip document
+						 * if it exceeds.
+						 */
+						if (length > maxDocSize) {
+							LOG.info("Size of the document '" + docId
+									+ "' is larger than supported");
 							return null;
 						}
+						contentStream = ((Blob) largeObject).getBinaryStream();
+						if (contentStream != null) {
+							blobContent = getBytes(length, contentStream);
+						}
+
+					} catch (SQLException e1) {
+						LOG.warning("Exception occured while retrivieving Blob content:\n"
+								+ e.toString());
+						return null;
 					}
-					doc.setBinaryContent(SpiConstants.PROPNAME_CONTENT, blobContent);
 				}
-				/*
-				 * First try to get the MIME type of this file from the result
-				 * set. If it does not maintain a column for MIME type try to
-				 * get the MIME type of this document(file stored as BLOB in
-				 * database) using MIME type finder utility.
-				 */
 
-				mimeType = new MimeTypeFinder().find(blobContent, context);
-
-				// set mime type for this document
-				doc.setProperty(SpiConstants.PROPNAME_MIMETYPE, mimeType);
-
-				// get xml representation of document(exclude the BLOB column).
-				Map<String, Object> rowForXmlDoc = getRowForXmlDoc(row, dbContext);
-				String xmlRow = XmlUtils.getXMLRow(dbName, rowForXmlDoc, primaryKeys, "", dbContext, true);
-				// get checksum of blob
-				String blobCheckSum = Util.getChecksum((blobContent));
-				// get checksum of other column
-				String otherColumnCheckSum = Util.getChecksum(xmlRow.getBytes());
-				// get checksum of blob object and other column
-				String docCheckSum = Util.getChecksum((otherColumnCheckSum + blobCheckSum).getBytes());
-				// set checksum of this document
-				doc.setProperty(DBDocument.ROW_CHECKSUM, docCheckSum);
-				LOG.info("BLOB Data found");
-
+				setBlobContent(blobContent, doc, dbName, row, dbContext, primaryKeys, context);
 			} else {
 				/*
 				 * get the value of CLOB as StringBuilder. iBATIS returns char
 				 * array or String for CLOB data depending upon Database.
 				 */
 				if (largeObject instanceof char[]) {
+					int length = ((char[]) largeObject).length;
+					/*
+					 * Check if the size of document exceeds Max document size
+					 * that Connector manager supports. Skip document if it
+					 * exceeds.
+					 */
+					if (length > maxDocSize) {
+						LOG.info("Size of the document '" + docId
+								+ "' is larger than supported");
+						return null;
+					}
 					clobValue = new String((char[]) largeObject);
 				} else if (largeObject instanceof String) {
+					int length = largeObject.toString().getBytes().length;
+					/*
+					 * Check if the size of document exceeds Max document size
+					 * that Connector manager supports. Skip document if it
+					 * exceeds.
+					 */
+					if (length > maxDocSize) {
+						LOG.info("Size of the document '" + docId
+								+ "' is larger than supported");
+						return null;
+					}
 					clobValue = largeObject.toString();
 				} else if (largeObject instanceof Clob) {
+
 					try {
 						int length = (int) ((Clob) largeObject).length();
+						/*
+						 * Check if the size of document exceeds Max document
+						 * size that Connector manager supports. Skip document
+						 * if it exceeds.
+						 */
+						if (length > maxDocSize) {
+							LOG.info("Size of the document '" + docId
+									+ "' is larger than supported");
+							return null;
+						}
 						InputStream clobStream = ((Clob) largeObject).getAsciiStream();
 						clobValue = new String(getBytes(length, clobStream));
 					} catch (SQLException e) {
@@ -587,16 +616,6 @@ public class Util {
 	}
 
 	/**
-	 * Set TraversalContext. TraversalContext is required for detecting
-	 * appropriate MIME type of document
-	 * 
-	 * @param trContext
-	 */
-	public static void setTraversalContext(TraversalContext trContext) {
-		context = trContext;
-	}
-
-	/**
 	 * This method extract the columns for Last Modified date and Document Title
 	 * and add in list of skip columns.
 	 * 
@@ -643,4 +662,48 @@ public class Util {
 		return content;
 	}
 
+	/**
+	 * This method sets the content of blob data in DBDocument.
+	 * 
+	 * @param blobContent BLOB content to be set
+	 * @param doc DBDocument
+	 * @param dbName name of the database
+	 * @param row Map representing row in the database table
+	 * @param dbContext object of DBContext
+	 * @param primaryKeys primary key columns
+	 * @return DBDocument
+	 * @throws DBException
+	 */
+	private static DBDocument setBlobContent(byte[] blobContent,
+			DBDocument doc, String dbName, Map<String, Object> row,
+			DBContext dbContext, String[] primaryKeys, TraversalContext context)
+			throws DBException {
+		/*
+		 * First try to get the MIME type of this file from the result set. If
+		 * it does not maintain a column for MIME type try to get the MIME type
+		 * of this document(file stored as BLOB in database) using MIME type
+		 * finder utility.
+		 */
+		String mimeType = "";
+		mimeType = new MimeTypeFinder().find(blobContent, context);
+
+		// set mime type for this document
+		doc.setProperty(SpiConstants.PROPNAME_MIMETYPE, mimeType);
+
+		// Set content
+		doc.setBinaryContent(SpiConstants.PROPNAME_CONTENT, blobContent);
+		// get xml representation of document(exclude the BLOB column).
+		Map<String, Object> rowForXmlDoc = getRowForXmlDoc(row, dbContext);
+		String xmlRow = XmlUtils.getXMLRow(dbName, rowForXmlDoc, primaryKeys, "", dbContext, true);
+		// get checksum of blob
+		String blobCheckSum = Util.getChecksum((blobContent));
+		// get checksum of other column
+		String otherColumnCheckSum = Util.getChecksum(xmlRow.getBytes());
+		// get checksum of blob object and other column
+		String docCheckSum = Util.getChecksum((otherColumnCheckSum + blobCheckSum).getBytes());
+		// set checksum of this document
+		doc.setProperty(DBDocument.ROW_CHECKSUM, docCheckSum);
+		LOG.info("BLOB Data found");
+		return doc;
+	}
 }

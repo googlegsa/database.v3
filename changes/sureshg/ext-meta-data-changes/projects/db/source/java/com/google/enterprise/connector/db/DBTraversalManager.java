@@ -16,6 +16,8 @@ package com.google.enterprise.connector.db;
 
 import com.google.enterprise.connector.spi.DocumentList;
 import com.google.enterprise.connector.spi.RepositoryException;
+import com.google.enterprise.connector.spi.TraversalContext;
+import com.google.enterprise.connector.spi.TraversalContextAware;
 import com.google.enterprise.connector.spi.TraversalManager;
 
 import org.joda.time.DateTime;
@@ -29,11 +31,13 @@ import java.util.logging.Logger;
 /**
  * {@link TraversalManager} implementation for the DB connector.
  */
-public class DBTraversalManager implements TraversalManager {
+public class DBTraversalManager implements TraversalManager,
+		TraversalContextAware {
 	private static final Logger LOG = Logger.getLogger(DBTraversalManager.class.getName());
 	private DBClient dbClient;
 	private GlobalState globalState;
 	private String xslt;
+	private TraversalContext traversalContext;
 
 	// Limit on the batch size.
 	private int batchHint = 100;
@@ -271,7 +275,7 @@ public class DBTraversalManager implements TraversalManager {
 			case MODE_BLOB_CLOB:
 				dbDoc = null;
 				for (Map<String, Object> row : rows) {
-					dbDoc = Util.largeObjectToDoc(dbClient.getDBContext().getDbName(), dbClient.getPrimaryKeys(), row, dbClient.getDBContext().getHostname(), dbClient.getDBContext());
+					dbDoc = Util.largeObjectToDoc(dbClient.getDBContext().getDbName(), dbClient.getPrimaryKeys(), row, dbClient.getDBContext().getHostname(), dbClient.getDBContext(), traversalContext);
 					if (dbDoc != null) {
 						globalState.addDocument(dbDoc);
 					}
@@ -381,5 +385,15 @@ public class DBTraversalManager implements TraversalManager {
 		}
 		}
 
+	}
+
+	/**
+	 * Set TraversalContext. TraversalContext is required for detecting
+	 * appropriate MIME type of document and to get other useful information.
+	 * 
+	 *@param traversalContext current traversal context.
+	 */
+	public void setTraversalContext(TraversalContext traversalContext) {
+		this.traversalContext = traversalContext;
 	}
 }

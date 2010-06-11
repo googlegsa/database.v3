@@ -17,6 +17,9 @@ package com.google.enterprise.connector.db;
 import com.google.enterprise.connector.spi.Property;
 import com.google.enterprise.connector.spi.RepositoryException;
 import com.google.enterprise.connector.spi.SpiConstants;
+import com.google.enterprise.connector.spi.TraversalContext;
+import com.google.enterprise.connector.traversal.FileSizeLimitInfo;
+import com.google.enterprise.connector.traversal.ProductionTraversalContext;
 
 import org.joda.time.DateTime;
 
@@ -148,13 +151,18 @@ public class UtilTest extends TestCase {
 		// column used to store document title.
 		rowMap.put(dbContext.getDocumentTitle(), title);
 
+		ProductionTraversalContext context = new ProductionTraversalContext();
+		FileSizeLimitInfo fileSizeLimitInfo = new FileSizeLimitInfo();
+		fileSizeLimitInfo.setMaxFeedSize(31457280);
+		context.setFileSizeLimitInfo(fileSizeLimitInfo);
+
 		// Test scenarios for CLOB data types
-		testCLOBDataScenarios(rowMap, primaryKeys);
+		testCLOBDataScenarios(rowMap, primaryKeys, context);
 		// remove CLOB entry from row map which was added in
 		// testCLOBDataScenarios().
 		rowMap.remove(dbContext.getLobField());
 		// Test scenarios for BLOB data types
-		testBLOBDataScenarios(rowMap, primaryKeys, dbContext);
+		testBLOBDataScenarios(rowMap, primaryKeys, dbContext, context);
 	}
 
 	/**
@@ -164,7 +172,7 @@ public class UtilTest extends TestCase {
 	 * @param primaryKeys
 	 */
 	private void testCLOBDataScenarios(Map<String, Object> rowMap,
-			String[] primaryKeys) {
+			String[] primaryKeys, TraversalContext context) {
 
 		LOG.info("Testing largeObjectToDoc() for CLOB data");
 
@@ -183,7 +191,7 @@ public class UtilTest extends TestCase {
 		rowMap.put(dbContext.getLobField(), clobContent);
 
 		try {
-			DBDocument clobDoc = Util.largeObjectToDoc("testdb_", primaryKeys, rowMap, "localhost", dbContext);
+			DBDocument clobDoc = Util.largeObjectToDoc("testdb_", primaryKeys, rowMap, "localhost", dbContext, context);
 			assertNotNull(clobDoc);
 			// test scenario:- this doc will have column name "version" as
 			// metadata key and value will be "2.3.4"
@@ -213,7 +221,7 @@ public class UtilTest extends TestCase {
 	 */
 
 	private void testBLOBDataScenarios(Map<String, Object> rowMap,
-			String[] primaryKeys, DBContext dbContext) {
+			String[] primaryKeys, DBContext dbContext, TraversalContext context) {
 		LOG.info("Testing largeObjectToDoc for BLOB data");
 		// In iBATIS binary content(BLOB) is represented as byte array.
 		// Define BLOB data for this test case
@@ -228,7 +236,7 @@ public class UtilTest extends TestCase {
 		rowMap.put(dbContext.getFetchURLField(), fetchURL);
 
 		try {
-			DBDocument blobDoc = Util.largeObjectToDoc("testdb_", primaryKeys, rowMap, "localhost", dbContext);
+			DBDocument blobDoc = Util.largeObjectToDoc("testdb_", primaryKeys, rowMap, "localhost", dbContext, context);
 			assertNotNull(blobDoc);
 			// test scenario:- this doc will have column name "version" as
 			// metadata key and value will be "2.3.4"
