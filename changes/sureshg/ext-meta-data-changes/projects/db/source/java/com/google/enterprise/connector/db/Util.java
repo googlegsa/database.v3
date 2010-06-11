@@ -427,7 +427,25 @@ public class Util {
 
 			if (largeObject instanceof byte[]) {
 				blobContent = (byte[]) largeObject;
-				setBlobContent(blobContent, doc, dbName, row, dbContext, primaryKeys, context);
+				int length = blobContent.length;
+				/*
+				 * Check if the size of document exceeds Max document size that
+				 * Connector manager supports. Skip document if it exceeds.
+				 */
+				if (length > maxDocSize) {
+					LOG.info("Size of the document '" + docId
+							+ "' is larger than supported");
+					return null;
+				}
+
+				doc = setBlobContent(blobContent, doc, dbName, row, dbContext, primaryKeys, context, docId);
+				/*
+				 * if returned document is null , it means mime type or content
+				 * encoding of the current document is not supported.
+				 */
+				if (doc == null) {
+					return null;
+				}
 
 			} else if (largeObject instanceof Blob) {
 				int length;
@@ -472,8 +490,14 @@ public class Util {
 						return null;
 					}
 				}
-
-				setBlobContent(blobContent, doc, dbName, row, dbContext, primaryKeys, context);
+				/*
+				 * if returned document is null , it means mime type or content
+				 * encoding of the current document is not supported.
+				 */
+				doc = setBlobContent(blobContent, doc, dbName, row, dbContext, primaryKeys, context, docId);
+				if (doc == null) {
+					return null;
+				}
 			} else {
 				/*
 				 * get the value of CLOB as StringBuilder. iBATIS returns char
@@ -676,8 +700,8 @@ public class Util {
 	 */
 	private static DBDocument setBlobContent(byte[] blobContent,
 			DBDocument doc, String dbName, Map<String, Object> row,
-			DBContext dbContext, String[] primaryKeys, TraversalContext context)
-			throws DBException {
+			DBContext dbContext, String[] primaryKeys,
+			TraversalContext context, String docId) throws DBException {
 		/*
 		 * First try to get the MIME type of this file from the result set. If
 		 * it does not maintain a column for MIME type try to get the MIME type
@@ -687,6 +711,18 @@ public class Util {
 		String mimeType = "";
 		mimeType = new MimeTypeFinder().find(blobContent, context);
 
+		// get the mime type supported.
+		int mimeTypeSupport = context.mimeTypeSupportLevel(mimeType);
+
+		if (mimeTypeSupport == 0) {
+			LOG.warning("Skipping the document with docId : " + docId
+					+ " as content encoding is not supprted");
+			return null;
+		} else if (0 > mimeTypeSupport) {
+			LOG.warning("Skipping the document with docId : " + docId
+					+ " as content mime type " + mimeType + " is not supported");
+			return null;
+		}
 		// set mime type for this document
 		doc.setProperty(SpiConstants.PROPNAME_MIMETYPE, mimeType);
 
