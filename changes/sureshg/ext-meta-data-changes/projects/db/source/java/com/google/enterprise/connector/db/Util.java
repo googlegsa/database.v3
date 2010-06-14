@@ -15,6 +15,7 @@
 package com.google.enterprise.connector.db;
 
 import com.google.enterprise.connector.spi.RepositoryException;
+import com.google.enterprise.connector.spi.SkippedDocumentException;
 import com.google.enterprise.connector.spi.SpiConstants;
 import com.google.enterprise.connector.spi.TraversalContext;
 
@@ -433,17 +434,22 @@ public class Util {
 				 * Connector manager supports. Skip document if it exceeds.
 				 */
 				if (length > maxDocSize) {
-					LOG.info("Size of the document '" + docId
+					LOG.warning("Size of the document '" + docId
 							+ "' is larger than supported");
 					return null;
 				}
 
-				doc = setBlobContent(blobContent, doc, dbName, row, dbContext, primaryKeys, context, docId);
 				/*
-				 * if returned document is null , it means mime type or content
-				 * encoding of the current document is not supported.
+				 * If skipped document exception occurs while setting BLOB
+				 * content means mime type or content encoding of the current
+				 * document is not supported.
 				 */
-				if (doc == null) {
+				try {
+					doc = setBlobContent(blobContent, doc, dbName, row, dbContext, primaryKeys, context, docId);
+				} catch (SkippedDocumentException e) {
+
+					LOG.warning("Exception occured while setting BLOB content "
+							+ e.toString());
 					return null;
 				}
 
@@ -458,7 +464,7 @@ public class Util {
 					 * exceeds.
 					 */
 					if (length > maxDocSize) {
-						LOG.info("Size of the document '" + docId
+						LOG.warning("Size of the document '" + docId
 								+ "' is larger than supported");
 						return null;
 					}
@@ -475,7 +481,7 @@ public class Util {
 						 * if it exceeds.
 						 */
 						if (length > maxDocSize) {
-							LOG.info("Size of the document '" + docId
+							LOG.warning("Size of the document '" + docId
 									+ "' is larger than supported");
 							return null;
 						}
@@ -491,13 +497,18 @@ public class Util {
 					}
 				}
 				/*
-				 * if returned document is null , it means mime type or content
-				 * encoding of the current document is not supported.
+				 * If skipped document exception occurs while setting BLOB
+				 * content means mime type or content encoding of the current
+				 * document is not supported.
 				 */
-				doc = setBlobContent(blobContent, doc, dbName, row, dbContext, primaryKeys, context, docId);
-				if (doc == null) {
+				try {
+					doc = setBlobContent(blobContent, doc, dbName, row, dbContext, primaryKeys, context, docId);
+				} catch (SkippedDocumentException e) {
+					LOG.warning("Exception occured while setting BLOB content"
+							+ e.toString());
 					return null;
 				}
+
 			} else {
 				/*
 				 * get the value of CLOB as StringBuilder. iBATIS returns char
@@ -511,7 +522,7 @@ public class Util {
 					 * exceeds.
 					 */
 					if (length > maxDocSize) {
-						LOG.info("Size of the document '" + docId
+						LOG.warning("Size of the document '" + docId
 								+ "' is larger than supported");
 						return null;
 					}
@@ -524,7 +535,7 @@ public class Util {
 					 * exceeds.
 					 */
 					if (length > maxDocSize) {
-						LOG.info("Size of the document '" + docId
+						LOG.warning("Size of the document '" + docId
 								+ "' is larger than supported");
 						return null;
 					}
@@ -539,7 +550,7 @@ public class Util {
 						 * if it exceeds.
 						 */
 						if (length > maxDocSize) {
-							LOG.info("Size of the document '" + docId
+							LOG.warning("Size of the document '" + docId
 									+ "' is larger than supported");
 							return null;
 						}
@@ -701,7 +712,8 @@ public class Util {
 	private static DBDocument setBlobContent(byte[] blobContent,
 			DBDocument doc, String dbName, Map<String, Object> row,
 			DBContext dbContext, String[] primaryKeys,
-			TraversalContext context, String docId) throws DBException {
+			TraversalContext context, String docId) throws DBException,
+			SkippedDocumentException {
 		/*
 		 * First try to get the MIME type of this file from the result set. If
 		 * it does not maintain a column for MIME type try to get the MIME type
@@ -713,15 +725,29 @@ public class Util {
 
 		// get the mime type supported.
 		int mimeTypeSupport = context.mimeTypeSupportLevel(mimeType);
-
 		if (mimeTypeSupport == 0) {
-			LOG.warning("Skipping the document with docId : " + docId
+			LOG.warning("Dropping content of document with docId : " + docId
 					+ " as content encoding is not supprted");
-			return null;
-		} else if (0 > mimeTypeSupport) {
-			LOG.warning("Skipping the document with docId : " + docId
-					+ " as content mime type " + mimeType + " is not supported");
-			return null;
+			// get xml representation of document(exclude the BLOB column).
+			Map<String, Object> rowForXmlDoc = getRowForXmlDoc(row, dbContext);
+			String xmlRow = XmlUtils.getXMLRow(dbName, rowForXmlDoc, primaryKeys, "", dbContext, true);
+			// get checksum of blob
+			String blobCheckSum = Util.getChecksum((blobContent));
+			// get checksum of other column
+			String otherColumnCheckSum = Util.getChecksum(xmlRow.getBytes());
+			// get checksum of blob object and other column
+			String docCheckSum = Util.getChecksum((otherColumnCheckSum + blobCheckSum).getBytes());
+			// set checksum of this document
+			doc.setProperty(DBDocument.ROW_CHECKSUM, docCheckSum);
+			/*
+			 * return document without setting document content for the current
+			 * document
+			 */
+			return doc;
+		} else if (mimeTypeSupport < 0) {
+			String msg = new StringBuilder(
+					"Skipping the document with docId : ").append(docId).append(" as the mime type ").append(mimeType).append(" is in the 'ignored' mimetypes list").toString();
+			throw new SkippedDocumentException(msg);
 		}
 		// set mime type for this document
 		doc.setProperty(SpiConstants.PROPNAME_MIMETYPE, mimeType);

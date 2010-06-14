@@ -18,12 +18,15 @@ import com.google.enterprise.connector.spi.Property;
 import com.google.enterprise.connector.spi.RepositoryException;
 import com.google.enterprise.connector.spi.SpiConstants;
 import com.google.enterprise.connector.traversal.FileSizeLimitInfo;
+import com.google.enterprise.connector.traversal.MimeTypeMap;
 import com.google.enterprise.connector.traversal.ProductionTraversalContext;
 
 import org.joda.time.DateTime;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.logging.Logger;
 
 import junit.framework.TestCase;
@@ -234,14 +237,16 @@ public class UtilTest extends TestCase {
 		LOG.info("Testing largeObjectToDoc for BLOB data");
 		// In iBATIS binary content(BLOB) is represented as byte array.
 		// Define BLOB data for this test case
-		byte[] blobContent = "SOME BINARY DATA".getBytes();
+
+		String content = "SOME BINARY DATA";
+		byte[] blobContent = content.getBytes();
+		rowMap.remove(dbContext.getLobField());
 		// set BLOB content
 		rowMap.put(dbContext.getLobField(), blobContent);
 
 		// Define for fetching BLOB content
 		String fetchURL = "http://myhost:8030/app?dpc_id=120";
-		// use alias "dbconn_lob_url" for the column user for storing URL to
-		// BLOB data
+		// get Fetch URL value from DBContext
 		rowMap.put(dbContext.getFetchURLField(), fetchURL);
 		ProductionTraversalContext context = new ProductionTraversalContext();
 		FileSizeLimitInfo fileSizeLimitInfo = new FileSizeLimitInfo();
@@ -265,6 +270,16 @@ public class UtilTest extends TestCase {
 			// if one of the column holds the URL for fetching BLOB data. It
 			// will be used as display URL in feed.
 			assertEquals(fetchURL, blobDoc.findProperty(SpiConstants.PROPNAME_DISPLAYURL).nextValue().toString());
+			// set "text/plain" mime type in ignore list. Now we should get null
+			// value for DB document as this document is ignored by connector.
+			Set<String> ignoredMime = new HashSet<String>();
+			ignoredMime.add("text/plain");
+			MimeTypeMap mimeTypeMap = new MimeTypeMap();
+			mimeTypeMap.setExcludedMimeTypes(ignoredMime);
+			context.setMimeTypeMap(mimeTypeMap);
+			blobDoc = Util.largeObjectToDoc("testdb_", primaryKeys, rowMap, "localhost", dbContext, context);
+			// DB doc should be ignored and should return null value
+			assertNull(blobDoc);
 
 		} catch (DBException e) {
 			fail("Unexpected exception" + e.toString());

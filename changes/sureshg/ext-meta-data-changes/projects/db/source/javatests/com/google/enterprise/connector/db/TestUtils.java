@@ -108,8 +108,8 @@ public class TestUtils {
 		String documentURLField = "docURL";
 		String documentIdField = "docId";
 		String baseURL = "http://myhost/app/";
-		String lobField = "";
-		String fetchURLField = "";
+		String lobField = "lob";
+		String fetchURLField = "fetchURL";
 		String extMetadataType = "";
 
 		DBContext dbContext = new DBContext(connectionUrl, hostname,
