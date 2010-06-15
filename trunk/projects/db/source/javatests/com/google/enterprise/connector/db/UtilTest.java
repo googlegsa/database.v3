@@ -14,44 +14,26 @@
 
 package com.google.enterprise.connector.db;
 
+import com.google.enterprise.connector.spi.Property;
+import com.google.enterprise.connector.spi.RepositoryException;
+import com.google.enterprise.connector.spi.SkippedDocumentException;
+import com.google.enterprise.connector.spi.SpiConstants;
+import com.google.enterprise.connector.traversal.FileSizeLimitInfo;
+import com.google.enterprise.connector.traversal.MimeTypeMap;
+import com.google.enterprise.connector.traversal.ProductionTraversalContext;
+
+import org.joda.time.DateTime;
+
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.logging.Logger;
 
 import junit.framework.TestCase;
 
-import org.joda.time.DateTime;
-
-import com.google.enterprise.connector.spi.Property;
-import com.google.enterprise.connector.spi.RepositoryException;
-import com.google.enterprise.connector.spi.SpiConstants;
-
 public class UtilTest extends TestCase {
 	private static final Logger LOG = Logger.getLogger(UtilTest.class.getName());
-
-	/**
-	 * Test for generating the docId.
-	 */
-	public final void testGenerateDocId() {
-		Map<String, Object> rowMap = null;
-		String primaryKeys[] = null;
-
-		try {
-			// generateDocId(primaryKeys, rowMap) should throw an exception as
-			// primary key array and rowMai is null
-			String docId = Util.generateDocId(primaryKeys, rowMap);
-			fail();
-		} catch (DBException e1) {
-			e1.printStackTrace();
-		}
-
-		try {
-			rowMap = TestUtils.getStandardDBRow();
-			primaryKeys = TestUtils.getStandardPrimaryKeys();
-			assertEquals("6fd5643953e6e60188c93b89c71bc1808eb7edc2", Util.generateDocId(primaryKeys, rowMap));
-		} catch (DBException e) {
-			fail("Exception while generating doc id" + e.toString());
-		}
-	}
 
 	/**
 	 * Test for converting DB row to DB Doc.
@@ -60,12 +42,12 @@ public class UtilTest extends TestCase {
 		Map<String, Object> rowMap = TestUtils.getStandardDBRow();
 		String[] primaryKeys = TestUtils.getStandardPrimaryKeys();
 		try {
-			DBDocument doc = Util.rowToDoc("testdb_", primaryKeys, rowMap, "localhost", null);
+			DBDocument doc = Util.rowToDoc("testdb_", primaryKeys, rowMap, "localhost", null, null);
 			for (String propName : doc.getPropertyNames()) {
 				Property prop = doc.findProperty(propName);
 				LOG.info(propName + ":    " + prop.nextValue().toString());
 			}
-			assertEquals("6fd5643953e6e60188c93b89c71bc1808eb7edc2", doc.findProperty(SpiConstants.PROPNAME_DOCID).nextValue().toString());
+			assertEquals("MSxsYXN0XzAx", doc.findProperty(SpiConstants.PROPNAME_DOCID).nextValue().toString());
 			assertEquals("eb476c046da8b3e83081e3195923aba1dd9c6045", doc.findProperty(DBDocument.ROW_CHECKSUM).nextValue().toString());
 		} catch (DBException e) {
 			fail("Could not generate DB document from row.");
@@ -76,15 +58,240 @@ public class UtilTest extends TestCase {
 
 	public final void testGetCheckpointString() throws DBException {
 		Map<String, Object> rowMap = TestUtils.getStandardDBRow();
-		DBDocument doc = Util.rowToDoc("testdb_", TestUtils.getStandardPrimaryKeys(), rowMap, "localhost", null);
+		DBDocument doc = Util.rowToDoc("testdb_", TestUtils.getStandardPrimaryKeys(), rowMap, "localhost", null, null);
 		try {
 			String checkpointStr = Util.getCheckpointString(null, null);
 			assertEquals("(NO_TIMESTAMP)NO_DOCID", checkpointStr);
 			DateTime dt = new DateTime();
 			checkpointStr = Util.getCheckpointString(dt, doc);
 			assertTrue(checkpointStr.contains(dt.toString()));
-			assertTrue(checkpointStr.contains("6fd5643953e6e60188c93b89c71bc1808eb7edc2"));
+			assertTrue(checkpointStr.contains("MSxsYXN0XzAx"));
 			LOG.info(checkpointStr);
+		} catch (RepositoryException e) {
+			fail("Unexpected exception" + e.toString());
+		}
+	}
+
+	/**
+	 * test case for generateURLMetaFeed()
+	 */
+	public final void testGenerateURLMetaFeed() {
+		Map<String, Object> rowMap = new HashMap<String, Object>();
+		Map<String, Object> rowMapWithBaseURL = new HashMap<String, Object>();
+		DBContext dbContext = null;
+		try {
+			dbContext = TestUtils.getDBContext();
+		} catch (DBException dbe) {
+			fail("Unexpected exception" + dbe.toString());
+		}
+		String primaryKeyColumn = "id";
+		String[] primaryKeys = { primaryKeyColumn };
+		String documentURL = "http://myhost/app/welcome.html";
+		String baseURL = "http://myhost/app/";
+		String docId = "index123.html";
+		String versionColumn = "version";
+		String versionValue = "2.3.4";
+		// add primary key in row
+		rowMap.put(primaryKeyColumn, 1);
+		// add document URL in row
+		rowMap.put(dbContext.getDocumentURLField(), documentURL);
+		// add version column in row
+		rowMap.put(versionColumn, versionValue);
+		try {
+			DBDocument doc = Util.generateMetadataURLFeed("testdb", primaryKeys, rowMap, "localhost", dbContext, "");
+			// test:- column "version" value as metadata
+			assertEquals(versionValue, doc.findProperty(versionColumn).nextValue().toString());
+			// test:- display URL will be same as the actual URL of the
+			// document
+
+			assertEquals("http://myhost/app/welcome.html", doc.findProperty(SpiConstants.PROPNAME_DISPLAYURL).nextValue().toString());
+
+			// test scenario: when base URL is not empty, the display URL is
+			// generated by concatenating document id with base URL.
+
+			rowMapWithBaseURL.put(primaryKeyColumn, 2);
+			rowMapWithBaseURL.put(dbContext.getDocumentIdField(), docId);
+			rowMapWithBaseURL.put(versionColumn, versionValue);
+
+			DBDocument docWithBaseURL = Util.generateMetadataURLFeed("testdb", primaryKeys, rowMapWithBaseURL, "localhost", dbContext, Util.WITH_BASE_URL);
+
+			// test:- column "version" value as metadata
+			assertEquals(versionValue, docWithBaseURL.findProperty(versionColumn).nextValue().toString());
+			// test: display URL of the document
+			assertEquals(baseURL + docId, docWithBaseURL.findProperty(SpiConstants.PROPNAME_DISPLAYURL).nextValue().toString());
+
+		} catch (DBException e) {
+			fail("Unexpected exception" + e.toString());
+		} catch (RepositoryException e) {
+			fail("Unexpected exception" + e.toString());
+		}
+
+	}
+
+	/**
+	 * test case for largeObjectToDoc() method
+	 */
+	public final void testLargeObjectToDoc() {
+		Map<String, Object> rowMap = new HashMap<String, Object>();
+		Map<String, Object> rowMapWithBaseURL = new HashMap<String, Object>();
+		DBContext dbContext = null;
+		try {
+			dbContext = TestUtils.getDBContext();
+		} catch (DBException dbe) {
+			fail("Unexpected exception" + dbe.toString());
+		}
+		// define common test data
+		String primaryKeyColumn = "id";
+		String[] primaryKeys = { primaryKeyColumn };
+		String versionColumn = "version";
+		String versionValue = "2.3.4";
+		String title = "Welcome Page";
+		// add primary key in row
+		rowMap.put(primaryKeyColumn, 1);
+		// add version column in row
+		rowMap.put(versionColumn, versionValue);
+		// add document title for this document. Use alias "dbconn_title" for
+		// column used to store document title.
+		rowMap.put(dbContext.getDocumentTitle(), title);
+
+		// Test scenarios for CLOB data types
+		testCLOBDataScenarios(rowMap, primaryKeys);
+		// remove CLOB entry from row map which was added in
+		// testCLOBDataScenarios().
+		rowMap.remove(dbContext.getLobField());
+		// Test scenarios for BLOB data types
+		testBLOBDataScenarios(rowMap, primaryKeys, dbContext);
+	}
+
+	/**
+	 * test scenarios for CLOB data types
+	 * 
+	 * @param rowMap
+	 * @param primaryKeys
+	 */
+	private void testCLOBDataScenarios(Map<String, Object> rowMap,
+			String[] primaryKeys) {
+
+		LOG.info("Testing largeObjectToDoc() for CLOB data");
+
+		DBContext dbContext = null;
+		try {
+			dbContext = TestUtils.getDBContext();
+		} catch (DBException dbe) {
+			fail("Unexpected exception" + dbe.toString());
+		}
+
+		// In iBATIS CLOB data is represented as String or char array.
+		// Define CLOB data for this test case
+		String clobContent = "This IS CLOB Text";
+		// set CLOB content. Use alias "dbconn_clob" for column used for storing
+		// CLOB data.
+		rowMap.put(dbContext.getLobField(), clobContent);
+
+		try {
+			ProductionTraversalContext context = new ProductionTraversalContext();
+			FileSizeLimitInfo fileSizeLimitInfo = new FileSizeLimitInfo();
+			fileSizeLimitInfo.setMaxDocumentSize(5);
+			context.setFileSizeLimitInfo(fileSizeLimitInfo);
+
+			DBDocument clobDoc = Util.largeObjectToDoc("testdb_", primaryKeys, rowMap, "localhost", dbContext, context);
+			/*
+			 * as the size of the document is more than supported. clobDoc
+			 * should have null value.
+			 */
+			assertNull(clobDoc);
+			// increase the maximum supported size of the document
+			fileSizeLimitInfo.setMaxDocumentSize(1024);
+			context.setFileSizeLimitInfo(fileSizeLimitInfo);
+			clobDoc = Util.largeObjectToDoc("testdb_", primaryKeys, rowMap, "localhost", dbContext, context);
+			assertNotNull(clobDoc);
+
+			// test scenario:- this doc will have column name "version" as
+			// metadata key and value will be "2.3.4"
+			assertEquals("2.3.4", clobDoc.findProperty("version").nextValue().toString());
+			// test scenario:- the content of this document will be same as the
+			// content of CLOB column(dbconn_clob).
+			assertEquals(clobContent, clobDoc.findProperty(SpiConstants.PROPNAME_CONTENT).nextValue().toString());
+			// test scenario:- primary key column should be excluded while
+			// indexing external metadata
+			assertNull(clobDoc.findProperty("id"));
+
+			// test document title
+			assertEquals("Welcome Page", clobDoc.findProperty(SpiConstants.PROPNAME_TITLE).nextValue().toString());
+
+		} catch (DBException e) {
+			fail("Unexpected exception" + e.toString());
+		} catch (RepositoryException e) {
+			fail("Unexpected exception" + e.toString());
+		}
+	}
+
+	/**
+	 * test scenarios for clob
+	 * 
+	 * @param rowMap
+	 * @param primaryKeys
+	 */
+
+	private void testBLOBDataScenarios(Map<String, Object> rowMap,
+			String[] primaryKeys, DBContext dbContext) {
+		LOG.info("Testing largeObjectToDoc for BLOB data");
+		// In iBATIS binary content(BLOB) is represented as byte array.
+		// Define BLOB data for this test case
+
+		String content = "SOME BINARY DATA";
+		byte[] blobContent = content.getBytes();
+		rowMap.remove(dbContext.getLobField());
+		// set BLOB content
+		rowMap.put(dbContext.getLobField(), blobContent);
+
+		// Define for fetching BLOB content
+		String fetchURL = "http://myhost:8030/app?dpc_id=120";
+		// get Fetch URL value from DBContext
+		rowMap.put(dbContext.getFetchURLField(), fetchURL);
+		ProductionTraversalContext context = new ProductionTraversalContext();
+		FileSizeLimitInfo fileSizeLimitInfo = new FileSizeLimitInfo();
+		fileSizeLimitInfo.setMaxDocumentSize(1024);
+		context.setFileSizeLimitInfo(fileSizeLimitInfo);
+
+		try {
+			DBDocument blobDoc = Util.largeObjectToDoc("testdb_", primaryKeys, rowMap, "localhost", dbContext, context);
+			assertNotNull(blobDoc);
+			// test scenario:- this doc will have column name "version" as
+			// metadata key and value will be "2.3.4"
+			assertEquals("2.3.4", blobDoc.findProperty("version").nextValue().toString());
+
+			// test scenario:- primary key column should be excluded while
+			// indexing external metadata
+			assertNull(blobDoc.findProperty("id"));
+
+			// test document title
+			assertEquals("Welcome Page", blobDoc.findProperty(SpiConstants.PROPNAME_TITLE).nextValue().toString());
+
+			// if one of the column holds the URL for fetching BLOB data. It
+			// will be used as display URL in feed.
+			assertEquals(fetchURL, blobDoc.findProperty(SpiConstants.PROPNAME_DISPLAYURL).nextValue().toString());
+
+			// set "text/plain" mime type in ignore list. Now we should get null
+			// value for DB document as this document is ignored by connector.
+			Set<String> ignoredMime = new HashSet<String>();
+			ignoredMime.add("text/plain");
+			MimeTypeMap mimeTypeMap = new MimeTypeMap();
+			mimeTypeMap.setExcludedMimeTypes(ignoredMime);
+			context.setMimeTypeMap(mimeTypeMap);
+			blobDoc = Util.largeObjectToDoc("testdb_", primaryKeys, rowMap, "localhost", dbContext, context);
+			Property docContent = null;
+			try {
+				docContent = blobDoc.findProperty(SpiConstants.PROPNAME_CONTENT);
+			} catch (SkippedDocumentException e) {
+				LOG.info("Connector has thrown SkippedDocumentException which is expected");
+			}
+			// document content should have null value.
+			assertNull(docContent);
+		} catch (DBException e) {
+			fail("Unexpected exception" + e.toString());
+		} catch (SkippedDocumentException e) {
+			fail("Unexpected exception" + e.toString());
 		} catch (RepositoryException e) {
 			fail("Unexpected exception" + e.toString());
 		}

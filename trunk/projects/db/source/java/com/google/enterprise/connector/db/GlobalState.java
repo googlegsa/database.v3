@@ -14,6 +14,16 @@
 
 package com.google.enterprise.connector.db;
 
+import com.google.enterprise.connector.spi.Document;
+import com.google.enterprise.connector.spi.Property;
+import com.google.enterprise.connector.spi.RepositoryException;
+import com.google.enterprise.connector.spi.SpiConstants;
+
+import org.joda.time.DateTime;
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
+import org.xml.sax.SAXException;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -27,16 +37,6 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
-
-import org.joda.time.DateTime;
-import org.w3c.dom.Element;
-import org.w3c.dom.NodeList;
-import org.xml.sax.SAXException;
-
-import com.google.enterprise.connector.spi.Document;
-import com.google.enterprise.connector.spi.Property;
-import com.google.enterprise.connector.spi.RepositoryException;
-import com.google.enterprise.connector.spi.SpiConstants;
 
 /**
  * This is the main class for maintaining the global state which can be
@@ -70,6 +70,7 @@ public class GlobalState {
 	private LinkedList<DBDocument> docsInFlight = new LinkedList<DBDocument>();
 	private DateTime queryExecutionTime = null;
 	private DateTime queryTimeForInFlightDocs = null;
+	private boolean isMetadataURLFeed = false;
 
 	public GlobalState(String workDir) {
 		this.workDir = workDir;
@@ -128,10 +129,25 @@ public class GlobalState {
 	 * added to the doc queue for the deletion.
 	 */
 	public void markNewDBTraversal() {
-		addDocumentsToDelete();
+
+		// mark documents for DELETE only for Content feed. Otherwise just
+		// clear the entries from "previousChecksumMap".
+		if (!isMetadataURLFeed) {
+			addDocumentsToDelete();
+		} else {
+			previousChecksumMap.clear();
+		}
 		previousChecksumMap.putAll(currentChecksumMap);
 		currentChecksumMap.clear();
 		setCursorDB(0);
+	}
+
+	public boolean isMetadataURLFeed() {
+		return this.isMetadataURLFeed;
+	}
+
+	public void setMetadataURLFeed(boolean isMetadataURLFeed) {
+		this.isMetadataURLFeed = isMetadataURLFeed;
 	}
 
 	/**
@@ -148,9 +164,9 @@ public class GlobalState {
 	 * queue.
 	 */
 	private void addDocumentsToDelete() {
+		LOG.info(previousChecksumMap.size()
+				+ " document(s) are marked for delete feed");
 		for (String key : previousChecksumMap.keySet()) {
-			LOG.info(previousChecksumMap.size()
-					+ " document(s) are marked for delete feed");
 			DBDocument dbDoc = new DBDocument();
 			dbDoc.setProperty(SpiConstants.PROPNAME_DOCID, key);
 			dbDoc.setProperty(DBDocument.ROW_CHECKSUM, previousChecksumMap.get(key));
@@ -221,8 +237,9 @@ public class GlobalState {
 	 * </pre>
 	 * 
 	 * @throws DBException
+	 * @throws RepositoryException
 	 */
-	public void saveState() throws DBException {
+	public void saveState() throws DBException, RepositoryException {
 		try {
 			String xml = dumpToStateXML();
 			File f = getStateFileLocation();
@@ -241,8 +258,9 @@ public class GlobalState {
 	 * 
 	 * @return xml string.
 	 * @throws DBException
+	 * @throws RepositoryException
 	 */
-	private String dumpToStateXML() throws DBException {
+	private String dumpToStateXML() throws DBException, RepositoryException {
 		DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
 		org.w3c.dom.Document doc;
 		try {

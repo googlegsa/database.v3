@@ -14,6 +14,14 @@
 
 package com.google.enterprise.connector.db;
 
+import com.google.enterprise.connector.spi.RepositoryException;
+import com.google.enterprise.connector.spi.Session;
+
+import org.joda.time.DateTime;
+
+import com.ibatis.common.jdbc.ScriptRunner;
+import com.ibatis.common.resources.Resources;
+
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -22,20 +30,13 @@ import java.util.Map;
 
 import junit.framework.TestCase;
 
-import org.joda.time.DateTime;
-
-import com.google.enterprise.connector.spi.RepositoryException;
-import com.google.enterprise.connector.spi.Session;
-import com.ibatis.common.jdbc.ScriptRunner;
-import com.ibatis.common.resources.Resources;
-
 /**
  * This is a base class for all test classes that requires interaction with
  * database. This provide methods to interact with database. *
  * 
  * @author Suresh_Ghuge
  */
-public class DBTestBase extends TestCase {
+public abstract class DBTestBase extends TestCase {
 
 	private Map<String, String> configMap = new HashMap<String, String>();
 	private GlobalState globalState;
@@ -49,6 +50,10 @@ public class DBTestBase extends TestCase {
 	public static final String TRUNCATE_TEST_DB_TABLE = "com/google/enterprise/connector/db/config/truncateTestTable.sql";
 	public static final String DROP_TEST_DB_TABLE = "com/google/enterprise/connector/db/config/dropdb.sql";
 
+	public static final String CREATE_USER_DOC_MAP_TABLE = "com/google/enterprise/connector/db/config/createUerDocMapTable.sql";
+	public static final String LOAD_USER_DOC_MAP_TEST_DATA = "com/google/enterprise/connector/db/config/loadUerDocMapTable.sql";
+	public static final String DROP_USER_DOC_MAP_TABLE = "com/google/enterprise/connector/db/config/dropUserDocMapTable.sql";
+
 	@Override
 	protected void setUp() throws Exception {
 		TestDirectoryManager testDirManager = new TestDirectoryManager(this);
@@ -60,11 +65,19 @@ public class DBTestBase extends TestCase {
 		configMap.put("driverClassName", LanguageResource.getPropertyValue("driverClassName"));
 		configMap.put("sqlQuery", LanguageResource.getPropertyValue("sqlQuery"));
 		configMap.put("primaryKeysString", LanguageResource.getPropertyValue("primaryKeysString"));
-		System.out.println("Configuration map:======= " + configMap);
 		configMap.put("googleConnectorWorkDir", testDirManager.getTmpDir());
 		configMap.put("xslt", "");
+		configMap.put("authZQuery", LanguageResource.getPropertyValue("authZQuery"));
+		configMap.put("lastModifiedDate", "");
+		configMap.put("documentTitle", "");
+		configMap.put("externalMetadata", "");
+		configMap.put("documentURLField", "");
+		configMap.put("documentIdField", "");
+		configMap.put("baseURL", "");
+		configMap.put("lobField", "");
+		configMap.put("fetchURLField", "");
+		configMap.put("extMetadataType", "");
 		globalState = new GlobalState(testDirManager.getTmpDir());
-		runDBScript(CREATE_TEST_DB_TABLE);
 	}
 
 	protected DBConnector getConnector() {
@@ -100,7 +113,7 @@ public class DBTestBase extends TestCase {
 		globalState.setQueryExecutionTime(queryExecutionTime);
 		try {
 			for (Map<String, Object> row : TestUtils.getDBRows()) {
-				DBDocument dbDoc = Util.rowToDoc("testdb_", TestUtils.getStandardPrimaryKeys(), row, "localhost", null);
+				DBDocument dbDoc = Util.rowToDoc("testdb_", TestUtils.getStandardPrimaryKeys(), row, "localhost", null, TestUtils.getDBContext());
 				globalState.addDocument(dbDoc);
 			}
 		} catch (DBException dbe) {

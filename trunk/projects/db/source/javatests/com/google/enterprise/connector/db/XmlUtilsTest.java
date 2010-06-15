@@ -54,7 +54,7 @@ public class XmlUtilsTest extends TestCase {
 				+ "<firstName>first_01</firstName><id>1</id>"
 				+ "<lastName>last_01</lastName>" + "</testdb_>";
 		try {
-			String rowXml = XmlUtils.getXMLRow("testdb_", rowMap, TestUtils.getStandardPrimaryKeys(), null);
+			String rowXml = XmlUtils.getXMLRow("testdb_", rowMap, TestUtils.getStandardPrimaryKeys(), null, null, true);
 			assertTrue(rowXml.contains(expected));
 		} catch (DBException e) {
 			fail(" Caught exception");
@@ -69,7 +69,7 @@ public class XmlUtilsTest extends TestCase {
 				"<td>last_01</td>", "<td>01@google.com</td>",
 				"<td>first_01</td>" };
 		try {
-			String rowXml = XmlUtils.getXMLRow("testdb_", rowMap, TestUtils.getStandardPrimaryKeys(), "");
+			String rowXml = XmlUtils.getXMLRow("testdb_", rowMap, TestUtils.getStandardPrimaryKeys(), "", null, true);
 			assertCheckPatterns(rowXml, expectedPatterns);
 		} catch (DBException e) {
 			fail(" Caught exception");
@@ -103,7 +103,7 @@ public class XmlUtilsTest extends TestCase {
 				"<td>01@google.com</td>", "<td>first_01</td>", "<td>1</td>",
 				"<td>last_01</td>" };
 		try {
-			String rowXml = XmlUtils.getXMLRow("testdb_", rowMap, TestUtils.getStandardPrimaryKeys(), xslt);
+			String rowXml = XmlUtils.getXMLRow("testdb_", rowMap, TestUtils.getStandardPrimaryKeys(), xslt, null, true);
 			assertCheckPatterns(rowXml, expectedPatterns);
 		} catch (DBException e) {
 			fail(" Caught exception");

@@ -14,6 +14,9 @@
 
 package com.google.enterprise.connector.db;
 
+import com.google.enterprise.connector.spi.RepositoryException;
+import com.google.enterprise.connector.spi.SpiConstants;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -25,9 +28,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import junit.framework.TestCase;
-
-import com.google.enterprise.connector.spi.RepositoryException;
-import com.google.enterprise.connector.spi.SpiConstants;
 
 public class GlobalStateTest extends TestCase {
 	private static final Logger LOG = Logger.getLogger(GlobalStateTest.class.getName());
@@ -72,7 +72,7 @@ public class GlobalStateTest extends TestCase {
 		try {
 			// Add 4 documents.
 			for (Map<String, Object> row : TestUtils.getDBRows()) {
-				DBDocument dbDoc = Util.rowToDoc("testdb_", TestUtils.getStandardPrimaryKeys(), row, "localhost", null);
+				DBDocument dbDoc = Util.rowToDoc("testdb_", TestUtils.getStandardPrimaryKeys(), row, "localhost", null, null);
 				globalState.addDocument(dbDoc);
 			}
 
@@ -142,19 +142,16 @@ public class GlobalStateTest extends TestCase {
 	}
 
 	public final void testSaveState() {
-		String[] expectedPatterns = new String[] {
-				"docid=\"1f81a76b56764180bdce3d3a55081c94338e0bd3\" ",
+		String[] expectedPatterns = new String[] { "docid=\"MyxsYXN0XzAz\" ",
 				"</currentChecksumMap><previousChecksumMap><checksumMapEntry ",
-				"docid=\"7796571db039cc272cf73197369e1d9fb1395696\"",
-				"<checksumMapEntry" };
+				"docid=\"NCxsYXN0XzA0\"", "<checksumMapEntry" };
 		String expectedCursorXml = "<dbCursor>0</dbCursor>";
 		String[] expectedDocToDeleteXml = new String[] {
-				"docid=\"2a61639c96ed45ec8f6e3d4e1ab79944cd1d1923\"",
-				"rowChecksum=.*" };
+				"docid=\"MSxsYXN0XzAx\"", "rowChecksum=.*" };
 
 		try {
 			for (Map<String, Object> row : TestUtils.getDBRows()) {
-				DBDocument dbDoc = Util.rowToDoc("testdb_", TestUtils.getStandardPrimaryKeys(), row, "localhost", null);
+				DBDocument dbDoc = Util.rowToDoc("testdb_", TestUtils.getStandardPrimaryKeys(), row, "localhost", null, null);
 				globalState.addDocument(dbDoc);
 			}
 			globalState.setCursorDB(4);
@@ -163,7 +160,12 @@ public class GlobalStateTest extends TestCase {
 			globalState.getDocQueue().nextDocument();
 
 			// Set the last document in the docQueue to delete.
-			globalState.saveState();
+			try {
+				globalState.saveState();
+			} catch (RepositoryException e1) {
+				fail("RepositoryException occurred while testing saveState: "
+						+ e1.toString());
+			}
 
 			String actualXml = readFile(globalState.getStateFileLocation());
 			LOG.info(actualXml);
@@ -183,7 +185,11 @@ public class GlobalStateTest extends TestCase {
 			assertEquals(1, globalState.getPreviousChecksumMap().size());
 			globalState.markNewDBTraversal();
 			assertEquals(4, globalState.getPreviousChecksumMap().size());
-			globalState.saveState();
+			try {
+				globalState.saveState();
+			} catch (RepositoryException e) {
+				fail("RepositoryException occurred while testing saveState");
+			}
 			actualXml = readFile(globalState.getStateFileLocation());
 			LOG.info(actualXml);
 			assertCheckPatterns(actualXml, expectedDocToDeleteXml);
@@ -212,7 +218,7 @@ public class GlobalStateTest extends TestCase {
 	private void setUpInitialState() {
 		try {
 			for (Map<String, Object> row : TestUtils.getDBRows()) {
-				DBDocument dbDoc = Util.rowToDoc("testdb_", TestUtils.getStandardPrimaryKeys(), row, "localhost", null);
+				DBDocument dbDoc = Util.rowToDoc("testdb_", TestUtils.getStandardPrimaryKeys(), row, "localhost", null, null);
 				globalState.addDocument(dbDoc);
 			}
 		} catch (DBException e) {
@@ -251,6 +257,8 @@ public class GlobalStateTest extends TestCase {
 
 		} catch (DBException e) {
 			fail("Could not save state");
+		} catch (RepositoryException e) {
+			fail("RepositoryException occurred while testing saveState");
 		}
 	}
 
