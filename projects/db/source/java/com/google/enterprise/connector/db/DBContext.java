@@ -16,47 +16,116 @@ package com.google.enterprise.connector.db;
 
 /**
  * This is mostly a data holder class for a particular database connection.
- *
  */
 public class DBContext {
-  private final String connectionUrl;
-  private final String hostname;
-  private final String login;
-  private final String password;
-  private final String dbName;
-  private final String driverClassName;
+	private final String connectionUrl;
+	private final String hostname;
+	private final String login;
+	private final String password;
+	private final String dbName;
+	private final String driverClassName;
 
-  public DBContext(String connectionUrl, String hostname, String driverClassName,
-      String login, String password, String dbName) {
-    this.connectionUrl = connectionUrl;
-    this.hostname = hostname;
-    this.driverClassName = driverClassName;
-    this.login = login;
-    this.password = password;
-    this.dbName = dbName;
-  }
+	private String documentURLField;
+	private String documentIdField;
+	private String baseURL;
+	private String lobField;
+	private String fetchURLField;
+	private String lastModifiedDate;
+	private String documentTitle;
+	private String extMetadataType;
 
-  public String getConnectionUrl() {
-    return connectionUrl;
-  }
+	private boolean publicFeed = true;
 
-  public String getHostname() {
-    return hostname;
-  }
+	public DBContext(String connectionUrl, String hostname,
+			String driverClassName, String login, String password,
+			String dbName, String lastModifiedDate, String documentTitle,
+			String documentURLField, String documentIdField, String baseURL,
+			String lobField, String fetchURLField, String extMetadataType) {
 
-  public String getLogin() {
-    return login;
-  }
+		this.connectionUrl = connectionUrl;
+		this.hostname = hostname;
+		this.driverClassName = driverClassName;
+		this.login = login;
+		this.password = password;
+		this.dbName = dbName;
 
-  public String getPassword() {
-    return password;
-  }
+		this.extMetadataType = extMetadataType;
+		this.documentURLField = documentURLField;
+		this.documentIdField = documentIdField;
+		this.baseURL = baseURL;
+		this.lobField = lobField;
+		this.fetchURLField = fetchURLField;
 
-  public String getDbName() {
-    return dbName;
-  }
+		this.lastModifiedDate = lastModifiedDate;
+		this.documentTitle = documentTitle;
 
-  public String getDriverClassName() {
-    return driverClassName;
-  }
+	}
+
+	public void setExtMetadataType(String extMetadataType) {
+		this.extMetadataType = extMetadataType;
+	}
+
+	public String getConnectionUrl() {
+		return connectionUrl;
+	}
+
+	public String getHostname() {
+		return hostname;
+	}
+
+	public String getLogin() {
+		return login;
+	}
+
+	public String getPassword() {
+		return password;
+	}
+
+	public String getDbName() {
+		return dbName;
+	}
+
+	public String getDriverClassName() {
+		return driverClassName;
+	}
+
+	public String getLastModifiedDate() {
+		return lastModifiedDate;
+	}
+
+	public String getDocumentTitle() {
+		return documentTitle;
+	}
+
+	public String getExtMetadataType() {
+		return extMetadataType;
+	}
+
+	public String getDocumentURLField() {
+		return documentURLField;
+	}
+
+	public String getDocumentIdField() {
+		return documentIdField;
+	}
+
+	public String getBaseURL() {
+		return baseURL;
+	}
+
+	public String getLobField() {
+		return lobField;
+	}
+
+	public String getFetchURLField() {
+		return fetchURLField;
+	}
+
+	public boolean isPublicFeed() {
+		return publicFeed;
+	}
+
+	public void setPublicFeed(boolean publicFeed) {
+		this.publicFeed = publicFeed;
+	}
 }

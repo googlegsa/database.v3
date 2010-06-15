@@ -16,43 +16,42 @@ package com.google.enterprise.connector.db;
 
 import com.google.enterprise.connector.spi.RepositoryException;
 
-import junit.framework.TestCase;
-
 import org.joda.time.DateTime;
 
 import java.util.Map;
 import java.util.logging.Logger;
 
+import junit.framework.TestCase;
+
 public class DBDocumentListTest extends TestCase {
-  private static final Logger LOG = Logger.getLogger(DBDocumentListTest.class.getName());
-  private DBDocumentList docList;
-  GlobalState globalState;
-  DateTime dt;
+	private static final Logger LOG = Logger.getLogger(DBDocumentListTest.class.getName());
+	private DBDocumentList docList;
+	GlobalState globalState;
+	DateTime dt;
 
-  @Override
-  protected void setUp() throws Exception {
-    TestDirectoryManager testDirManager = new TestDirectoryManager(this);    
-    globalState = new GlobalState(testDirManager.getTmpDir());
-    docList = new DBDocumentList(globalState);
-    for (Map<String, Object> row : TestUtils.getDBRows()) {
-      DBDocument dbDoc = Util.rowToDoc("testdb_",
-          TestUtils.getStandardPrimaryKeys(), row, "localhost", null);
-      docList.addDocument(dbDoc);
-    }
-    dt = new DateTime();
-    globalState.setQueryExecutionTime(dt);
-  }
+	@Override
+	protected void setUp() throws Exception {
+		TestDirectoryManager testDirManager = new TestDirectoryManager(this);
+		globalState = new GlobalState(testDirManager.getTmpDir());
+		docList = new DBDocumentList(globalState);
+		for (Map<String, Object> row : TestUtils.getDBRows()) {
+			DBDocument dbDoc = Util.rowToDoc("testdb_", TestUtils.getStandardPrimaryKeys(), row, "localhost", null, null);
+			docList.addDocument(dbDoc);
+		}
+		dt = new DateTime();
+		globalState.setQueryExecutionTime(dt);
+	}
 
-  public final void testCheckpoint() throws RepositoryException {
-    String checkpointStr = docList.checkpoint();
-    LOG.info(checkpointStr);
-    assertTrue(checkpointStr.contains(dt.toString()));
-    assertTrue(checkpointStr.contains("6fd5643953e6e60188c93b89c71bc1808eb7edc2"));
-  }
+	public final void testCheckpoint() throws RepositoryException {
+		String checkpointStr = docList.checkpoint();
+		LOG.info(checkpointStr);
+		assertTrue(checkpointStr.contains(dt.toString()));
+		assertTrue(checkpointStr.contains("MSxsYXN0XzAx"));
+	}
 
-  public final void testNextDocument() {
-    docList.nextDocument();
-    assertEquals(1, globalState.getDocsInFlight().size());
-    assertEquals(3, docList.size());
-  }
+	public final void testNextDocument() {
+		docList.nextDocument();
+		assertEquals(1, globalState.getDocsInFlight().size());
+		assertEquals(3, docList.size());
+	}
 }

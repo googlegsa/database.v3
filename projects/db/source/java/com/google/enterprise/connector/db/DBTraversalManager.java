@@ -14,29 +14,51 @@
 
 package com.google.enterprise.connector.db;
 
+import com.google.enterprise.connector.spi.DocumentList;
+import com.google.enterprise.connector.spi.RepositoryException;
+import com.google.enterprise.connector.spi.TraversalContext;
+import com.google.enterprise.connector.spi.TraversalContextAware;
+import com.google.enterprise.connector.spi.TraversalManager;
+
+import org.joda.time.DateTime;
+
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.logging.Logger;
 
-import org.joda.time.DateTime;
-
-import com.google.enterprise.connector.spi.DocumentList;
-import com.google.enterprise.connector.spi.RepositoryException;
-import com.google.enterprise.connector.spi.TraversalManager;
-
 /**
  * {@link TraversalManager} implementation for the DB connector.
  */
-public class DBTraversalManager implements TraversalManager {
+public class DBTraversalManager implements TraversalManager,
+		TraversalContextAware {
 	private static final Logger LOG = Logger.getLogger(DBTraversalManager.class.getName());
 	private DBClient dbClient;
 	private GlobalState globalState;
 	private String xslt;
+	private TraversalContext traversalContext;
 
 	// Limit on the batch size.
 	private int batchHint = 100;
+
+	// EXC_NORMAL represents that DB Connector is running in normal mode
+	private static final int MODE_NORMAL = 1;
+
+	// EXC_METADATA_URL represents that DB Connector is running for indexing
+	// External Metadada
+	private static final int MODE_METADATA_URL = 2;
+
+	// EXC_BLOB represents that DB Connector is running for indexing BLOB
+	// data
+	private static final int MODE_METADATA_BASE_URL = 3;
+
+	// EXC_CLOB represents that DB Connector is running for indexing CLOB
+	// data
+	private static final int MODE_BLOB_CLOB = 4;
+
+	// current execution mode
+	private int currentExcMode = -1;
 
 	/**
 	 * Creates a DBTraversalManager.
@@ -174,8 +196,9 @@ public class DBTraversalManager implements TraversalManager {
 	 * 
 	 * @return DBDcoumentList document list to be consumed by the CM.
 	 * @throws DBException
+	 * @throws RepositoryException
 	 */
-	private DBDocumentList traverseDB() throws DBException {
+	private DBDocumentList traverseDB() throws DBException, RepositoryException {
 
 		List<Map<String, Object>> rows;
 		if (0 == globalState.getDocQueue().size()) {
@@ -214,13 +237,164 @@ public class DBTraversalManager implements TraversalManager {
 	private List<Map<String, Object>> executeQueryAndAddDocs()
 			throws DBException {
 		List<Map<String, Object>> rows = dbClient.executePartialQuery(globalState.getCursorDB(), 3 * batchHint);
+
 		globalState.setCursorDB(globalState.getCursorDB() + rows.size());
 		globalState.setQueryExecutionTime(new DateTime());
-		for (Map<String, Object> row : rows) {
-			globalState.addDocument(Util.rowToDoc(dbClient.getDBContext().getDbName(), dbClient.getPrimaryKeys(), row, dbClient.getDBContext().getHostname(), xslt));
+		DBDocument dbDoc = null;
+		if (rows != null && rows.size() > 0) {
+
+			currentExcMode = getExecutionScenario(dbClient.getDBContext());
+			String logMessage = getExcLogMessage(currentExcMode);
+			LOG.info(logMessage);
+
+			switch (currentExcMode) {
+
+			// execute the connector for metadata-url feed
+			case MODE_METADATA_URL:
+
+				for (Map<String, Object> row : rows) {
+					dbDoc = Util.generateMetadataURLFeed(dbClient.getDBContext().getDbName(), dbClient.getPrimaryKeys(), row, dbClient.getDBContext().getHostname(), dbClient.getDBContext(), "");
+					if (dbDoc != null) {
+						globalState.addDocument(dbDoc);
+					}
+				}
+				break;
+
+			// execute the connector for BLOB data
+			case MODE_METADATA_BASE_URL:
+				dbDoc = null;
+				for (Map<String, Object> row : rows) {
+					dbDoc = Util.generateMetadataURLFeed(dbClient.getDBContext().getDbName(), dbClient.getPrimaryKeys(), row, dbClient.getDBContext().getHostname(), dbClient.getDBContext(), Util.WITH_BASE_URL);
+					if (dbDoc != null) {
+						globalState.addDocument(dbDoc);
+					}
+				}
+
+				break;
+
+			// execute the connector for CLOB data
+			case MODE_BLOB_CLOB:
+				dbDoc = null;
+				for (Map<String, Object> row : rows) {
+					dbDoc = Util.largeObjectToDoc(dbClient.getDBContext().getDbName(), dbClient.getPrimaryKeys(), row, dbClient.getDBContext().getHostname(), dbClient.getDBContext(), traversalContext);
+					if (dbDoc != null) {
+						globalState.addDocument(dbDoc);
+					}
+				}
+
+				break;
+
+			// execute the connector in normal mode
+			default:
+				for (Map<String, Object> row : rows) {
+					globalState.addDocument(Util.rowToDoc(dbClient.getDBContext().getDbName(), dbClient.getPrimaryKeys(), row, dbClient.getDBContext().getHostname(), xslt, dbClient.getDBContext()));
+				}
+				break;
+			}
 		}
+
 		LOG.info(globalState.getDocQueue().size()
 				+ " document(s) to be fed to GSA");
 		return rows;
+	}
+
+	/**
+	 * this method will detect the execution mode from the column names(Normal,
+	 * CLOB, BLOB or External Metadata) of the DB Connector and returns the
+	 * integer value representing execution mode
+	 * 
+	 * @param map
+	 * @return
+	 */
+	private int getExecutionScenario(DBContext dbContext) {
+
+		String extMetaType = dbContext.getExtMetadataType();
+		String lobField = dbContext.getLobField();
+		String docURLField = dbContext.getDocumentURLField();
+		String docIdField = dbContext.getDocumentIdField();
+		if (extMetaType != null && extMetaType.trim().length() > 0
+				&& !extMetaType.equals(DBConnectorType.NO_EXT_METADATA)) {
+			if (extMetaType.equalsIgnoreCase(DBConnectorType.COMPLETE_URL)
+					&& (docURLField != null && docURLField.trim().length() > 0)) {
+				globalState.setMetadataURLFeed(true);
+				return MODE_METADATA_URL;
+			} else if (extMetaType.equalsIgnoreCase(DBConnectorType.DOC_ID)
+					&& (docIdField != null && docIdField.trim().length() > 0)) {
+				globalState.setMetadataURLFeed(true);
+				return MODE_METADATA_BASE_URL;
+			} else if (extMetaType.equalsIgnoreCase(DBConnectorType.BLOB_CLOB)
+					&& (lobField != null && lobField.trim().length() > 0)) {
+				globalState.setMetadataURLFeed(false);
+				return MODE_BLOB_CLOB;
+			} else {
+				globalState.setMetadataURLFeed(false);
+				/*
+				 * Explicitly change the mode of execution as user may switch
+				 * from "External Metadata Feed" mode to
+				 * "Content Feed(for text data)" mode.
+				 */
+				dbContext.setExtMetadataType(DBConnectorType.NO_EXT_METADATA);
+				return MODE_NORMAL;
+			}
+		} else {
+			globalState.setMetadataURLFeed(false);
+			/*
+			 * Explicitly change the mode of execution as user may switch from
+			 * "External Metadata Feed" mode to "Content Feed(for text data)"
+			 * mode.
+			 */
+			dbContext.setExtMetadataType(DBConnectorType.NO_EXT_METADATA);
+			return MODE_NORMAL;
+		}
+	}
+
+	/**
+	 * this method return appropriate log message as per current execution mode.
+	 * 
+	 * @param excMode current execution mode
+	 * @return
+	 */
+	private static String getExcLogMessage(int excMode) {
+
+		switch (excMode) {
+
+		case MODE_METADATA_URL: {
+			/*
+			 * execution mode: Externam Metadata feed using complete document
+			 * URL
+			 */
+			return " DB Connector is running in External Metadata feed mode with complete document URL";
+		}
+		case MODE_METADATA_BASE_URL: {
+			/*
+			 * execution mode: Externam Metadata feed using Base URL and
+			 * document Id
+			 */
+			return " DB Connector is running in External Metadata feed mode with Base URL and document ID";
+		}
+		case MODE_BLOB_CLOB: {
+			/*
+			 * execution mode: Content feed mode for BLOB/CLOB data.
+			 */
+			return " DB Connector is running in Content Feed Mode for BLOB/CLOB data";
+		}
+
+		default: {
+			/*
+			 * execution mode: Content feed mode for Text data.
+			 */return " DB Connector is running in content feed mode for text data";
+		}
+		}
+
+	}
+
+	/**
+	 * Set TraversalContext. TraversalContext is required for detecting
+	 * appropriate MIME type of document and to get other useful information.
+	 * 
+	 *@param traversalContext current traversal context.
+	 */
+	public void setTraversalContext(TraversalContext traversalContext) {
+		this.traversalContext = traversalContext;
 	}
 }

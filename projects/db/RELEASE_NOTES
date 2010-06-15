@@ -10,6 +10,37 @@ issues and workarounds.
 
 Web Site: http://code.google.com/p/google-enterprise-connector-database/
 
+Release 2.6.0, BETA May 31,2010
+====================================
+
+Introduction
+------------
+This is a major release with new features. Users of previous releases should check the "Version Compatibility" section
+below for instructions on how to use existing data with this new release.
+
+New features
+-------------
+1. Added support for crawling external metadata using DB Connector
+2. Added support for authZ in DB Connector.
+3. Added support for BLOB/CLOB data types.
+4. Added support for "Last Modified Date" and "Document Title" properties.
+   User can designate column for "Last Modified Date" and "Document Title" on configuration form.
+
+Version Compatibility
+---------------------
+Connectors created with earlier versions of the connector will not work with this version. This version works with
+Connector Manager version 2.4.4. Earlier versions of the Connector Manager will not work correctly with this version of the connector.
+
+Platform Support
+------------------
+The connector can be installed on x86/x64 Windows and Linux environments.
+This version of the GSA connector for databses is certified against following databases:
+
+1. MySQL 5.2.3
+2. Oracle Database 10g Enterprise Edition Release 10.2.0.4.0
+3. MS SQL server 2005
+4. IBM DB2/NT SQL09050
+
 Release 1.0.2, ALPHA March 29,2010
 ===========================================
 
@@ -30,7 +61,7 @@ The connector can be installed on x86/x64 Windows and Linux environments.
 This version of the GSA connector for databses is certified against following databases:
 
 1. MySQL 5.2.3
-2. Oracle Database 10g Enterprise Edition Release 10.2.0.4.0 
+2. Oracle Database 10g Enterprise Edition Release 10.2.0.4.0
 3. MS SQL server 2005
 4. IBM DB2/NT SQL09050
 
@@ -82,7 +113,7 @@ Release 1.0.0, ALPHA October 20, 2009
 
 Introduction
 ------------
-This is an initaial release with new features.
+This is an initial release with new features.
 
 
 Version Compatibility

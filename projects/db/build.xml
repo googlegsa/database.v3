@@ -129,6 +129,8 @@
 
     <copy todir="${classes-tests.dir}/com/google/enterprise/connector/db/config" >
       <fileset dir="${config.dir}"/>
+      <fileset dir="${connector-thirdparty-tests-jar.dir}" includes="**/*.sql" />
+      <fileset dir="${connector-thirdparty-tests-jar.dir}" includes="**/*.properties" />
     </copy>
 
     <junit printsummary="yes" haltonfailure="yes">
