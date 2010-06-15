@@ -163,7 +163,8 @@ public class GlobalStateTest extends TestCase {
 			try {
 				globalState.saveState();
 			} catch (RepositoryException e1) {
-				fail("RepositoryException occurred while testing saveState");
+				fail("RepositoryException occurred while testing saveState: "
+						+ e1.toString());
 			}
 
 			String actualXml = readFile(globalState.getStateFileLocation());
