@@ -33,3 +33,9 @@ The license files for each included component is provided in this
 distribution under the License directory.
 
 
+Source code for 3rd party libraries
+
+Database connector uses various 3rd party open source libraries. The versions of these libraries
+are embedded in the names of the files. If you have trouble locating the source code of
+any of the libraries used by Database connector, you can file an issue on the Database connector
+project site.
