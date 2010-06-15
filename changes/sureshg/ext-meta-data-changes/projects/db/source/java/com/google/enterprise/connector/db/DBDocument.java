@@ -17,6 +17,8 @@ package com.google.enterprise.connector.db;
 import com.google.enterprise.connector.spi.Document;
 import com.google.enterprise.connector.spi.Property;
 import com.google.enterprise.connector.spi.SimpleProperty;
+import com.google.enterprise.connector.spi.SkippedDocumentException;
+import com.google.enterprise.connector.spi.SpiConstants;
 import com.google.enterprise.connector.spi.Value;
 
 import java.sql.Timestamp;
@@ -26,15 +28,21 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.logging.Logger;
 
 /**
  * An implementation of Document for database records. Each row in the database
  * represents a {@link DBDocument}.
  */
 public class DBDocument implements Document {
-
+	private static final Logger LOG = Logger.getLogger(DBDocument.class.getName());
 	private final Map<String, List<Value>> properties = new HashMap<String, List<Value>>();
 	public static final String ROW_CHECKSUM = "dbconnector:checksum";
+	private int mimeTypeSupportLevel;
+
+	public void setMimeTypeSupportLevel(int mimeTypeSupportLevel) {
+		this.mimeTypeSupportLevel = mimeTypeSupportLevel;
+	}
 
 	/**
 	 * Constructs a document with no properties.
@@ -43,8 +51,14 @@ public class DBDocument implements Document {
 	}
 
 	/* @Override */
-	public Property findProperty(String name) {
+	public Property findProperty(String name) throws SkippedDocumentException {
 		List<Value> property = properties.get(name);
+		if (name.equals(SpiConstants.PROPNAME_MIMETYPE)) {
+			filterMimeType();
+		} else if (name.equals(SpiConstants.PROPNAME_CONTENT)) {
+			filterMimeType();
+		}
+
 		return (property == null) ? null : new SimpleProperty(property);
 	}
 
@@ -100,4 +114,37 @@ public class DBDocument implements Document {
 		properties.put(propertyName, Collections.singletonList(Value.getBinaryValue((byte[]) propertyValue)));
 	}
 
+	public int getMimeTypeSupportLevel() {
+
+		return mimeTypeSupportLevel;
+	}
+
+	/**
+	 * This method will analyze the value of "Mime Type Support Level". If value
+	 * is 0 warning message will be logged and value is negative then
+	 * SkippedDocumentException will be thrown.
+	 * 
+	 * @throws SkippedDocumentException
+	 */
+	private void filterMimeType() throws SkippedDocumentException {
+
+		String docId = properties.get(SpiConstants.PROPNAME_DOCID).iterator().next().toString();
+		List<Value> mimeTypeProperty = properties.get(SpiConstants.PROPNAME_MIMETYPE);
+		String mimeType = null;
+		if (mimeTypeProperty != null) {
+			mimeType = mimeTypeProperty.iterator().next().toString();
+		}
+		mimeType = mimeType == null ? "'no mime'" : mimeType;
+		if (mimeTypeSupportLevel == 0) {
+			LOG.warning("Skipping the document with docId : " + docId
+					+ " as content mime type " + mimeType + " is not supported");
+
+		} else if (mimeTypeSupportLevel < 0) {
+			String msg = new StringBuilder(
+					"Skipping the document with docId : ").append(docId).append(" as the mime type ").append(mimeType).append(" is in the 'ignored' mimetypes list").toString();
+
+			LOG.warning(msg);
+			throw new SkippedDocumentException(msg);
+		}
+	}
 }

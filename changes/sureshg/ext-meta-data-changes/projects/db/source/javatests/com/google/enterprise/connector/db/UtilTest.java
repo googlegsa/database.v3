@@ -16,6 +16,7 @@ package com.google.enterprise.connector.db;
 
 import com.google.enterprise.connector.spi.Property;
 import com.google.enterprise.connector.spi.RepositoryException;
+import com.google.enterprise.connector.spi.SkippedDocumentException;
 import com.google.enterprise.connector.spi.SpiConstants;
 import com.google.enterprise.connector.traversal.FileSizeLimitInfo;
 import com.google.enterprise.connector.traversal.MimeTypeMap;
@@ -270,6 +271,7 @@ public class UtilTest extends TestCase {
 			// if one of the column holds the URL for fetching BLOB data. It
 			// will be used as display URL in feed.
 			assertEquals(fetchURL, blobDoc.findProperty(SpiConstants.PROPNAME_DISPLAYURL).nextValue().toString());
+
 			// set "text/plain" mime type in ignore list. Now we should get null
 			// value for DB document as this document is ignored by connector.
 			Set<String> ignoredMime = new HashSet<String>();
@@ -278,10 +280,17 @@ public class UtilTest extends TestCase {
 			mimeTypeMap.setExcludedMimeTypes(ignoredMime);
 			context.setMimeTypeMap(mimeTypeMap);
 			blobDoc = Util.largeObjectToDoc("testdb_", primaryKeys, rowMap, "localhost", dbContext, context);
-			// DB doc should be ignored and should return null value
-			assertNull(blobDoc);
-
+			Property docContent = null;
+			try {
+				docContent = blobDoc.findProperty(SpiConstants.PROPNAME_CONTENT);
+			} catch (SkippedDocumentException e) {
+				LOG.info("Connector has thrown SkippedDocumentException which is expected");
+			}
+			// document content should have null value.
+			assertNull(docContent);
 		} catch (DBException e) {
+			fail("Unexpected exception" + e.toString());
+		} catch (SkippedDocumentException e) {
 			fail("Unexpected exception" + e.toString());
 		} catch (RepositoryException e) {
 			fail("Unexpected exception" + e.toString());

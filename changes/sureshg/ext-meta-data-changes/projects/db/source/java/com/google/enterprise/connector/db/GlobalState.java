@@ -237,8 +237,9 @@ public class GlobalState {
 	 * </pre>
 	 * 
 	 * @throws DBException
+	 * @throws RepositoryException
 	 */
-	public void saveState() throws DBException {
+	public void saveState() throws DBException, RepositoryException {
 		try {
 			String xml = dumpToStateXML();
 			File f = getStateFileLocation();
@@ -257,8 +258,9 @@ public class GlobalState {
 	 * 
 	 * @return xml string.
 	 * @throws DBException
+	 * @throws RepositoryException
 	 */
-	private String dumpToStateXML() throws DBException {
+	private String dumpToStateXML() throws DBException, RepositoryException {
 		DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
 		org.w3c.dom.Document doc;
 		try {

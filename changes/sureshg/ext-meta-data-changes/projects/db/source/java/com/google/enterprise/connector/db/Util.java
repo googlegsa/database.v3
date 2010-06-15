@@ -15,7 +15,6 @@
 package com.google.enterprise.connector.db;
 
 import com.google.enterprise.connector.spi.RepositoryException;
-import com.google.enterprise.connector.spi.SkippedDocumentException;
 import com.google.enterprise.connector.spi.SpiConstants;
 import com.google.enterprise.connector.spi.TraversalContext;
 
@@ -414,7 +413,8 @@ public class Util {
 		skipColumns.add(dbContext.getLobField());
 
 		/*
-		 * check if large object data value for null.
+		 * check if large object data value for null.If large object is null,
+		 * then don't set content else handle the content as per LOB type.
 		 */
 		if (largeObject != null) {
 			/*
@@ -444,14 +444,8 @@ public class Util {
 				 * content means mime type or content encoding of the current
 				 * document is not supported.
 				 */
-				try {
-					doc = setBlobContent(blobContent, doc, dbName, row, dbContext, primaryKeys, context, docId);
-				} catch (SkippedDocumentException e) {
 
-					LOG.warning("Exception occured while setting BLOB content "
-							+ e.toString());
-					return null;
-				}
+				doc = setBlobContent(blobContent, doc, dbName, row, dbContext, primaryKeys, context, docId);
 
 			} else if (largeObject instanceof Blob) {
 				int length;
@@ -496,18 +490,7 @@ public class Util {
 						return null;
 					}
 				}
-				/*
-				 * If skipped document exception occurs while setting BLOB
-				 * content means mime type or content encoding of the current
-				 * document is not supported.
-				 */
-				try {
-					doc = setBlobContent(blobContent, doc, dbName, row, dbContext, primaryKeys, context, docId);
-				} catch (SkippedDocumentException e) {
-					LOG.warning("Exception occured while setting BLOB content"
-							+ e.toString());
-					return null;
-				}
+				doc = setBlobContent(blobContent, doc, dbName, row, dbContext, primaryKeys, context, docId);
 
 			} else {
 				/*
@@ -586,8 +569,16 @@ public class Util {
 			 * If large object is null then send empty value.
 			 */
 		} else {
+			/* get xml representation of document(exclude the LOB column). */
+			Map<String, Object> rowForXmlDoc = getRowForXmlDoc(row, dbContext);
+			String xmlRow = XmlUtils.getXMLRow(dbName, rowForXmlDoc, primaryKeys, "", dbContext, true);
+
+			// get checksum of columns other than LOB.
+			String otherColumnCheckSum = Util.getChecksum(xmlRow.getBytes());
+
+			// set checksum for this document
+			doc.setProperty(DBDocument.ROW_CHECKSUM, otherColumnCheckSum);
 			LOG.warning("Content of Document " + docId + " has null value.");
-			return null;
 		}
 
 		// set doc id
@@ -712,8 +703,7 @@ public class Util {
 	private static DBDocument setBlobContent(byte[] blobContent,
 			DBDocument doc, String dbName, Map<String, Object> row,
 			DBContext dbContext, String[] primaryKeys,
-			TraversalContext context, String docId) throws DBException,
-			SkippedDocumentException {
+			TraversalContext context, String docId) throws DBException {
 		/*
 		 * First try to get the MIME type of this file from the result set. If
 		 * it does not maintain a column for MIME type try to get the MIME type
@@ -724,31 +714,9 @@ public class Util {
 		mimeType = new MimeTypeFinder().find(blobContent, context);
 
 		// get the mime type supported.
-		int mimeTypeSupport = context.mimeTypeSupportLevel(mimeType);
-		if (mimeTypeSupport == 0) {
-			LOG.warning("Dropping content of document with docId : " + docId
-					+ " as content encoding is not supprted");
-			// get xml representation of document(exclude the BLOB column).
-			Map<String, Object> rowForXmlDoc = getRowForXmlDoc(row, dbContext);
-			String xmlRow = XmlUtils.getXMLRow(dbName, rowForXmlDoc, primaryKeys, "", dbContext, true);
-			// get checksum of blob
-			String blobCheckSum = Util.getChecksum((blobContent));
-			// get checksum of other column
-			String otherColumnCheckSum = Util.getChecksum(xmlRow.getBytes());
-			// get checksum of blob object and other column
-			String docCheckSum = Util.getChecksum((otherColumnCheckSum + blobCheckSum).getBytes());
-			// set checksum of this document
-			doc.setProperty(DBDocument.ROW_CHECKSUM, docCheckSum);
-			/*
-			 * return document without setting document content for the current
-			 * document
-			 */
-			return doc;
-		} else if (mimeTypeSupport < 0) {
-			String msg = new StringBuilder(
-					"Skipping the document with docId : ").append(docId).append(" as the mime type ").append(mimeType).append(" is in the 'ignored' mimetypes list").toString();
-			throw new SkippedDocumentException(msg);
-		}
+		int mimeTypeSupportLevel = context.mimeTypeSupportLevel(mimeType);
+		doc.setMimeTypeSupportLevel(mimeTypeSupportLevel);
+
 		// set mime type for this document
 		doc.setProperty(SpiConstants.PROPNAME_MIMETYPE, mimeType);
 

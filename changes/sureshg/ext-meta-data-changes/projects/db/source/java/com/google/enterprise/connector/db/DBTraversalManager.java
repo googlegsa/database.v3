@@ -196,8 +196,9 @@ public class DBTraversalManager implements TraversalManager,
 	 * 
 	 * @return DBDcoumentList document list to be consumed by the CM.
 	 * @throws DBException
+	 * @throws RepositoryException
 	 */
-	private DBDocumentList traverseDB() throws DBException {
+	private DBDocumentList traverseDB() throws DBException, RepositoryException {
 
 		List<Map<String, Object>> rows;
 		if (0 == globalState.getDocQueue().size()) {

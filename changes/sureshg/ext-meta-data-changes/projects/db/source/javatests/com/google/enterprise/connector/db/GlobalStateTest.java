@@ -160,7 +160,11 @@ public class GlobalStateTest extends TestCase {
 			globalState.getDocQueue().nextDocument();
 
 			// Set the last document in the docQueue to delete.
-			globalState.saveState();
+			try {
+				globalState.saveState();
+			} catch (RepositoryException e1) {
+				fail("RepositoryException occurred while testing saveState");
+			}
 
 			String actualXml = readFile(globalState.getStateFileLocation());
 			LOG.info(actualXml);
@@ -180,7 +184,11 @@ public class GlobalStateTest extends TestCase {
 			assertEquals(1, globalState.getPreviousChecksumMap().size());
 			globalState.markNewDBTraversal();
 			assertEquals(4, globalState.getPreviousChecksumMap().size());
-			globalState.saveState();
+			try {
+				globalState.saveState();
+			} catch (RepositoryException e) {
+				fail("RepositoryException occurred while testing saveState");
+			}
 			actualXml = readFile(globalState.getStateFileLocation());
 			LOG.info(actualXml);
 			assertCheckPatterns(actualXml, expectedDocToDeleteXml);
@@ -248,6 +256,8 @@ public class GlobalStateTest extends TestCase {
 
 		} catch (DBException e) {
 			fail("Could not save state");
+		} catch (RepositoryException e) {
+			fail("RepositoryException occurred while testing saveState");
 		}
 	}
 
