@@ -213,7 +213,7 @@
     <copy file="${logging-properties.file}" todir="${config-zip.dir}" />
 
     <copy todir="${lib-zip.dir}">
-      <fileset dir="${thirdparty-prod-jar.dir}" includes="**/*.jar" />
+      <fileset dir="${thirdparty-prod-jar.dir}" excludes="**/guava-r05.jar" includes="**/*.jar" />
     </copy>
     <copy todir="${license-zip.dir}">
       <fileset dir="${license-prod.dir}" />
