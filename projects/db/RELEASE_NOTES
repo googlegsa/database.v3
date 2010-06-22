@@ -28,7 +28,7 @@ New features
 
 Version Compatibility
 ---------------------
-Connectors created with earlier versions of the connector will not work with this version. This version works with
+Connectors created with earlier versions will not work with this version. This version works with
 Connector Manager version 2.4.4. Earlier versions of the Connector Manager will not work correctly with this version of the connector.
 
 Platform Support
@@ -40,6 +40,11 @@ This version of the GSA connector for databses is certified against following da
 2. Oracle Database 10g Enterprise Edition Release 10.2.0.4.0
 3. MS SQL server 2005
 4. IBM DB2/NT SQL09050
+
+Known Issues/Limitations
+-----------------------------
+1. The value of "Database Name" field is not validated at the time of saving connector instance.
+
 
 Release 1.0.2, ALPHA March 29,2010
 ===========================================

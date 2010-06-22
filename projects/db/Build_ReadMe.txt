@@ -1,20 +1,20 @@
 Following are the steps to build Google Search Appliance Connector for Databases
 ========================================================================================
-1. Ensure that you have Apache Ant installed on your system. If not, you can get it from http://ant.apache.org/bindownload.cgi
+1. Ensure that you have Apache Ant and JDK 1.5 installed on your system. If not, you can get it from http://ant.apache.org/bindownload.cgi
 
 2. Ensure that you have Connector Manager on your system. You can get it at
    http://code.google.com/p/google-enterprise-connector-manager/downloads/list.
-   Choose connector-manager-2.4.4.zip  (binary).
-   2b) Unpack the zip file. (unzip connector-manager-2.4.4.zip).
-   2c) Change directory to connector-manager-2.4.4 (cd connector-manager-2.4.4).
+   Choose connector-manager-2.6.0.zip  (binary).
+   2b) Unpack the zip file. (unzip connector-manager-2.6.0zip).
+   2c) Change directory to connector-manager-2.6.0 (cd connector-manager-2.6.0).
    2d) Rename connector-manager.war to connector-manager.zip
    2e) Unpack the connector-manager.zip file(unzip connector-manager.zip).
    2f) Create Connector Manager Home directory in file system.
    2g) Create directory structure "dist\jarfile" under Connector Manager home directory.
    2h) Copy jar files from "connector-manager\WEB-INF\lib"(created in step 2e) to "Connector Manager home directory\dist\jarfile" directory.
 
-3. Create a file 'google-enterprise-connector-db.properties' in your home directory(where database connector project is downloaded ). Add a line 
-   to set the connector.manager.home pointing to the Connector Manager Home directory(created in step 2f). You can use the line below as   
+3. Create a file 'google-enterprise-connector-db.properties' in your home directory(where database connector project is downloaded ). Add a line
+   to set the connector.manager.home pointing to the Connector Manager Home directory(created in step 2f). You can use the line below as
    an example but must replace ##.Connector Manager Home.## with the actual path to the connector manager home directory on your system.
    connector.manager.home=##.Connector Manager Home.##
    For example:  connector.manager.home=C:/Connector-Manager/
@@ -23,7 +23,7 @@ Following are the steps to build Google Search Appliance Connector for Databases
    execute the ANT target "ant jar_prod" to build the Database Connector jar file. Jar file "connector-db.jar" will be built under "./build/prod/jar/" directory.
 
 5. Steps to run JUnit test cases
-    5a) Modify "config\DatabaseConfiguration.properties" file as per your test database settings. Refer below example for configuring test database.
+    5a) Modify "third_party\tests\DatabaseConfiguration.properties" file as per your test database settings. Refer below example for configuring test database.
             #Provide the Login name of database user.
             login=admin
             #Provide the Password of database user

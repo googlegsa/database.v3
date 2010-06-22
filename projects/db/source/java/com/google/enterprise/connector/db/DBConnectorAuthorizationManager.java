@@ -55,19 +55,22 @@ public class DBConnectorAuthorizationManager implements AuthorizationManager {
 		String docIdString = DocIdUtil.getDocIdString(docIdMap.keySet());
 		List<AuthorizationResponse> encodedDocuments = new ArrayList<AuthorizationResponse>();
 		List<String> authorizedDocIdList = dbClient.executeAuthZQuery(userName, docIdString);
-
+		StringBuilder logMessage = new StringBuilder();
+		logMessage.append("User: " + userName + " is authorized for :");
 		/*
 		 * Mark Authorization Response status PERMIT for authorized documents.
 		 */
 		for (String docId : authorizedDocIdList) {
 			String encodedDocId = docIdMap.get(docId);
+
 			if (encodedDocId != null) {
 				encodedDocuments.add(new AuthorizationResponse(Status.PERMIT,
 						encodedDocId));
+				logMessage.append(encodedDocId + ", ");
 				docIdMap.remove(docId);
 			}
 		}
-
+		logMessage.append(" and not authorized for document ID : ");
 		/*
 		 * Mark Authorization Response status DENY for non-authorized documents.
 		 */
@@ -77,9 +80,10 @@ public class DBConnectorAuthorizationManager implements AuthorizationManager {
 			if (encodedDocId != null) {
 				encodedDocuments.add(new AuthorizationResponse(Status.DENY,
 						encodedDocId));
+				logMessage.append(encodedDocId + ", ");
 			}
 		}
-
+		LOG.info(logMessage.toString());
 		return encodedDocuments;
 	}
 }
