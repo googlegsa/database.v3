@@ -28,8 +28,7 @@ New features
 
 Version Compatibility
 ---------------------
-Connectors created with earlier versions will not work with this version. This version works with
-Connector Manager version 2.4.4. Earlier versions of the Connector Manager will not work correctly with this version of the connector.
+Connectors created with earlier versions will not work with this version. Earlier versions of the Connector Manager will not work correctly with this version of the connector.
 
 Platform Support
 ------------------
