@@ -10,7 +10,7 @@ issues and workarounds.
 
 Web Site: http://code.google.com/p/google-enterprise-connector-database/
 
-Release 2.6.0, BETA May 31,2010
+Release 2.6.0, BETA June 30,2010
 ====================================
 
 Introduction
@@ -40,6 +40,11 @@ This version of the GSA connector for databses is certified against following da
 2. Oracle Database 10g Enterprise Edition Release 10.2.0.4.0
 3. MS SQL server 2005
 4. IBM DB2/NT SQL09050
+
+Known Limitations
+------------------
+Issue 14: Connector configuration gets saved for an invalid AuthZ query.
+Issue 15: Connector instance getting saved even when invalid Database name given.
 
 Release 1.0.2, ALPHA March 29,2010
 ===========================================
