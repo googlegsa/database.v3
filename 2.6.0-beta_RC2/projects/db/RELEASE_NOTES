@@ -32,7 +32,7 @@ Connectors created with earlier versions will not work with this version. Connec
 
 Platform Support
 ------------------
-The connector can be installed on x86/x64 Windows and Linux environments.
+The connector can be installed on x86/x64 Windows (2003/2008) and Linux environments.
 This version of the GSA connector for databses is certified against following databases:
 
 1. MySQL 5.2.3
@@ -43,7 +43,7 @@ This version of the GSA connector for databses is certified against following da
 Known Limitations
 ------------------
 Issue 14: Connector configuration gets saved for an invalid AuthZ query.
-Issue 15: Connector instance getting saved even when invalid Database name given.
+Issue 15: Connector instance getting saved even when invalid Database name is given.
 
 Release 1.0.2, ALPHA March 29,2010
 ===========================================
