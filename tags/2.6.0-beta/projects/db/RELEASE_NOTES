@@ -1,0 +1,126 @@
+Release Notes:
+===============
+
+Google Search Appliance Connector for Databases
+
+This document contains the release notes for Google Search Appliance Connector for Databases.
+The following sections describe the release in detail and provide information that supplements
+the main documentation.  See the Issues Tab on the Code Site for the current list of known
+issues and workarounds.
+
+Web Site: http://code.google.com/p/google-enterprise-connector-database/
+
+Release 2.6.0, BETA June 30,2010
+====================================
+
+Introduction
+------------
+This is a major release with new features. Users of previous releases should check the "Version Compatibility" section
+below for instructions on how to use existing data with this new release.
+
+New features
+-------------
+1. Added support for crawling external metadata using DB Connector
+2. Added support for authZ in DB Connector.
+3. Added support for BLOB/CLOB data types.
+4. Added support for "Last Modified Date" and "Document Title" properties.
+   User can designate column for "Last Modified Date" and "Document Title" on configuration form.
+
+Version Compatibility
+---------------------
+Connectors created with earlier versions will not work with this version. Connector Manager version older than 2.4.x will not work correctly with this version of the connector.
+
+Platform Support
+------------------
+The connector can be installed on x86/x64 Windows (2003/2008) and Linux environments.
+This version of the GSA connector for databses is certified against following databases:
+
+1. MySQL 5.2.3
+2. Oracle Database 10g Enterprise Edition Release 10.2.0.4.0
+3. MS SQL server 2005
+4. IBM DB2/NT SQL09050
+
+Known Limitations
+------------------
+Issue 14: Connector configuration gets saved for an invalid AuthZ query.
+Issue 15: Connector instance getting saved even when invalid Database name is given.
+
+Release 1.0.2, ALPHA March 29,2010
+===========================================
+
+Introduction
+----------------
+This is a maintenance release that improves quality, reliability, and performance without adding any new functionality.
+All users of 1.0.1, ALPHA release should upgrade to this release.
+
+Version Compatibility
+---------------------
+This version works with Connector Manager version 2.4.4.
+Versions lower than 2.4.4 of the Connector Manager will not work correctly with this version of the connector.
+
+Platform Support
+------------------
+The connector can be installed on x86/x64 Windows and Linux environments.
+
+This version of the GSA connector for databses is certified against following databases:
+
+1. MySQL 5.2.3
+2. Oracle Database 10g Enterprise Edition Release 10.2.0.4.0
+3. MS SQL server 2005
+4. IBM DB2/NT SQL09050
+
+Issues fixed from last release
+-------------------------------
+1. Issue 2: On Windows, the path to the IbatisSqlMap.xml file is not resolved correctly and hence no crawling is initiated.
+2. Issue 4: "NullPointerException" is thrown when the column name is different from the value entered as primary key or they are
+            in different case, during connector configuration.
+3. Issue 6: Connector does not honor the retry delay time and starts next crawl cycle immediately.
+4. Issue 7: Database user password is visible in log file.
+5. Issue 8: Text box size in database connector configuration form is increased.
+6. Issue 9: JUnit test cases (e.g. XmlUtilsTest.testGetXmlRowEmptyStylesheet) fail due to differences in HashMap ordering
+7. Issue 12: Same DocID is generated for different records in the database table when the column name is differed in case
+            from the value entered as primary key during connector configuration.
+8. Issue 13: JUnit Test Case GlobalStateTest fails due to difference in actual string and expected because of spaces and invisible characters.
+
+Known Issues
+-------------
+
+1. Issue 1: Connector does not support serve time authentication and authorization.
+2. Issue 11: Connector does not support BLOB and CLOB data types in the database.
+
+Release 1.0.1, ALPHA December 2, 2009
+==========================
+
+Introduction
+------------
+This is an initial release with new features.
+
+
+Version Compatibility
+---------------------
+This version works with Connector Manager version 2.0.0 or later. Earlier versions of
+the Connector Manager will not work correctly with this version of the connector.
+
+Platform Support
+------------------
+The connector can be installed and run on both 32-bit & 64-bit Windows and Linux environments
+
+Issues fixed from last release:
+---------------------------------
+1. The connector was made JRE/JDK 1.5 complaint
+2. The path of the resource bundles was corrected to point to the correct directory
+
+
+------------------------------------------------------------------------------------------------------------------------------------------------
+Release 1.0.0, ALPHA October 20, 2009
+==========================
+
+Introduction
+------------
+This is an initial release with new features.
+
+
+Version Compatibility
+---------------------
+This version works with Connector Manager version 2.0.0 or later. Earlier versions of
+the Connector Manager will not work correctly with this version of the connector.
