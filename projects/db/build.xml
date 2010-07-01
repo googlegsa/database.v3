@@ -202,7 +202,7 @@
     <property name="connector-db-src.zip" value="${downloads.dir}/connector-db-${version}-src.zip" />
     <zip destfile="${connector-db-src.zip}" >
       <zipfileset dir="." prefix="connector-db-${version}/projects/database-connector"
-        includes="${readme.file}, ${copying.file}, ${release_notes.file}, Build_ReadMe.txt, build.xml, config/**/*, third_party/**/*, License/**/*, source/**/*" />
+        includes="${readme.file}, ${copying.file}, ${release_notes.file}, Build_ReadMe.txt, build.xml,version.properties ,config/**/*, third_party/**/*, License/**/*, source/**/*" />
     </zip>
 
 
@@ -221,6 +221,7 @@
 
     <zip destfile="${downloads.dir}/connector-db-${version}.zip">
       <zipfileset dir="${zip.dir}" />
+      <zipfileset dir="." includes="RELEASE_NOTES"/>
     </zip>
 
   </target>
