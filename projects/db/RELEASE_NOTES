@@ -10,7 +10,7 @@ issues and workarounds.
 
 Web Site: http://code.google.com/p/google-enterprise-connector-database/
 
-Release 2.6.0, BETA May 31,2010
+Release 2.6.0, BETA June 30,2010
 ====================================
 
 Introduction
@@ -28,23 +28,64 @@ New features
 
 Version Compatibility
 ---------------------
-Connectors created with earlier versions will not work with this version. This version works with
-Connector Manager version 2.4.4. Earlier versions of the Connector Manager will not work correctly with this version of the connector.
+Connectors created with earlier versions will not work with this version. Connector Manager version older than 2.4.x will not work correctly with this version of the connector.
 
 Platform Support
 ------------------
-The connector can be installed on x86/x64 Windows and Linux environments.
-This version of the GSA connector for databses is certified against following databases:
+The connector can be installed and run on both 32-bit & 64-bit Windows and Linux environments.
+
+Certified Against
+-------------------
+
+32-bit:
+-------
+Microsoft Windows Server 2008
+Windows Server Standard Service Pack 2
+Processor: Intel(R) Xeon(R) CPU    E5504 @ 2.00 GHz 2.00 GHz
+Memory (RAM): 2.00 GB
+System Type: 32-bit Operating System
+
+Microsoft Windows Server 2003
+Enterprise Edition
+Intel(R) Xeon(R) CPU
+E5504 @ 2.00GHz, 2.00 GB of RAM
+
+Red Hat Linux 5 (32-bit)
+Intel(R) Xeon(R) CPU
+E5504 @ 2.00GHz, 2.00 GB of RAM
+
+64-bit:
+--------
+Microsoft Windows Server 2008
+Windows Server Standard Service Pack 2
+Processor: Intel(R) Xeon(R) CPU    E5620 @ 2.40 GHz 2.39 GHz
+Memory (RAM): 4.00 GB
+System Type: 64-bit Operating System
+
+Microsoft Windows Server 2008 R2
+Enterprise x64 Edition
+Intel(R) Xeon(R) CPU
+E5504 @ 2.00GHz, 4.00 GB of RAM
+
+
+Microsoft Windows Server 2003
+Enterprise x64 Edition
+Intel(R) Xeon(R) CPU
+E5504 @ 2.00GHz, 2.00 GB of RAM
+
+Supported databases
+------------------------
+This version of the GSA connector for databases is certified against following databases:
 
 1. MySQL 5.2.3
 2. Oracle Database 10g Enterprise Edition Release 10.2.0.4.0
 3. MS SQL server 2005
 4. IBM DB2/NT SQL09050
 
-Known Issues/Limitations
------------------------------
-1. The value of "Database Name" field is not validated at the time of saving connector instance.
-
+Known Limitations
+------------------
+Issue 14: Connector configuration gets saved for an invalid AuthZ query.
+Issue 15: Connector instance getting saved even when invalid Database name is given.
 
 Release 1.0.2, ALPHA March 29,2010
 ===========================================
