@@ -1,0 +1,18 @@
+This utility is developed for inserting Employee records with BLOB data .
+User need to supply firstName lastName deptID emplNo and path of file to be uplodaed as command line argument.
+e.g
+Ramesh Rane 4 8 "C:\Documents and Settings\suresh_ghuge\Desktop\issues for lgging.rtf".
+
+Also add below dependent jars in classpath while building and running this utility.
+
+asm.jar
+cglib-2.1.jar
+commons-collections-2.1.1.jar
+commons-logging-1.0.4.jar
+db2jcc.jar
+dom4j-1.5.2.jar
+ehcache-1.1.jar
+hibernate3.jar
+jta.jar
+mysql-connector-java-5.1.6-bin.jar
+sqljdbc.jar
