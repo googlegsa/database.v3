@@ -19,16 +19,22 @@ import org.hibernate.cfg.Configuration;
 
 import java.io.File;
 
+/**
+ * This is an util class for getting Hibernate Session object. User need to
+ * replace "REPLACE WITH ACTUAL PATH" with actual path to the config file of
+ * hibernate before compiling and tunning this utility.
+ * 
+ * @author suresh_ghuge
+ */
 public class HibernateUtil {
 
 	private static final SessionFactory sessionFactory;
 
 	static {
 		try {
-
 			sessionFactory = new Configuration().configure(new File(
 					"REPLACE WITH ACTUAL PATH")).buildSessionFactory();
-			/*
+			/* example :
 			 * sessionFactory = new Configuration().configure(new File(
 			 * "E:\\workspace\\DBUtility\\src\\hibernate.mysql.cfg.xml"
 			 * )).buildSessionFactory();

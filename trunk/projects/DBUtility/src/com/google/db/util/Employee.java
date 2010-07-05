@@ -1,4 +1,4 @@
-//Copyright 2009 Google Inc.
+//Copyright 2010 Google Inc.
 //
 //Licensed under the Apache License, Version 2.0 (the "License");
 //you may not use this file except in compliance with the License.
@@ -22,6 +22,12 @@ import java.io.InputStream;
 import java.sql.Blob;
 import java.sql.SQLException;
 
+/**
+ * This class represent Employee_info table in database. This class is mapped
+ * with the Employee_Info table in Database.
+ * 
+ * @author suresh_ghuge
+ */
 public class Employee {
 
 	private String lastName;
@@ -81,6 +87,12 @@ public class Employee {
 		this.deptId = deptId;
 	}
 
+	/**
+	 * This method converts BLOB object into array of bytes
+	 * 
+	 * @param fromBlob BLOB object
+	 * @return
+	 */
 	private byte[] toByteArray(Blob fromBlob) {
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		try {
@@ -99,8 +111,19 @@ public class Employee {
 		}
 	}
 
+	/**
+	 * This method writes content of BLOB object into ByteArrayOutputStream and
+	 * return the array of bytes.
+	 * 
+	 * @param fromBlob input BLOB object
+	 * @param baos BLOB object will be written in ByteArrayOutputStream
+	 * @return
+	 * @throws SQLException
+	 * @throws IOException
+	 */
 	private byte[] toByteArrayImpl(Blob fromBlob, ByteArrayOutputStream baos)
 			throws SQLException, IOException {
+		// initial
 		byte[] buf = new byte[4000];
 		InputStream is = fromBlob.getBinaryStream();
 		try {
