@@ -1,4 +1,4 @@
-#summary One-sentence summary of this page.
+#summary Troubleshooting guide and FAQs for Database Connector .
 
 = Introduction =  
 This document has a list of troubleshooting tips and FAQ to quickly identify if connector has been configured correctly and is discovering & crawling as intended.
