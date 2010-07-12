@@ -14,9 +14,7 @@ In this scenario, the Database Connector queries the database for data, then sub
 
 * Where to specify URL column(field)? *
 
-New configuration field * "Document URL Field" * has introduced on Database Connector configuration form, connector admin must enter the name of the column which holds the URL of documents to be crawled and indexed in this field. Please see below screen shot of DB Connector configuration form for * "Document URL Field" *. See below screen shot for the same.
-
-            https://sites.google.com/a/google.com/google-persistent-team-site/Home/database-connector/external-metadata-indexing-using-db-connector/url%20field.GIF?attredirects=0
+New configuration field * "Document URL Field" * has introduced on Database Connector configuration form, connector admin must enter the name of the column which holds the URL of documents to be crawled and indexed in this field. Please see below screen shot of DB Connector configuration form for * "Document URL Field" *. 
 
 ==Scenario 2:==
 -------------
@@ -34,10 +32,6 @@ For above example user must enter {{{"http://my-host:6502/getdoc?action=get&doci
 
 New fields *"Base URL"* and *"Document ID Field"* has introduced on Database Connector configuration form where user can enter the Base URL string and name of the document id column. 
 
-Please see the below screen shot for the same.
-
-    [https://sites.google.com/a/google.com/google-persistent-team-site/_/rsrc/1272541556437/Home/database-connector/external-metadata-indexing-using-db-connector/base%20URL%20n%20doc%20id.GIF]
-
 == Scenario 3: ==
 -----------------
 In this scenario external metadata is stored in a relational database and the primary document is also stored in the database as a Large Object(BLOB/CLOB).
@@ -51,11 +45,6 @@ If database table maintain the column for fetching this BLOB/CLOB data, user can
 
 MIME type of the BLOB data is determined programatically. MimeUtil library is used to determine the MIME type of the BLOB data.  *"text/html"* is used as MIME type for CLOB data.
 
-Please below screen shot for the same.
-
-  [https://sites.google.com/a/google.com/google-persistent-team-site/_/rsrc/1272541594551/Home/database-connector/external-metadata-indexing-using-db-connector/blob%20data.GIF]
-
-
 * "Document Title" and "Last Modified Date" fields *
 -------------------
 * Where to specify *"Last Modified Date"* of the document for above three scenarios? *
@@ -66,7 +55,4 @@ If database maintains the last modified date of the document in one of its colum
 
 If database maintains the *"Title"* of the document in one of its column. User can enter the name of this field in *"Document Title Field"* field of database connector configuration form.
 
-Please see the below screen shot for the same.
-
-  [https://sites.google.com/a/google.com/google-persistent-team-site/_/rsrc/1272545138954/Home/database-connector/external-metadata-indexing-using-db-connector/date%20title%20new.GIF]
 Note: Above all fields are not required field. 
