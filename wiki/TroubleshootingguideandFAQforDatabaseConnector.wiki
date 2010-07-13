@@ -12,7 +12,7 @@ This section describes some commonly encountered error messages and their likely
  You must provide fully qualified name of connector host. For example *connector-host.domain*
 *
  * Could not connect to the database.*
- You see this error message when user provided Database Connection URL is not valid or  given user does not have sufficient privileges. Check [http://code.google.com/p/google-enterprise-connector-database/wiki/DBConnectorConfigurationDetails here] more details.
+ You see this error message when user provided Database Connection URL is not valid or  given user does not have sufficient privileges. Check [http://code.google.com/p/google-enterprise-connector-database/wiki/DBConnectorConfigurationDetails here] for more details.
 *
  * One or more primary key values are invalid.*
  You see this error message when user provided primary keys are not found in Resultset. User must provide primary keys which are there in Resultset.
@@ -50,6 +50,12 @@ This section details some of the important log messages that are written into th
 || Crawl cycle of database `<`database name`>` is completed at: `<`date-time`>`. Total `<`recordCount`>` records are crawled during this crawl cycle || This log message is logged at the end of every crawl cycle || INFO ||
 || Size of the document `<`docId`>` is larger than supported|| Size of document with docid `<`docId`>` is larger than connector manager supports|| WARNING||
 || Skipping the document with docId : `<`docId`>` as content mime type `<`mimeType`>` is not supported. || Mimetype `<`mimeType`>` of document with docId `<`docId`>` is not supported|| WARNING ||
+||Unable to connect to the database || Database connector is unable to connect to the database. This could happened because database server has shut down or network failure.|| WARNING||
+||Could not execute AuthZ query on the database||User provided AuthZ Query is not  correct syntactically||WARNING||
+||User: `<`user name`>` is authorized for : `<`list of docuement Ids`>` and not authorized for document `<`list of document Ids`>`|| User is is allowed to view  <list of document Ids> and denied for  <list of document Ids> ||INFO ||
+||Traversal resumed at `<`date-time`>` from checkpoint <checkpoint string>||Traversal has resumed at `<`date-time`>` from previous checkpoint|| INFO ||
+||Could not load state. Starting all over again||Connector is running first time or state file is deleted intentionally to force re-crawling of entire data.|| WARNING||
+
 
 =Frequently Asked Questions - FAQ=
 This section lists some of the most commonly asked questions.
@@ -112,3 +118,20 @@ Go to $CATALINA_HOME/webapps/connector-manager/WEB-INF/classes. Open logging.pro
 
 * Q. Does connector keep track of the deleted rows so that they are removed from the GSA’s index? *
  Yes. Connector sends delete feeds for such documents. GSA, than removes all such documents and their contents from its index. 
+
+* I have last modified date of the documents stored in database table. Can I specify last modified date while configuring database connector?*
+ Yes. You can specify last modified date of the document in "Last Modified Date Field" of Database Connector configuration form.
+
+* I have document modified stored in database table. Can I specify document title field while configuring database connector?*
+ Yes. You can specify last document title of the document in "Document Title Field" of Database Connector configuration form.
+
+
+=== External Metadata Indexing Using Database Connector ===
+* Q. Can I configure Database Connector to crawl and index external metadata? *
+ Yes. You can configure Database Connector to crawl and index external metadata. Click [ http://code.google.com/p/google-enterprise-connector-database/wiki/ExternalMetadataIndexingUsingDBConnector here] for more details.
+
+*Q. I have document URL and associated metadata stored in database table(s). Can I configure Database Connector to crawl and index this data in Metadata and URL mode  ?*
+  Yes. You can configure Database Connector to send Metadata and URL feeds to GSA for URL and metadata stored in database table(s). Click [ http://code.google.com/p/google-enterprise-connector-database/wiki/ExternalMetadataIndexingUsingDBConnector here] for more details.
+
+*Q. I have BLOB/CLOB data stored in database. Can I configure Database Connector to crawl BLOB/CLOB data?*
+ Yes. You can configure Database Connector to crawl and index BLOB or CLOB data. Click [ http://code.google.com/p/google-enterprise-connector-database/wiki/ExternalMetadataIndexingUsingDBConnector here] for more details.
