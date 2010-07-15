@@ -119,19 +119,27 @@ Go to $CATALINA_HOME/webapps/connector-manager/WEB-INF/classes. Open logging.pro
 * Q. Does connector keep track of the deleted rows so that they are removed from the GSA’s index? *
  Yes. Connector sends delete feeds for such documents. GSA, than removes all such documents and their contents from its index. 
 
-* I have last modified date of the documents stored in database table. Can I specify last modified date while configuring database connector?*
+* Q. I have last modified date of the documents stored in database table. Can I specify last modified date while configuring database connector?*
  Yes. You can specify last modified date of the document in "Last Modified Date Field" of Database Connector configuration form.
 
-* I have document modified stored in database table. Can I specify document title field while configuring database connector?*
+* Q. I have document modified stored in database table. Can I specify document title field while configuring database connector?*
  Yes. You can specify last document title of the document in "Document Title Field" of Database Connector configuration form.
 
+* Q. Can I configure Database connector to handle authentication?* 
+ No. Current version of Database connector does not support authentication.
+
+* Q. Can I configure Database connector handle authorization?*
+ Yes. You can configure Database connector to handle authorization. Click [http://code.google.com/p/google-enterprise-connector-database/wiki/HandlingAuthZinDatabaseConnector here] for more details.
+
+* Q. Can I configure Database connector to call stored procedures ?*
+ No. Current version of Database connector does not support call to stored procedures.
 
 === External Metadata Indexing Using Database Connector ===
 * Q. Can I configure Database Connector to crawl and index external metadata? *
  Yes. You can configure Database Connector to crawl and index external metadata. Click [ http://code.google.com/p/google-enterprise-connector-database/wiki/ExternalMetadataIndexingUsingDBConnector here] for more details.
 
-*Q. I have document URL and associated metadata stored in database table(s). Can I configure Database Connector to crawl and index this data in Metadata and URL mode  ?*
+* Q. I have document URL and associated metadata stored in database table(s). Can I configure Database Connector to crawl and index this data in Metadata and URL mode  ?*
   Yes. You can configure Database Connector to send Metadata and URL feeds to GSA for URL and metadata stored in database table(s). Click [ http://code.google.com/p/google-enterprise-connector-database/wiki/ExternalMetadataIndexingUsingDBConnector here] for more details.
 
-*Q. I have BLOB/CLOB data stored in database. Can I configure Database Connector to crawl BLOB/CLOB data?*
+* Q. I have BLOB/CLOB data stored in database. Can I configure Database Connector to crawl BLOB/CLOB data?*
  Yes. You can configure Database Connector to crawl and index BLOB or CLOB data. Click [ http://code.google.com/p/google-enterprise-connector-database/wiki/ExternalMetadataIndexingUsingDBConnector here] for more details.
