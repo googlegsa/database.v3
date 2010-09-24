@@ -21,7 +21,8 @@ Here are the typical values used for different databases for these fields:
 
 Driver Jar Used:mysql-connector-java-5.1.6-bin.jar 
 
-1. JDBC Connection URL: jdbc:mysql://DB_HOST_NAME_OR_IP:3306/SchemaNAME
+1. JDBC Connection URL: jdbc:mysql://DB_HOST_NAME_OR_IP:3306/SchemaNAME (Default schema for MySql database server is "MySql" )
+The SchemaName is the name of database schema in which the table used in select query resides. 
 
 2. JDBC Driver Classname: com.mysql.jdbc.Driver
  
@@ -31,7 +32,8 @@ Driver Jar Used:mysql-connector-java-5.1.6-bin.jar
 
 Driver Jar Used:sqljdbc.jar
 
-1. JDBC Connection URL: jdbc:sqlserver://DB_HOST_NAME_OR_IP:1433;databaseName=DB_NAME
+1. JDBC Connection URL: jdbc:sqlserver://DB_HOST_NAME_OR_IP:1433;databaseName=SchemaNAME  (DB_NAME)
+The SchemaName is the name of database schema in which the table used in select query resides. 
 
 2. JDBC Driver Classname: com.microsoft.sqlserver.jdbc.SQLServerDriver
  
@@ -41,7 +43,8 @@ Driver Jar Used:sqljdbc.jar
 
 Driver Jar Used: ojdbc14.jar
 
-1. JDBC Connection URL: jdbc:oracle:thin:@DB_HOST_NAME_OR_IP:1521:ORACLE_SERVICENAME
+1. JDBC Connection URL: jdbc:oracle:thin:@DB_HOST_NAME_OR_IP:1521:SchemaNAME  (ORACLE_SERVICENAME)
+The SchemaName is the name of database schema in which the table used in select query resides. 
 
 2. JDBC Driver Classname: oracle.jdbc.OracleDriver
  
@@ -51,7 +54,8 @@ Driver Jar Used: ojdbc14.jar
 
 Driver Jar Used:db2jcc.jar
 
-1. JDBC Connection URL: jdbc:db2://DB_HOST_NAME_OR_IP:50000/DBNAME
+1. JDBC Connection URL: jdbc:db2://DB_HOST_NAME_OR_IP:50000/SchemaNAME  (DBNAME)
+The SchemaName is the name of database schema in which the table used in select query resides.  
 
 2. JDBC Driver Classname: com.ibm.db2.jcc.DB2Driver
  
