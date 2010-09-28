@@ -15,6 +15,12 @@ Following fields on the DB connector configuration page are dependent on which D
 
 Here are the typical values used for different databases for these fields:
 
+*_DB_HOST_NAME_OR_IP_ :* is the IP address or the name of the machine where Database server resides.
+
+*_Database Name_ :* is the name of database schema in which the table used in select query resides.  
+
+
+
 
 *MY SQL server:*
  
@@ -22,8 +28,6 @@ Here are the typical values used for different databases for these fields:
 Driver Jar Used:mysql-connector-java-5.1.6-bin.jar 
 
 1.JDBC Connection URL: jdbc:mysql://DB_HOST_NAME_OR_IP:3306/*_Database Name_*
-
-The Database Name is the name of database schema in which the table used in select query resides. 
 
 2. JDBC Driver Classname: com.mysql.jdbc.Driver
  
@@ -35,8 +39,6 @@ Driver Jar Used:sqljdbc.jar
 
 1. JDBC Connection URL:jdbc:sqlserver://DB_HOST_NAME_OR_IP:1433;databaseName=*_Database Name_*
 
-The Database Name is the name of database schema in which the table used in select query resides. 
-
 2. JDBC Driver Classname: com.microsoft.sqlserver.jdbc.SQLServerDriver
  
 
@@ -47,8 +49,6 @@ Driver Jar Used: ojdbc14.jar
 
 1. JDBC Connection URL: jdbc:oracle:thin:@DB_HOST_NAME_OR_IP:1521:*_Database Name_*
 
-The Database Name is the name of database schema in which the table used in select query resides. 
-
 2. JDBC Driver Classname: oracle.jdbc.OracleDriver
  
 
@@ -58,8 +58,6 @@ The Database Name is the name of database schema in which the table used in sele
 Driver Jar Used:db2jcc.jar
 
 1. JDBC Connection URL: jdbc:db2://DB_HOST_NAME_OR_IP:50000/*_Database Name_*
-
-The Database Name is the name of database schema in which the table used in select query resides.  
 
 2. JDBC Driver Classname: com.ibm.db2.jcc.DB2Driver
  
