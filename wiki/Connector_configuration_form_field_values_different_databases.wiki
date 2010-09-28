@@ -21,7 +21,7 @@ Here are the typical values used for different databases for these fields:
 
 Driver Jar Used:mysql-connector-java-5.1.6-bin.jar 
 
-1. JDBC Connection URL: jdbc:mysql://DB_HOST_NAME_OR_IP:3306/Database_Name
+1. JDBC Connection URL: jdbc:mysql://DB_HOST_NAME_OR_IP:3306/<Database_Name>
 
 The Database_Name is the name of database schema in which the table used in select query resides. 
 
