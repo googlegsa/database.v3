@@ -21,7 +21,7 @@ Here are the typical values used for different databases for these fields:
 
 Driver Jar Used:mysql-connector-java-5.1.6-bin.jar 
 
-1.JDBC Connection URL: jdbc:mysql://DB_HOST_NAME_OR_IP:3306/*Database Name*
+1.JDBC Connection URL: jdbc:mysql://DB_HOST_NAME_OR_IP:3306/*_Database Name_*
 
 The Database Name is the name of database schema in which the table used in select query resides. 
 
@@ -33,7 +33,7 @@ The Database Name is the name of database schema in which the table used in sele
 
 Driver Jar Used:sqljdbc.jar
 
-1. JDBC Connection URL:jdbc:sqlserver://DB_HOST_NAME_OR_IP:1433;databaseName=*Database Name*
+1. JDBC Connection URL:jdbc:sqlserver://DB_HOST_NAME_OR_IP:1433;databaseName=*_Database Name_*
 
 The Database Name is the name of database schema in which the table used in select query resides. 
 
@@ -45,7 +45,7 @@ The Database Name is the name of database schema in which the table used in sele
 
 Driver Jar Used: ojdbc14.jar
 
-1. JDBC Connection URL: jdbc:oracle:thin:@DB_HOST_NAME_OR_IP:1521:*Database Name*
+1. JDBC Connection URL: jdbc:oracle:thin:@DB_HOST_NAME_OR_IP:1521:*_Database Name_*
 
 The Database Name is the name of database schema in which the table used in select query resides. 
 
@@ -57,7 +57,7 @@ The Database Name is the name of database schema in which the table used in sele
 
 Driver Jar Used:db2jcc.jar
 
-1. JDBC Connection URL: jdbc:db2://DB_HOST_NAME_OR_IP:50000/*Database Name*
+1. JDBC Connection URL: jdbc:db2://DB_HOST_NAME_OR_IP:50000/*_Database Name_*
 
 The Database Name is the name of database schema in which the table used in select query resides.  
 
