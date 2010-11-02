@@ -18,7 +18,6 @@ import com.google.enterprise.connector.spi.Document;
 import com.google.enterprise.connector.spi.Property;
 import com.google.enterprise.connector.spi.RepositoryException;
 import com.google.enterprise.connector.spi.SpiConstants;
-import com.google.enterprise.connector.spi.TraversalContext;
 
 import org.joda.time.DateTime;
 import org.w3c.dom.Element;
@@ -129,12 +128,12 @@ public class GlobalState {
 	 * to start from the first row. Documents in the previous checksum map are
 	 * added to the doc queue for the deletion.
 	 */
-	public void markNewDBTraversal(TraversalContext tcontext) {
+	public void markNewDBTraversal() {
 
 		// mark documents for DELETE only for Content feed. Otherwise just
 		// clear the entries from "previousChecksumMap".
 		if (!isMetadataURLFeed) {
-			addDocumentsToDelete(tcontext);
+			addDocumentsToDelete();
 		} else {
 			previousChecksumMap.clear();
 		}
@@ -164,11 +163,11 @@ public class GlobalState {
 	 * Adds all the docs in the previous checksum Map for deletion to the doc
 	 * queue.
 	 */
-	private void addDocumentsToDelete(TraversalContext context) {
+	private void addDocumentsToDelete() {
 		LOG.info(previousChecksumMap.size()
 				+ " document(s) are marked for delete feed");
 		for (String key : previousChecksumMap.keySet()) {
-			DBDocument dbDoc = new DBDocument(context);
+			DBDocument dbDoc = new DBDocument();
 			dbDoc.setProperty(SpiConstants.PROPNAME_DOCID, key);
 			dbDoc.setProperty(DBDocument.ROW_CHECKSUM, previousChecksumMap.get(key));
 			dbDoc.setProperty(SpiConstants.PROPNAME_ACTION, SpiConstants.ActionType.DELETE.toString());
@@ -390,7 +389,7 @@ public class GlobalState {
 			if (stateNodeList.item(0) == null) {
 				throw new DBException(
 						"Unable to get the item of the nodelist for "
-						+ "tag '<state>'");
+								+ "tag '<state>'");
 			}
 
 			NodeList cursorDBNodeList = ((Element) stateNodeList.item(0)).getElementsByTagName(DB_CURSOR_XML);
@@ -411,7 +410,7 @@ public class GlobalState {
 			}
 			if (currentChecksumMapNodeList.item(0) == null) {
 				throw new DBException(
-				"Unable to get value of currentChecksumMap");
+						"Unable to get value of currentChecksumMap");
 			}
 			loadChecksumMaps(currentChecksumMapNodeList, true);
 
@@ -423,7 +422,7 @@ public class GlobalState {
 			}
 			if (previousChecksumMapNodeList.item(0) == null) {
 				throw new DBException(
-				"Unable to get value of previousChecksumMap");
+						"Unable to get value of previousChecksumMap");
 			}
 			loadChecksumMaps(previousChecksumMapNodeList, false);
 		} catch (ParserConfigurationException e) {
