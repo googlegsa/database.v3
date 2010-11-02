@@ -360,7 +360,7 @@ public class DBConnectorType implements ConnectorType {
 			 * empty or if user has entered value for base URL.
 			 */
 			boolean isChecked = (value != null && value.trim().length() > 0)
-					|| (baseURL != null && baseURL.trim().length() > 0);
+			|| (baseURL != null && baseURL.trim().length() > 0);
 			buf.append(getRadio(DOC_ID, isChecked));
 		} else if (CLOB_BLOB_FIELD.equals(key)) {
 			String fetchURL = null;
@@ -368,7 +368,7 @@ public class DBConnectorType implements ConnectorType {
 				fetchURL = config.get(FETCH_URL_FIELD);
 			}
 			boolean isChecked = (value != null && value.trim().length() > 0)
-					|| (fetchURL != null && fetchURL.trim().length() > 0);
+			|| (fetchURL != null && fetchURL.trim().length() > 0);
 			buf.append(getRadio(BLOB_CLOB, isChecked));
 		}
 		/*
@@ -680,7 +680,7 @@ public class DBConnectorType implements ConnectorType {
 					&& (documentIdField == null || documentIdField.trim().length() == 0)) {
 				result = false;
 				message = res.getString(MISSING_ATTRIBUTES) + " : "
-						+ res.getString(DOCUMENT_ID_FIELD);
+				+ res.getString(DOCUMENT_ID_FIELD);
 				problemFields.add(DOCUMENT_ID_FIELD);
 			}
 			// Validate documnet ID column name
@@ -694,7 +694,7 @@ public class DBConnectorType implements ConnectorType {
 				if (baseURL == null || baseURL.trim().length() == 0) {
 					result = false;
 					message = res.getString(MISSING_ATTRIBUTES) + " : "
-							+ res.getString(BASE_URL);
+					+ res.getString(BASE_URL);
 					problemFields.add(BASE_URL);
 				}
 
@@ -709,7 +709,7 @@ public class DBConnectorType implements ConnectorType {
 					&& (blobClobField == null || blobClobField.trim().length() == 0)) {
 				result = false;
 				message = res.getString(MISSING_ATTRIBUTES) + " : "
-						+ res.getString(CLOB_BLOB_FIELD);
+				+ res.getString(CLOB_BLOB_FIELD);
 				problemFields.add(CLOB_BLOB_FIELD);
 			}
 
@@ -1015,6 +1015,9 @@ public class DBConnectorType implements ConnectorType {
 	}
 
 	/* @Override */
+	/* (non-Javadoc)
+	 * @see com.google.enterprise.connector.spi.ConnectorType#getPopulatedConfigForm(java.util.Map, java.util.Locale)
+	 */
 	public ConfigureResponse getPopulatedConfigForm(
 			Map<String, String> configMap, Locale locale) {
 		try {
@@ -1059,7 +1062,7 @@ public class DBConnectorType implements ConnectorType {
 							LOG.log(Level.INFO, "failed to create connector", e);
 							return new ConfigureResponse(
 									"Error creating connector: "
-											+ e.getMessage(), "");
+									+ e.getMessage(), "");
 						}
 						return null;
 					}
@@ -1114,19 +1117,19 @@ public class DBConnectorType implements ConnectorType {
 		 * editable.
 		 */
 		String javascript = "<SCRIPT> function setReadOnlyProperties(urlField , docIdField , lobField){"
-				+ "document.getElementById('documentURLField').readOnly=urlField ;    "
-				+ "document.getElementById('documentIdField').readOnly=docIdField ;    "
-				+ "document.getElementById('baseURL').readOnly=docIdField ;    "
-				+ "document.getElementById('lobField').readOnly=lobField ;  "
-				+ "document.getElementById('fetchURLField').readOnly=lobField ;"
-				+ "if(urlField){document.getElementById('documentURLField').value='';}"
-				+ "if(docIdField){document.getElementById('documentIdField').value='' ;"
-				+ "document.getElementById('baseURL').value=''}"
-				+ "if(lobField){document.getElementById('lobField').value='';"
-				+ "document.getElementById('fetchURLField').value='';}"
-				+ "if(!lobField){document.getElementById('authZQuery').readOnly=false}"
-				+ "else{document.getElementById('authZQuery').readOnly=true} }"
-				+ "</SCRIPT>";
+			+ "document.getElementById('documentURLField').readOnly=urlField ;    "
+			+ "document.getElementById('documentIdField').readOnly=docIdField ;    "
+			+ "document.getElementById('baseURL').readOnly=docIdField ;    "
+			+ "document.getElementById('lobField').readOnly=lobField ;  "
+			+ "document.getElementById('fetchURLField').readOnly=lobField ;"
+			+ "if(urlField){document.getElementById('documentURLField').value='';}"
+			+ "if(docIdField){document.getElementById('documentIdField').value='' ;"
+			+ "document.getElementById('baseURL').value=''}"
+			+ "if(lobField){document.getElementById('lobField').value='';"
+			+ "document.getElementById('fetchURLField').value='';}"
+			+ "if(!lobField){document.getElementById('authZQuery').readOnly=false}"
+			+ "else{document.getElementById('authZQuery').readOnly=true} }"
+			+ "</SCRIPT>";
 
 		return javascript;
 	}
