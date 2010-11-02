@@ -20,6 +20,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 
+import com.google.enterprise.connector.traversal.ProductionTraversalContext;
+
 /**
  * Utility class for unittests.
  */
@@ -80,7 +82,8 @@ public class TestUtils {
 
 	public static DBDocument createDBDoc(int id, String firstName,
 			String lastName, String email) throws DBException {
-		DBDocument dbDoc = Util.rowToDoc("testdb_", TestUtils.getStandardPrimaryKeys(), getRow(id, firstName, lastName, email), "localhost", null, null);
+		ProductionTraversalContext context = new ProductionTraversalContext();
+		DBDocument dbDoc = Util.rowToDoc("testdb_", TestUtils.getStandardPrimaryKeys(), getRow(id, firstName, lastName, email), "localhost", null, null,context);
 		return dbDoc;
 	}
 
