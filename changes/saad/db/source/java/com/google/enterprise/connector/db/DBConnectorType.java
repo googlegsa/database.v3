@@ -1015,6 +1015,9 @@ public class DBConnectorType implements ConnectorType {
 	}
 
 	/* @Override */
+	/* (non-Javadoc)
+	 * @see com.google.enterprise.connector.spi.ConnectorType#getPopulatedConfigForm(java.util.Map, java.util.Locale)
+	 */
 	public ConfigureResponse getPopulatedConfigForm(
 			Map<String, String> configMap, Locale locale) {
 		try {

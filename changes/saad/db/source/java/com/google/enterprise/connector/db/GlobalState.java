@@ -18,6 +18,7 @@ import com.google.enterprise.connector.spi.Document;
 import com.google.enterprise.connector.spi.Property;
 import com.google.enterprise.connector.spi.RepositoryException;
 import com.google.enterprise.connector.spi.SpiConstants;
+import com.google.enterprise.connector.spi.TraversalContext;
 
 import org.joda.time.DateTime;
 import org.w3c.dom.Element;
@@ -128,12 +129,12 @@ public class GlobalState {
 	 * to start from the first row. Documents in the previous checksum map are
 	 * added to the doc queue for the deletion.
 	 */
-	public void markNewDBTraversal() {
+	public void markNewDBTraversal(TraversalContext tcontext) {
 
 		// mark documents for DELETE only for Content feed. Otherwise just
 		// clear the entries from "previousChecksumMap".
 		if (!isMetadataURLFeed) {
-			addDocumentsToDelete();
+			addDocumentsToDelete(tcontext);
 		} else {
 			previousChecksumMap.clear();
 		}
@@ -163,11 +164,11 @@ public class GlobalState {
 	 * Adds all the docs in the previous checksum Map for deletion to the doc
 	 * queue.
 	 */
-	private void addDocumentsToDelete() {
+	private void addDocumentsToDelete(TraversalContext context) {
 		LOG.info(previousChecksumMap.size()
 				+ " document(s) are marked for delete feed");
 		for (String key : previousChecksumMap.keySet()) {
-			DBDocument dbDoc = new DBDocument();
+			DBDocument dbDoc = new DBDocument(context);
 			dbDoc.setProperty(SpiConstants.PROPNAME_DOCID, key);
 			dbDoc.setProperty(DBDocument.ROW_CHECKSUM, previousChecksumMap.get(key));
 			dbDoc.setProperty(SpiConstants.PROPNAME_ACTION, SpiConstants.ActionType.DELETE.toString());
