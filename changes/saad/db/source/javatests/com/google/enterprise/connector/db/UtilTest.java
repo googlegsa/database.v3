@@ -42,13 +42,14 @@ public class UtilTest extends TestCase {
 		Map<String, Object> rowMap = TestUtils.getStandardDBRow();
 		String[] primaryKeys = TestUtils.getStandardPrimaryKeys();
 		try {
-			DBDocument doc = Util.rowToDoc("testdb_", primaryKeys, rowMap, "localhost", null, null);
+			ProductionTraversalContext context = new ProductionTraversalContext();
+			DBDocument doc = Util.rowToDoc("testdb_", primaryKeys, rowMap, "localhost", null, null,context);
 			for (String propName : doc.getPropertyNames()) {
 				Property prop = doc.findProperty(propName);
 				LOG.info(propName + ":    " + prop.nextValue().toString());
 			}
 			assertEquals("MSxsYXN0XzAx", doc.findProperty(SpiConstants.PROPNAME_DOCID).nextValue().toString());
-			assertEquals("eb476c046da8b3e83081e3195923aba1dd9c6045", doc.findProperty(DBDocument.ROW_CHECKSUM).nextValue().toString());
+			assertEquals("7ffd1d7efaf0d1ee260c646d827020651519e7b0", doc.findProperty(DBDocument.ROW_CHECKSUM).nextValue().toString());
 		} catch (DBException e) {
 			fail("Could not generate DB document from row.");
 		} catch (RepositoryException e) {
@@ -58,7 +59,8 @@ public class UtilTest extends TestCase {
 
 	public final void testGetCheckpointString() throws DBException {
 		Map<String, Object> rowMap = TestUtils.getStandardDBRow();
-		DBDocument doc = Util.rowToDoc("testdb_", TestUtils.getStandardPrimaryKeys(), rowMap, "localhost", null, null);
+		ProductionTraversalContext context = new ProductionTraversalContext();
+		DBDocument doc = Util.rowToDoc("testdb_", TestUtils.getStandardPrimaryKeys(), rowMap, "localhost", null, null,context);
 		try {
 			String checkpointStr = Util.getCheckpointString(null, null);
 			assertEquals("(NO_TIMESTAMP)NO_DOCID", checkpointStr);
@@ -98,7 +100,8 @@ public class UtilTest extends TestCase {
 		// add version column in row
 		rowMap.put(versionColumn, versionValue);
 		try {
-			DBDocument doc = Util.generateMetadataURLFeed("testdb", primaryKeys, rowMap, "localhost", dbContext, "");
+			ProductionTraversalContext context = new ProductionTraversalContext();
+			DBDocument doc = Util.generateMetadataURLFeed("testdb", primaryKeys, rowMap, "localhost", dbContext, "",context);
 			// test:- column "version" value as metadata
 			assertEquals(versionValue, doc.findProperty(versionColumn).nextValue().toString());
 			// test:- display URL will be same as the actual URL of the
@@ -112,8 +115,8 @@ public class UtilTest extends TestCase {
 			rowMapWithBaseURL.put(primaryKeyColumn, 2);
 			rowMapWithBaseURL.put(dbContext.getDocumentIdField(), docId);
 			rowMapWithBaseURL.put(versionColumn, versionValue);
-
-			DBDocument docWithBaseURL = Util.generateMetadataURLFeed("testdb", primaryKeys, rowMapWithBaseURL, "localhost", dbContext, Util.WITH_BASE_URL);
+			
+			DBDocument docWithBaseURL = Util.generateMetadataURLFeed("testdb", primaryKeys, rowMapWithBaseURL, "localhost", dbContext, Util.WITH_BASE_URL,context);
 
 			// test:- column "version" value as metadata
 			assertEquals(versionValue, docWithBaseURL.findProperty(versionColumn).nextValue().toString());
