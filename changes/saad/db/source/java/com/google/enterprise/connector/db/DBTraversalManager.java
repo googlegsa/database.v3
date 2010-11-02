@@ -20,12 +20,8 @@ import com.google.enterprise.connector.spi.TraversalContext;
 import com.google.enterprise.connector.spi.TraversalContextAware;
 import com.google.enterprise.connector.spi.TraversalManager;
 
-
 import org.joda.time.DateTime;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -36,7 +32,7 @@ import java.util.logging.Logger;
  * {@link TraversalManager} implementation for the DB connector.
  */
 public class DBTraversalManager implements TraversalManager,
-TraversalContextAware {
+		TraversalContextAware {
 	private static final Logger LOG = Logger.getLogger(DBTraversalManager.class.getName());
 	private DBClient dbClient;
 	private GlobalState globalState;
@@ -98,7 +94,7 @@ TraversalContextAware {
 	 */
 	/* @Override */
 	public DocumentList resumeTraversal(String checkpointStr)
-	throws RepositoryException {
+			throws RepositoryException {
 		LOG.info("Traversal resumed at " + new Date() + " from checkpoint "
 				+ checkpointStr);
 		try {
@@ -212,7 +208,7 @@ TraversalContextAware {
 			// You've reached the end of the DB or the DB is empty.
 			if (0 == rows.size()) {
 				int recordCOunt = globalState.getCursorDB();
-				globalState.markNewDBTraversal(traversalContext);
+				globalState.markNewDBTraversal();
 				/*
 				 * globalState.getDocQueue().size() can be non-zero if there are
 				 * any documents to delete.
@@ -239,7 +235,7 @@ TraversalContextAware {
 	}
 
 	private List<Map<String, Object>> executeQueryAndAddDocs()
-	throws DBException {
+			throws DBException {
 		List<Map<String, Object>> rows = dbClient.executePartialQuery(globalState.getCursorDB(), 3 * batchHint);
 
 		globalState.setCursorDB(globalState.getCursorDB() + rows.size());
@@ -257,18 +253,18 @@ TraversalContextAware {
 			case MODE_METADATA_URL:
 
 				for (Map<String, Object> row : rows) {
-					dbDoc = Util.generateMetadataURLFeed(dbClient.getDBContext().getDbName(), dbClient.getPrimaryKeys(), row, dbClient.getDBContext().getHostname(), dbClient.getDBContext(), "",this.traversalContext);
+					dbDoc = Util.generateMetadataURLFeed(dbClient.getDBContext().getDbName(), dbClient.getPrimaryKeys(), row, dbClient.getDBContext().getHostname(), dbClient.getDBContext(), "");
 					if (dbDoc != null) {
 						globalState.addDocument(dbDoc);
 					}
 				}
 				break;
 
-				// execute the connector for BLOB data
+			// execute the connector for BLOB data
 			case MODE_METADATA_BASE_URL:
 				dbDoc = null;
 				for (Map<String, Object> row : rows) {
-					dbDoc = Util.generateMetadataURLFeed(dbClient.getDBContext().getDbName(), dbClient.getPrimaryKeys(), row, dbClient.getDBContext().getHostname(), dbClient.getDBContext(), Util.WITH_BASE_URL,this.traversalContext);
+					dbDoc = Util.generateMetadataURLFeed(dbClient.getDBContext().getDbName(), dbClient.getPrimaryKeys(), row, dbClient.getDBContext().getHostname(), dbClient.getDBContext(), Util.WITH_BASE_URL);
 					if (dbDoc != null) {
 						globalState.addDocument(dbDoc);
 					}
@@ -276,7 +272,7 @@ TraversalContextAware {
 
 				break;
 
-				// execute the connector for CLOB data 
+			// execute the connector for CLOB data
 			case MODE_BLOB_CLOB:
 				dbDoc = null;
 				for (Map<String, Object> row : rows) {
@@ -288,10 +284,10 @@ TraversalContextAware {
 
 				break;
 
-				// execute the connector in normal mode
+			// execute the connector in normal mode
 			default:
 				for (Map<String, Object> row : rows) {
-					globalState.addDocument(Util.rowToDoc(dbClient.getDBContext().getDbName(), dbClient.getPrimaryKeys(), row, dbClient.getDBContext().getHostname(), xslt, dbClient.getDBContext(),this.traversalContext));
+					globalState.addDocument(Util.rowToDoc(dbClient.getDBContext().getDbName(), dbClient.getPrimaryKeys(), row, dbClient.getDBContext().getHostname(), xslt, dbClient.getDBContext()));
 				}
 				break;
 			}
@@ -400,6 +396,5 @@ TraversalContextAware {
 	 */
 	public void setTraversalContext(TraversalContext traversalContext) {
 		this.traversalContext = traversalContext;
-
 	}
 }
