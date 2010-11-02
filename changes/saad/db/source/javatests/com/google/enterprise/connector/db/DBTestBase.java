@@ -16,7 +16,6 @@ package com.google.enterprise.connector.db;
 
 import com.google.enterprise.connector.spi.RepositoryException;
 import com.google.enterprise.connector.spi.Session;
-import com.google.enterprise.connector.traversal.ProductionTraversalContext;
 
 import org.joda.time.DateTime;
 
@@ -114,8 +113,7 @@ public abstract class DBTestBase extends TestCase {
 		globalState.setQueryExecutionTime(queryExecutionTime);
 		try {
 			for (Map<String, Object> row : TestUtils.getDBRows()) {
-				ProductionTraversalContext context = new ProductionTraversalContext();
-				DBDocument dbDoc = Util.rowToDoc("testdb_", TestUtils.getStandardPrimaryKeys(), row, "localhost", null, TestUtils.getDBContext(),context);
+				DBDocument dbDoc = Util.rowToDoc("testdb_", TestUtils.getStandardPrimaryKeys(), row, "localhost", null, TestUtils.getDBContext());
 				globalState.addDocument(dbDoc);
 			}
 		} catch (DBException dbe) {

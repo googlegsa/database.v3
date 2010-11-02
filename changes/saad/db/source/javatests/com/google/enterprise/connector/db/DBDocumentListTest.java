@@ -15,7 +15,6 @@
 package com.google.enterprise.connector.db;
 
 import com.google.enterprise.connector.spi.RepositoryException;
-import com.google.enterprise.connector.traversal.ProductionTraversalContext;
 
 import org.joda.time.DateTime;
 
@@ -36,8 +35,7 @@ public class DBDocumentListTest extends TestCase {
 		globalState = new GlobalState(testDirManager.getTmpDir());
 		docList = new DBDocumentList(globalState);
 		for (Map<String, Object> row : TestUtils.getDBRows()) {
-			ProductionTraversalContext context = new ProductionTraversalContext();
-			DBDocument dbDoc = Util.rowToDoc("testdb_", TestUtils.getStandardPrimaryKeys(), row, "localhost", null, null,context);
+			DBDocument dbDoc = Util.rowToDoc("testdb_", TestUtils.getStandardPrimaryKeys(), row, "localhost", null, null);
 			docList.addDocument(dbDoc);
 		}
 		dt = new DateTime();

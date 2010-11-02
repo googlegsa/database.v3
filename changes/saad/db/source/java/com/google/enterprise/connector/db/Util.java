@@ -67,9 +67,9 @@ public class Util {
 	 */
 	public static DBDocument rowToDoc(String dbName, String[] primaryKeys,
 			Map<String, Object> row, String hostname, String xslt,
-			DBContext dbContext,TraversalContext context) throws DBException {
+			DBContext dbContext) throws DBException {
 
-		DBDocument doc = new DBDocument(context);
+		DBDocument doc = new DBDocument();
 		String contentXMLRow = XmlUtils.getXMLRow(dbName, row, primaryKeys, xslt, dbContext, false);
 		doc.setProperty(SpiConstants.PROPNAME_CONTENT, contentXMLRow);
 		String docId = DocIdUtil.generateDocId(primaryKeys, row);
@@ -274,7 +274,7 @@ public class Util {
 	 */
 	public static DBDocument generateMetadataURLFeed(String dbName,
 			String[] primaryKeys, Map<String, Object> row, String hostname,
-			DBContext dbContext, String type,TraversalContext context) throws DBException {
+			DBContext dbContext, String type) throws DBException {
 
 		boolean isWithBaseURL = type.equalsIgnoreCase(Util.WITH_BASE_URL);
 
@@ -313,7 +313,7 @@ public class Util {
 			}
 		}
 
-		DBDocument doc = new DBDocument(context);
+		DBDocument doc = new DBDocument();
 		// get doc id from primary key values
 		String docId = DocIdUtil.generateDocId(primaryKeys, row);
 
@@ -396,7 +396,7 @@ public class Util {
 		String docId = DocIdUtil.generateDocId(primaryKeys, row);
 
 		String clobValue = null;
-		DBDocument doc = new DBDocument(context);
+		DBDocument doc = new DBDocument();
 
 		/*
 		 * skipColumns maintain the list of column which needs to skip while
@@ -714,7 +714,8 @@ public class Util {
 		mimeType = new MimeTypeFinder().find(blobContent, context);
 
 		// get the mime type supported.
-		
+		int mimeTypeSupportLevel = context.mimeTypeSupportLevel(mimeType);
+		doc.setMimeTypeSupportLevel(mimeTypeSupportLevel);
 
 		// set mime type for this document
 		doc.setProperty(SpiConstants.PROPNAME_MIMETYPE, mimeType);
