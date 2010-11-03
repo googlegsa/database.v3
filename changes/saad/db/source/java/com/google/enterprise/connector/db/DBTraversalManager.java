@@ -19,9 +19,7 @@ import com.google.enterprise.connector.spi.RepositoryException;
 import com.google.enterprise.connector.spi.TraversalContext;
 import com.google.enterprise.connector.spi.TraversalContextAware;
 import com.google.enterprise.connector.spi.TraversalManager;
-
 import org.joda.time.DateTime;
-
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -32,7 +30,7 @@ import java.util.logging.Logger;
  * {@link TraversalManager} implementation for the DB connector.
  */
 public class DBTraversalManager implements TraversalManager,
-		TraversalContextAware {
+TraversalContextAware {
 	private static final Logger LOG = Logger.getLogger(DBTraversalManager.class.getName());
 	private DBClient dbClient;
 	private GlobalState globalState;
@@ -94,7 +92,7 @@ public class DBTraversalManager implements TraversalManager,
 	 */
 	/* @Override */
 	public DocumentList resumeTraversal(String checkpointStr)
-			throws RepositoryException {
+	throws RepositoryException {
 		LOG.info("Traversal resumed at " + new Date() + " from checkpoint "
 				+ checkpointStr);
 		try {
@@ -208,7 +206,7 @@ public class DBTraversalManager implements TraversalManager,
 			// You've reached the end of the DB or the DB is empty.
 			if (0 == rows.size()) {
 				int recordCOunt = globalState.getCursorDB();
-				globalState.markNewDBTraversal();
+				globalState.markNewDBTraversal(traversalContext);
 				/*
 				 * globalState.getDocQueue().size() can be non-zero if there are
 				 * any documents to delete.
@@ -235,7 +233,7 @@ public class DBTraversalManager implements TraversalManager,
 	}
 
 	private List<Map<String, Object>> executeQueryAndAddDocs()
-			throws DBException {
+	throws DBException {
 		List<Map<String, Object>> rows = dbClient.executePartialQuery(globalState.getCursorDB(), 3 * batchHint);
 
 		globalState.setCursorDB(globalState.getCursorDB() + rows.size());
@@ -253,18 +251,18 @@ public class DBTraversalManager implements TraversalManager,
 			case MODE_METADATA_URL:
 
 				for (Map<String, Object> row : rows) {
-					dbDoc = Util.generateMetadataURLFeed(dbClient.getDBContext().getDbName(), dbClient.getPrimaryKeys(), row, dbClient.getDBContext().getHostname(), dbClient.getDBContext(), "");
+					dbDoc = Util.generateMetadataURLFeed(dbClient.getDBContext().getDbName(), dbClient.getPrimaryKeys(), row, dbClient.getDBContext().getHostname(), dbClient.getDBContext(), "",this.traversalContext);
 					if (dbDoc != null) {
 						globalState.addDocument(dbDoc);
 					}
 				}
 				break;
 
-			// execute the connector for BLOB data
+				// execute the connector for BLOB data
 			case MODE_METADATA_BASE_URL:
 				dbDoc = null;
 				for (Map<String, Object> row : rows) {
-					dbDoc = Util.generateMetadataURLFeed(dbClient.getDBContext().getDbName(), dbClient.getPrimaryKeys(), row, dbClient.getDBContext().getHostname(), dbClient.getDBContext(), Util.WITH_BASE_URL);
+					dbDoc = Util.generateMetadataURLFeed(dbClient.getDBContext().getDbName(), dbClient.getPrimaryKeys(), row, dbClient.getDBContext().getHostname(), dbClient.getDBContext(), Util.WITH_BASE_URL,this.traversalContext);
 					if (dbDoc != null) {
 						globalState.addDocument(dbDoc);
 					}
@@ -272,7 +270,7 @@ public class DBTraversalManager implements TraversalManager,
 
 				break;
 
-			// execute the connector for CLOB data
+				// execute the connector for CLOB data 
 			case MODE_BLOB_CLOB:
 				dbDoc = null;
 				for (Map<String, Object> row : rows) {
@@ -284,10 +282,10 @@ public class DBTraversalManager implements TraversalManager,
 
 				break;
 
-			// execute the connector in normal mode
+				// execute the connector in normal mode
 			default:
 				for (Map<String, Object> row : rows) {
-					globalState.addDocument(Util.rowToDoc(dbClient.getDBContext().getDbName(), dbClient.getPrimaryKeys(), row, dbClient.getDBContext().getHostname(), xslt, dbClient.getDBContext()));
+					globalState.addDocument(Util.rowToDoc(dbClient.getDBContext().getDbName(), dbClient.getPrimaryKeys(), row, dbClient.getDBContext().getHostname(), xslt, dbClient.getDBContext(),this.traversalContext));
 				}
 				break;
 			}
@@ -396,5 +394,6 @@ public class DBTraversalManager implements TraversalManager,
 	 */
 	public void setTraversalContext(TraversalContext traversalContext) {
 		this.traversalContext = traversalContext;
+
 	}
 }

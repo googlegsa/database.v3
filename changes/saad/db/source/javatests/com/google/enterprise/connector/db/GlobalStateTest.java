@@ -16,6 +16,7 @@ package com.google.enterprise.connector.db;
 
 import com.google.enterprise.connector.spi.RepositoryException;
 import com.google.enterprise.connector.spi.SpiConstants;
+import com.google.enterprise.connector.traversal.ProductionTraversalContext;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -71,8 +72,9 @@ public class GlobalStateTest extends TestCase {
 	public final void testAddDocument() {
 		try {
 			// Add 4 documents.
+			ProductionTraversalContext context = new ProductionTraversalContext();
 			for (Map<String, Object> row : TestUtils.getDBRows()) {
-				DBDocument dbDoc = Util.rowToDoc("testdb_", TestUtils.getStandardPrimaryKeys(), row, "localhost", null, null);
+				DBDocument dbDoc = Util.rowToDoc("testdb_", TestUtils.getStandardPrimaryKeys(), row, "localhost", null, null,context);
 				globalState.addDocument(dbDoc);
 			}
 
@@ -84,7 +86,7 @@ public class GlobalStateTest extends TestCase {
 				// Consume all docs from the docQueue.
 				globalState.getDocQueue().nextDocument();
 			}
-			globalState.markNewDBTraversal();
+			globalState.markNewDBTraversal(context);
 			assertEquals(0, globalState.getDocQueue().size());
 			assertEquals(4, globalState.getPreviousChecksumMap().size());
 			assertEquals(0, globalState.getCurrentChecksumMap().size());
@@ -127,7 +129,7 @@ public class GlobalStateTest extends TestCase {
 			assertEquals(0, globalState.getDocQueue().size());
 			assertEquals(6, globalState.getDocsInFlight().size());
 
-			globalState.markNewDBTraversal();
+			globalState.markNewDBTraversal(context);
 			// docs in the previous checksum map should get marked for deletion.
 			assertEquals(2, globalState.getDocQueue().size());
 			assertEquals(3, globalState.getPreviousChecksumMap().size());
@@ -142,6 +144,7 @@ public class GlobalStateTest extends TestCase {
 	}
 
 	public final void testSaveState() {
+		ProductionTraversalContext context = new ProductionTraversalContext();
 		String[] expectedPatterns = new String[] { "docid=\"MyxsYXN0XzAz\" ",
 				"</currentChecksumMap><previousChecksumMap><checksumMapEntry ",
 				"docid=\"NCxsYXN0XzA0\"", "<checksumMapEntry" };
@@ -151,7 +154,7 @@ public class GlobalStateTest extends TestCase {
 
 		try {
 			for (Map<String, Object> row : TestUtils.getDBRows()) {
-				DBDocument dbDoc = Util.rowToDoc("testdb_", TestUtils.getStandardPrimaryKeys(), row, "localhost", null, null);
+				DBDocument dbDoc = Util.rowToDoc("testdb_", TestUtils.getStandardPrimaryKeys(), row, "localhost", null, null,context);
 				globalState.addDocument(dbDoc);
 			}
 			globalState.setCursorDB(4);
@@ -183,7 +186,7 @@ public class GlobalStateTest extends TestCase {
 				fail("Caught exception");
 			}
 			assertEquals(1, globalState.getPreviousChecksumMap().size());
-			globalState.markNewDBTraversal();
+			globalState.markNewDBTraversal(context);
 			assertEquals(4, globalState.getPreviousChecksumMap().size());
 			try {
 				globalState.saveState();
@@ -216,9 +219,10 @@ public class GlobalStateTest extends TestCase {
 	}
 
 	private void setUpInitialState() {
+		ProductionTraversalContext context = new ProductionTraversalContext();
 		try {
 			for (Map<String, Object> row : TestUtils.getDBRows()) {
-				DBDocument dbDoc = Util.rowToDoc("testdb_", TestUtils.getStandardPrimaryKeys(), row, "localhost", null, null);
+				DBDocument dbDoc = Util.rowToDoc("testdb_", TestUtils.getStandardPrimaryKeys(), row, "localhost", null, null,context);
 				globalState.addDocument(dbDoc);
 			}
 		} catch (DBException e) {
