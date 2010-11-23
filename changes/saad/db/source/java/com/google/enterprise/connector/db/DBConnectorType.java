@@ -960,7 +960,62 @@ public class DBConnectorType implements ConnectorType {
 			return success;
 		}
 	}
+	private static class XSLTCheck implements ConfigValidation
+	{
+		Map<String, String> config;
+		private String message = "";
+		private boolean success = false;
+		private List<String> problemFields = new ArrayList<String>();
+		String xslt;
+		ResourceBundle res;
+		public XSLTCheck(Map<String, String> config, ResourceBundle res) {
+			this.config = config;
+			this.res = res;
+		}
+		
+		public String getMessage() {
+			return message;
+		}
 
+		public List<String> getProblemFields() {
+			return problemFields;
+		}
+
+		public boolean validate() {
+			xslt = config.get(XSLT);
+			if(xslt!=null)
+			{
+				String str1,str2,str3;
+				int index1,index2,index3;
+				
+				str1="<title><xsl:value-of select=\"title\"/></title>";
+				str2="<td><xsl:value-of select=\"title\"/></td>";
+				str3="<td><xsl:value-of select=\"title";
+				index1=xslt.indexOf(str1);
+				index2=xslt.indexOf(str2);
+				index3=xslt.indexOf(str3);
+				
+				if(!config.get(DOC_TITLE_FIELD).equals("")&&index3!=-1)
+				{
+					success=false;
+					message = res.getString("XSLT_DOCUMENT_TITLE");
+					return success;
+				}
+				if(index1!=-1&&index2!=-1)
+				{
+					success=false;
+					message = res.getString("XSLT_VALIDATE");
+					problemFields.add(XSLT);
+				}
+				else
+				{
+					success=true;
+				}
+			}
+			return success;
+		}
+		
+	}
 	private static class HostNameFQDNCheck implements ConfigValidation {
 		Map<String, String> config;
 		private String message = "";
@@ -1052,17 +1107,24 @@ public class DBConnectorType implements ConnectorType {
 				if (success) {
 					configValidation = new HostNameFQDNCheck(config, resource);
 					success = configValidation.validate();
+					
 					if (success) {
-						try {
-							factory.makeConnector(config);
-						} catch (RepositoryException e) {
-							LOG.log(Level.INFO, "failed to create connector", e);
-							return new ConfigureResponse(
-									"Error creating connector: "
-											+ e.getMessage(), "");
-						}
-						return null;
-					}
+						configValidation = new XSLTCheck(config, resource);
+						success = configValidation.validate();
+					
+					
+							if (success) {
+								try {
+										factory.makeConnector(config);
+									} catch (RepositoryException e) {
+										LOG.log(Level.INFO, "failed to create connector", e);
+										return new ConfigureResponse(
+												"Error creating connector: "
+												+ e.getMessage(), "");
+									}
+									return null;
+							}
+					}			
 				}
 			}
 		}

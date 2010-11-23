@@ -138,14 +138,17 @@ public class XmlUtils {
 			} else if (xslt.length() == 0) {
 				xmlString = getStringFromDomDocument(doc, getDomDocFromXslt(getDefaultStyleSheet(dbName, row, dbContext, isCompleteDoc)));
 			} else {
-				xmlString = getStringFromDomDocument(doc, getDomDocFromXslt(xslt));
+			      xmlString = getStringFromDomDocument(doc, getDomDocFromXslt(xslt));
 			}
 		} catch (TransformerException e) {
+			
 			throw new DBException(
 					"Unable to create XML string from the DOM document");
+			
 		}
 		return xmlString;
 	}
+	
 
 	/**
 	 * @param dbName name of the Database instance
@@ -183,13 +186,19 @@ public class XmlUtils {
 		buf.append(dbName).append("\"><tr>");
 		for (String column : columnNames) {
 			if (isCompleteDoc) {
-				buf.append("<td><xsl:value-of select=\"").append(column).append("\"/></td>");
+				if(column.equalsIgnoreCase("title"))
+				buf.append("<td><xsl:value-of select=\"").append(column).append("[2]\"/></td>");
+				else
+					buf.append("<td><xsl:value-of select=\"").append(column).append("\"/></td>");
 			} else {
 				if (dbContext != null
 						&& !column.equalsIgnoreCase(dbContext.getDocumentTitle())
 						&& !column.equalsIgnoreCase(dbContext.getLastModifiedDate())) {
-					buf.append("<td><xsl:value-of select=\"").append(column).append("\"/></td>");
-				}
+					if(column.equalsIgnoreCase("title"))
+						buf.append("<td><xsl:value-of select=\"").append(column).append("[2]\"/></td>");
+						else
+							buf.append("<td><xsl:value-of select=\"").append(column).append("\"/></td>");
+						}
 			}
 		}
 		buf.append("</tr></xsl:for-each></table></body></html>"
