@@ -960,6 +960,13 @@ public class DBConnectorType implements ConnectorType {
 			return success;
 		}
 	}
+	/**
+	 * Checks if the Document Title field is entered in the configuration form and also provided in the XSLT,
+	 * if present in both the places then shows an error message .
+	 * 
+	 * Checks if  two select Title elements are provided in the XSLT , if present then the second select Title value needs to be 
+	 * indexed appropriately ,else an error message is shown.
+	 */
 	private static class XSLTCheck implements ConfigValidation
 	{
 		Map<String, String> config;
@@ -985,15 +992,11 @@ public class DBConnectorType implements ConnectorType {
 			xslt = config.get(XSLT);
 			if(xslt!=null)
 			{
-				String str1,str2,str3;
-				int index1,index2,index3;
+				String XSLT_RECORD_TITLE_ELEMENT;
+				int index3;
 				
-				str1="<title><xsl:value-of select=\"title\"/></title>";
-				str2="<td><xsl:value-of select=\"title\"/></td>";
-				str3="<td><xsl:value-of select=\"title";
-				index1=xslt.indexOf(str1);
-				index2=xslt.indexOf(str2);
-				index3=xslt.indexOf(str3);
+				XSLT_RECORD_TITLE_ELEMENT="<td><xsl:value-of select=\"title";
+				index3=xslt.indexOf(XSLT_RECORD_TITLE_ELEMENT);
 				
 				if(!config.get(DOC_TITLE_FIELD).equals("")&&index3!=-1)
 				{
@@ -1001,15 +1004,26 @@ public class DBConnectorType implements ConnectorType {
 					message = res.getString("XSLT_DOCUMENT_TITLE");
 					return success;
 				}
-				if(index1!=-1&&index2!=-1)
-				{
-					success=false;
-					message = res.getString("XSLT_VALIDATE");
-					problemFields.add(XSLT);
-				}
 				else
 				{
+					String XSLT_RESULT_TITLE_ELEMENT;
+					String XSLT_RECORD_TITLE_ELEMENT2;
+					int index1,index2;
+					XSLT_RESULT_TITLE_ELEMENT="<title><xsl:value-of select=\"title\"/></title>";
+					XSLT_RECORD_TITLE_ELEMENT2="<td><xsl:value-of select=\"title\"/></td>";
+					index1=xslt.indexOf(XSLT_RESULT_TITLE_ELEMENT);
+					index2=xslt.indexOf(XSLT_RECORD_TITLE_ELEMENT2);
+					
+					if(index1!=-1&&index2!=-1)
+					{
+						success=false;
+						message = res.getString("XSLT_VALIDATE");
+						problemFields.add(XSLT);
+					}
+					else
+					{
 					success=true;
+					}
 				}
 			}
 			return success;

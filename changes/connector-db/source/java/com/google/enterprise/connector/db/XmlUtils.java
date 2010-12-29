@@ -133,21 +133,18 @@ public class XmlUtils {
 
 		String xmlString;
 		try {
-			if (null == xslt) {
-				xmlString = getStringFromDomDocument(doc, null);
-			} else if (xslt.length() == 0) {
-				xmlString = getStringFromDomDocument(doc, getDomDocFromXslt(getDefaultStyleSheet(dbName, row, dbContext, isCompleteDoc)));
-			} else {
-			      xmlString = getStringFromDomDocument(doc, getDomDocFromXslt(xslt));
+				if (null == xslt) {
+					xmlString = getStringFromDomDocument(doc, null);
+				} else if (xslt.length() == 0) {
+					xmlString = getStringFromDomDocument(doc, getDomDocFromXslt(getDefaultStyleSheet(dbName, row, dbContext, isCompleteDoc)));
+				} else {
+					xmlString = getStringFromDomDocument(doc, getDomDocFromXslt(xslt));
+				}
+			} catch (TransformerException e) {
+					throw new DBException("Unable to create XML string from the DOM document");
 			}
-		} catch (TransformerException e) {
-			
-			throw new DBException(
-					"Unable to create XML string from the DOM document");
-			
-		}
 		return xmlString;
-	}
+}
 	
 
 	/**
@@ -163,6 +160,7 @@ public class XmlUtils {
 	private static String getDefaultStyleSheet(String dbName,
 			Map<String, Object> row, DBContext dbContext, boolean isCompleteDoc) {
 		StringBuffer buf = new StringBuffer();
+		String TITLE="title";
 		Set<String> columnNames = row.keySet();
 		buf.append("<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>"
 				+ "<xsl:stylesheet version=\"1.0\" "
@@ -186,7 +184,7 @@ public class XmlUtils {
 		buf.append(dbName).append("\"><tr>");
 		for (String column : columnNames) {
 			if (isCompleteDoc) {
-				if(column.equalsIgnoreCase("title"))
+				if(column.equalsIgnoreCase(TITLE))
 				buf.append("<td><xsl:value-of select=\"").append(column).append("[2]\"/></td>");
 				else
 					buf.append("<td><xsl:value-of select=\"").append(column).append("\"/></td>");
