@@ -54,12 +54,16 @@ public class DBDocument implements Document {
 	public Property findProperty(String name) throws SkippedDocumentException {
 		List<Value> property = properties.get(name);
 		if (name.equals(SpiConstants.PROPNAME_MIMETYPE)) {
-		
-			filterMimeType();
+
+			if(traversalContext!=null)
+				filterMimeType();
 		} else if (name.equals(SpiConstants.PROPNAME_CONTENT)) {
-			int val=filterMimeType();
-			if(val==0)
-				property=null;
+			if(traversalContext!=null)
+			{
+				int val=filterMimeType();
+				if(val==0)
+					property=null;
+			}
 		}
 
 		return (property == null) ? null : new SimpleProperty(property);

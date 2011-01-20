@@ -28,7 +28,7 @@ import java.util.Set;
 import java.util.logging.Logger;
 
 /**
- * This class provides an implementation of AuthentorizationManager SPI provided
+ * This class provides an implementation of Auth	orizationManager SPI provided
  * by CM for authorize the search users against Database documents.
  * 
  * @author suresh_ghuge
@@ -40,8 +40,8 @@ public class DBConnectorAuthorizationManager implements AuthorizationManager {
 
 	private final DBClient dbClient;
 
-	public DBConnectorAuthorizationManager(DBClient dbClient) {
-		this.dbClient = dbClient;
+	public DBConnectorAuthorizationManager(DBConnectorConfig dbConnectorConfig) {
+		this.dbClient = dbConnectorConfig.getDbClient();
 	}
 
 	public Collection<AuthorizationResponse> authorizeDocids(

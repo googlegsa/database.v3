@@ -921,7 +921,7 @@ public class DBConnectorType implements ConnectorType {
 				LOGIN, DRIVER_CLASS_NAME, SQL_QUERY, PRIMARY_KEYS_STRING };
 		private List<String> problemFields;
 		ResourceBundle res;
-
+          
 		public RequiredFields(Map<String, String> config, ResourceBundle res) {
 			this.config = config;
 			this.res = res;

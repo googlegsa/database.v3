@@ -24,16 +24,14 @@ import com.google.enterprise.connector.spi.TraversalManager;
  * AuthorizationManager
  */
 public class DBSession implements Session {
-	private final DBClient dbClient;
-	private final String xslt;
+	private final DBConnectorConfig dbConnectorConfig;
 
 	/**
 	 * @param dbClient
 	 * @param xslt
 	 */
-	public DBSession(DBClient dbClient, String xslt) {
-		this.dbClient = dbClient;
-		this.xslt = xslt;
+	public DBSession(DBConnectorConfig dbConnectorConfig) {
+	this.dbConnectorConfig=dbConnectorConfig;		
 	}
 
 	/* @Override */
@@ -45,7 +43,7 @@ public class DBSession implements Session {
 
 	/* @Override */
 	public AuthorizationManager getAuthorizationManager() {
-		return new DBConnectorAuthorizationManager(dbClient);
+		return new DBConnectorAuthorizationManager(dbConnectorConfig);
 	}
 
 	/**
@@ -53,6 +51,6 @@ public class DBSession implements Session {
 	 */
 	/* @Override */
 	public TraversalManager getTraversalManager() {
-		return new DBTraversalManager(dbClient, xslt);
+		return new DBTraversalManager(dbConnectorConfig.getDbClient(), dbConnectorConfig.getXslt());
 	}
 }
