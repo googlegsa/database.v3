@@ -17,7 +17,6 @@ package com.google.enterprise.connector.diffing;
 import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Multimap;
 import com.google.enterprise.connector.db.DBDocument;
 import com.google.enterprise.connector.spi.Document;
 import com.google.enterprise.connector.spi.RepositoryException;
@@ -69,16 +68,17 @@ public class JsonDocument extends SimpleDocument {
     }
   };
 
-  private static JsonDocument buildJson(DBDocument dbDoc) {
+  public static JsonDocument buildJson(DBDocument dbDoc) {
 	    JSONObject jo = new JSONObject();
 	   
 	    {
 	      
 	        try {
 				jo.put(DBDocument.ROW_CHECKSUM, dbDoc.findProperty(DBDocument.ROW_CHECKSUM).nextValue().toString());
+				jo.put(SpiConstants.PROPNAME_CONTENT, dbDoc.findProperty(SpiConstants.PROPNAME_CONTENT).nextValue().toString());
 				jo.put(SpiConstants.PROPNAME_DOCID, dbDoc.findProperty(SpiConstants.PROPNAME_DOCID).nextValue().toString());
 				jo.put(SpiConstants.PROPNAME_ACTION, dbDoc.findProperty(SpiConstants.PROPNAME_ACTION).nextValue().toString());
-				jo.put(SpiConstants.PROPNAME_ISPUBLIC, dbDoc.findProperty(SpiConstants.PROPNAME_ISPUBLIC).nextValue().toString());
+				//jo.put(SpiConstants.PROPNAME_ISPUBLIC, dbDoc.findProperty(SpiConstants.PROPNAME_ISPUBLIC).nextValue().toString());
 				jo.put(SpiConstants.PROPNAME_MIMETYPE, dbDoc.findProperty(SpiConstants.PROPNAME_MIMETYPE).nextValue().toString());
 				jo.put(SpiConstants.PROPNAME_DISPLAYURL, dbDoc.findProperty(SpiConstants.PROPNAME_DISPLAYURL).nextValue().toString());
 				jo.put(SpiConstants.PROPNAME_FEEDTYPE, dbDoc.findProperty(SpiConstants.PROPNAME_FEEDTYPE).nextValue().toString());
@@ -120,15 +120,16 @@ public class JsonDocument extends SimpleDocument {
 
   private static void extractAttributes(JSONObject jo,
       ImmutableMap.Builder<String, List<Value>> mapBuilder, String key) throws IllegalAccessError {
-    JSONArray ja;
+    String ja;
     try {
-      ja = jo.getJSONArray(key);
+      ja = (String)jo.get(key);
     } catch (JSONException e) {
       LOG.warning("Skipping: " + key);
       return;
     }
     ImmutableList.Builder<Value> builder = new ImmutableList.Builder<Value>();
-    for (int i = 0; i < ja.length(); i++) {
+    builder.add(Value.getStringValue(ja));
+    /*for (int i = 0; i < ja.length(); i++) {
       String v;
       try {
         v = ja.getString(i);
@@ -137,7 +138,7 @@ public class JsonDocument extends SimpleDocument {
         continue;
       }
       builder.add(Value.getStringValue(v));
-    }
+    }*/
     ImmutableList<Value> l = builder.build();
     if (l.size() > 0) {
       mapBuilder.put(key, l);

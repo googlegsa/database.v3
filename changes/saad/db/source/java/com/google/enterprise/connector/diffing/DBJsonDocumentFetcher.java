@@ -13,22 +13,23 @@ public class DBJsonDocumentFetcher implements JsonDocumentFetcher{
 	private final LinkedList<DBDocument> DBDocumentSupplier;
 	
 	
-	public DBJsonDocumentFetcher(
-			LinkedList<DBDocument> DBDocumentSupplier) {
+	public DBJsonDocumentFetcher(LinkedList<DBDocument> DBDocumentSupplier) {
 		    this.DBDocumentSupplier = DBDocumentSupplier;
 		  }
 
 	public Iterator<JsonDocument> iterator() {
 		LinkedList<DBDocument> results = this.DBDocumentSupplier;
-		 final Function<DBDocument,JsonDocument> f = new ConversionFunction();
-	    return Iterators.transform(results.iterator(),f);
-	  }
+		final Function<DBDocument,JsonDocument> f = new ConversionFunction();
+	    Iterator<JsonDocument> it1=Iterators.transform(results.iterator(),f);
+	    return it1;
+	}
 
 
 	private static class ConversionFunction implements Function<DBDocument,JsonDocument> {
 	    /* @Override */
 	    public JsonDocument apply(DBDocument dbDoc) {
 	      JsonDocument p = JsonDocument.buildFromDBDocument.apply(dbDoc);
+	    LOG.info("The json documents are :" +p.toJson());
 	      return p;
 	    }
 	  }

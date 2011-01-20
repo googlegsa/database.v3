@@ -6,19 +6,19 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
-import org.joda.time.DateTime;
-import com.google.enterprise.connector.spi.RepositoryException;
+
 import com.google.enterprise.connector.spi.TraversalContext;
+import com.google.enterprise.connector.spi.RepositoryException;
+
 
 
 public class RepositoryHandler {
 	private static final Logger LOG = Logger.getLogger(DBTraversalManager.class.getName());
 	private DBClient dbClient;
-	private GlobalState globalState;
 	private String xslt;
-	private TraversalContext traversalContext;
+	private TraversalContext traversalContext=null;
 	private int cursorDB = 0;
-	private final LinkedList<DBDocument> docList = new LinkedList<DBDocument>();
+	private LinkedList<DBDocument> docList = new LinkedList<DBDocument>();
 	
 	
 	public  int getCursorDB() {
@@ -51,34 +51,35 @@ public class RepositoryHandler {
 	// current execution mode
 	private int currentExcMode = -1;
 	
-	
-	public RepositoryHandler(DBClient dbClient, String xslt) {
-		this.cursorDB=0;
-		this.dbClient = dbClient;
-		this.xslt = xslt;
-		this.globalState = new GlobalState(dbClient.getGoogleConnectorWorkDir());
-	
-		globalState.loadState();
+	public RepositoryHandler() {
+		
+	}
+	public static LinkedList<DBDocument> makeRepositoryHandlerFromConfig(DBConnectorConfig dbConnectorConfig) {
+	     
+		RepositoryHandler repositoryHandler=new RepositoryHandler();
+		repositoryHandler.cursorDB=0;
+		repositoryHandler.dbClient = dbConnectorConfig.getDbClient();
+		repositoryHandler.xslt = dbConnectorConfig.getXslt();
+		repositoryHandler.startTraversal();
+		return repositoryHandler.docList;
 	}
 	
-	  
 
-	 
-	 
-	  public void addDocument(DBDocument dbDoc) {
+	
+	public void setTraversalContext(TraversalContext traversalContext) {
+		this.traversalContext = traversalContext;
+	}
+
+	public void addDocument(DBDocument dbDoc) {
 			docList.add(dbDoc);
 		}
 
 	  
-	  
-	  public static void startTraversal(DBClient dbClient, String xslt)
+    public void startTraversal()
 	     {
 			  
-		  RepositoryHandler repositoryHandler=new RepositoryHandler(dbClient,xslt); 
-		  
-		  
-		  try {
-					repositoryHandler.traverseDB();
+		    try {
+					traverseDB();
 				} catch (DBException e) {
 					
 					LOG.info("DBException");
@@ -92,7 +93,7 @@ public class RepositoryHandler {
 	  private void traverseDB() throws DBException, RepositoryException {
 		  
 		  List<Map<String, Object>> rows=executeQueryAndAddDocs();
-		  LOG.info("The rows crwaled by deamon thread are"+rows);
+		  LOG.info("The rows crawled are"+rows);
 	 }
 	  
 	  private List<Map<String, Object>> executeQueryAndAddDocs()
@@ -100,7 +101,6 @@ public class RepositoryHandler {
 			List<Map<String, Object>> rows = dbClient.executePartialQuery(cursorDB, 3 * batchHint);
 
 			setCursorDB(getCursorDB() + rows.size());
-			globalState.setQueryExecutionTime(new DateTime());
 			DBDocument dbDoc = null;
 			if (rows != null && rows.size() > 0) {
 
@@ -115,7 +115,7 @@ public class RepositoryHandler {
 
 					for (Map<String, Object> row : rows) {
 						dbDoc = Util.generateMetadataURLFeed(dbClient.getDBContext().getDbName(), dbClient.getPrimaryKeys(), row, dbClient.getDBContext().getHostname(), dbClient.getDBContext(), "",this.traversalContext);
-						docList.add(dbDoc);
+						this.docList.add(dbDoc);
 					}
 					break;
 
@@ -124,7 +124,7 @@ public class RepositoryHandler {
 					dbDoc = null;
 					for (Map<String, Object> row : rows) {
 						dbDoc = Util.generateMetadataURLFeed(dbClient.getDBContext().getDbName(), dbClient.getPrimaryKeys(), row, dbClient.getDBContext().getHostname(), dbClient.getDBContext(), Util.WITH_BASE_URL,this.traversalContext);
-						docList.add(dbDoc);
+						this.docList.add(dbDoc);
 					}
 
 					break;
@@ -134,7 +134,7 @@ public class RepositoryHandler {
 					dbDoc = null;
 					for (Map<String, Object> row : rows) {
 						dbDoc = Util.largeObjectToDoc(dbClient.getDBContext().getDbName(), dbClient.getPrimaryKeys(), row, dbClient.getDBContext().getHostname(), dbClient.getDBContext(), traversalContext);
-						docList.add(dbDoc);
+						this.docList.add(dbDoc);
 					}
 
 					break;
@@ -143,7 +143,7 @@ public class RepositoryHandler {
 				default:
 					for (Map<String, Object> row : rows) {
 						dbDoc=Util.rowToDoc(dbClient.getDBContext().getDbName(), dbClient.getPrimaryKeys(), row, dbClient.getDBContext().getHostname(), xslt, dbClient.getDBContext(),this.traversalContext);
-						docList.add(dbDoc);
+						this.docList.add(dbDoc);
 					}
 					break;
 				}
@@ -162,18 +162,14 @@ public class RepositoryHandler {
 					&& !extMetaType.equals(DBConnectorType.NO_EXT_METADATA)) {
 				if (extMetaType.equalsIgnoreCase(DBConnectorType.COMPLETE_URL)
 						&& (docURLField != null && docURLField.trim().length() > 0)) {
-					globalState.setMetadataURLFeed(true);
 					return MODE_METADATA_URL;
 				} else if (extMetaType.equalsIgnoreCase(DBConnectorType.DOC_ID)
 						&& (docIdField != null && docIdField.trim().length() > 0)) {
-					globalState.setMetadataURLFeed(true);
 					return MODE_METADATA_BASE_URL;
 				} else if (extMetaType.equalsIgnoreCase(DBConnectorType.BLOB_CLOB)
 						&& (lobField != null && lobField.trim().length() > 0)) {
-					globalState.setMetadataURLFeed(false);
 					return MODE_BLOB_CLOB;
 				} else {
-					globalState.setMetadataURLFeed(false);
 					/*
 					 * Explicitly change the mode of execution as user may switch
 					 * from "External Metadata Feed" mode to
@@ -183,7 +179,6 @@ public class RepositoryHandler {
 					return MODE_NORMAL;
 				}
 			} else {
-				globalState.setMetadataURLFeed(false);
 				/*
 				 * Explicitly change the mode of execution as user may switch from
 				 * "External Metadata Feed" mode to "Content Feed(for text data)"
