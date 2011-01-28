@@ -6,19 +6,25 @@ import java.util.logging.Logger;
 import com.google.common.base.Function;
 import com.google.common.collect.Iterators;
 import com.google.enterprise.connector.db.DBDocument;
+import com.google.enterprise.connector.db.DBException;
 
 
 public class DBJsonDocumentFetcher implements JsonDocumentFetcher{
 	private static Logger LOG = Logger.getLogger(DBJsonDocumentFetcher.class.getName());
-	private final LinkedList<DBDocument> DBDocumentSupplier;
+	private final RepositoryHandler repositoryHandler;
 	
 	
-	public DBJsonDocumentFetcher(LinkedList<DBDocument> DBDocumentSupplier) {
-		    this.DBDocumentSupplier = DBDocumentSupplier;
+	public DBJsonDocumentFetcher(RepositoryHandler repositoryHandler) {
+		    this.repositoryHandler = repositoryHandler;
 		  }
 
-	public Iterator<JsonDocument> iterator() {
-		LinkedList<DBDocument> results = this.DBDocumentSupplier;
+	public Iterator<JsonDocument> iterator()  {
+		LinkedList<DBDocument> results=null;
+		try {
+			results = repositoryHandler.executeQueryAndAddDocs();
+		} catch (DBException e) {
+			LOG.info("DBException while fetching rows");
+		}
 		final Function<DBDocument,JsonDocument> f = new ConversionFunction();
 	    Iterator<JsonDocument> it1=Iterators.transform(results.iterator(),f);
 	    return it1;

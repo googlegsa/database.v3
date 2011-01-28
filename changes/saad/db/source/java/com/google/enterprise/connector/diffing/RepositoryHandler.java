@@ -12,7 +12,7 @@ import com.google.enterprise.connector.spi.RepositoryException;
 
 
 
-public class RepositoryHandler {
+public class RepositoryHandler{
 	private static final Logger LOG = Logger.getLogger(DBTraversalManager.class.getName());
 	private DBClient dbClient;
 	private String xslt;
@@ -54,14 +54,14 @@ public class RepositoryHandler {
 	public RepositoryHandler() {
 		
 	}
-	public static LinkedList<DBDocument> makeRepositoryHandlerFromConfig(DBConnectorConfig dbConnectorConfig) {
+	public static RepositoryHandler makeRepositoryHandlerFromConfig(DBConnectorConfig dbConnectorConfig) {
 	     
 		RepositoryHandler repositoryHandler=new RepositoryHandler();
 		repositoryHandler.cursorDB=0;
 		repositoryHandler.dbClient = dbConnectorConfig.getDbClient();
 		repositoryHandler.xslt = dbConnectorConfig.getXslt();
 		repositoryHandler.startTraversal();
-		return repositoryHandler.docList;
+		return repositoryHandler;
 	}
 	
 
@@ -92,11 +92,10 @@ public class RepositoryHandler {
 	  
 	  private void traverseDB() throws DBException, RepositoryException {
 		  
-		  List<Map<String, Object>> rows=executeQueryAndAddDocs();
-		  LOG.info("The rows crawled are"+rows);
-	 }
+		  executeQueryAndAddDocs();
+	  }
 	  
-	  private List<Map<String, Object>> executeQueryAndAddDocs()
+	  public LinkedList<DBDocument> executeQueryAndAddDocs()
 		throws DBException {
 			List<Map<String, Object>> rows = dbClient.executePartialQuery(cursorDB, 3 * batchHint);
 
@@ -149,7 +148,7 @@ public class RepositoryHandler {
 				}
 			}
 
-			return rows;
+			return this.docList;
 		}
 
 	  private int getExecutionScenario(DBContext dbContext) {

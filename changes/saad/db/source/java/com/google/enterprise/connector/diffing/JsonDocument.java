@@ -24,11 +24,8 @@ import com.google.enterprise.connector.spi.SimpleDocument;
 import com.google.enterprise.connector.spi.SkippedDocumentException;
 import com.google.enterprise.connector.spi.SpiConstants;
 import com.google.enterprise.connector.spi.Value;
-
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -129,16 +126,6 @@ public class JsonDocument extends SimpleDocument {
     }
     ImmutableList.Builder<Value> builder = new ImmutableList.Builder<Value>();
     builder.add(Value.getStringValue(ja));
-    /*for (int i = 0; i < ja.length(); i++) {
-      String v;
-      try {
-        v = ja.getString(i);
-      } catch (JSONException e) {
-        LOG.warning("Skipping: " + key + " value: " + i);
-        continue;
-      }
-      builder.add(Value.getStringValue(v));
-    }*/
     ImmutableList<Value> l = builder.build();
     if (l.size() > 0) {
       mapBuilder.put(key, l);
