@@ -10,8 +10,8 @@ import com.google.enterprise.connector.db.DBDocument;
 public class DBDocumentSnapshotRepositoryList extends ArrayList<DBClassRepository> {
 	private static final Logger LOG = Logger.getLogger(DBDocumentSnapshotRepositoryList.class.getName());
 	
-public DBDocumentSnapshotRepositoryList(LinkedList<DBDocument> DBDocumentSupplier) {
-	    JsonDocumentFetcher f = new DBJsonDocumentFetcher(DBDocumentSupplier);
+public DBDocumentSnapshotRepositoryList(RepositoryHandler repositoryHandler) {
+	    JsonDocumentFetcher f = new DBJsonDocumentFetcher(repositoryHandler);
 	    DBClassRepository repository =new DBClassRepository(f);
 	    LOG.info("Repository Length Is:"+repository);
 	    add(repository);
