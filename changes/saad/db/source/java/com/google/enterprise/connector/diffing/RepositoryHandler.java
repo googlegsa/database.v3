@@ -18,7 +18,7 @@ public class RepositoryHandler{
 	private String xslt;
 	private TraversalContext traversalContext=null;
 	private int cursorDB = 0;
-	private LinkedList<DBDocument> docList = new LinkedList<DBDocument>();
+	
 	
 	
 	public  int getCursorDB() {
@@ -70,9 +70,7 @@ public class RepositoryHandler{
 		this.traversalContext = traversalContext;
 	}
 
-	public void addDocument(DBDocument dbDoc) {
-			docList.add(dbDoc);
-		}
+	
 
 	  
     public void startTraversal()
@@ -97,6 +95,7 @@ public class RepositoryHandler{
 	  
 	  public LinkedList<DBDocument> executeQueryAndAddDocs()
 		throws DBException {
+		 LinkedList<DBDocument> docList = new LinkedList<DBDocument>();
 			List<Map<String, Object>> rows = dbClient.executePartialQuery(cursorDB, 3 * batchHint);
 
 			setCursorDB(getCursorDB() + rows.size());
@@ -114,7 +113,7 @@ public class RepositoryHandler{
 
 					for (Map<String, Object> row : rows) {
 						dbDoc = Util.generateMetadataURLFeed(dbClient.getDBContext().getDbName(), dbClient.getPrimaryKeys(), row, dbClient.getDBContext().getHostname(), dbClient.getDBContext(), "",this.traversalContext);
-						this.docList.add(dbDoc);
+						docList.add(dbDoc);
 					}
 					break;
 
@@ -123,7 +122,7 @@ public class RepositoryHandler{
 					dbDoc = null;
 					for (Map<String, Object> row : rows) {
 						dbDoc = Util.generateMetadataURLFeed(dbClient.getDBContext().getDbName(), dbClient.getPrimaryKeys(), row, dbClient.getDBContext().getHostname(), dbClient.getDBContext(), Util.WITH_BASE_URL,this.traversalContext);
-						this.docList.add(dbDoc);
+						docList.add(dbDoc);
 					}
 
 					break;
@@ -133,7 +132,7 @@ public class RepositoryHandler{
 					dbDoc = null;
 					for (Map<String, Object> row : rows) {
 						dbDoc = Util.largeObjectToDoc(dbClient.getDBContext().getDbName(), dbClient.getPrimaryKeys(), row, dbClient.getDBContext().getHostname(), dbClient.getDBContext(), traversalContext);
-						this.docList.add(dbDoc);
+						docList.add(dbDoc);
 					}
 
 					break;
@@ -142,13 +141,13 @@ public class RepositoryHandler{
 				default:
 					for (Map<String, Object> row : rows) {
 						dbDoc=Util.rowToDoc(dbClient.getDBContext().getDbName(), dbClient.getPrimaryKeys(), row, dbClient.getDBContext().getHostname(), xslt, dbClient.getDBContext(),this.traversalContext);
-						this.docList.add(dbDoc);
+						docList.add(dbDoc);
 					}
 					break;
 				}
 			}
 
-			return this.docList;
+			return docList;
 		}
 
 	  private int getExecutionScenario(DBContext dbContext) {
