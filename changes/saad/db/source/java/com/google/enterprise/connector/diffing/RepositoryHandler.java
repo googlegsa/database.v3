@@ -17,19 +17,7 @@ public class RepositoryHandler{
 	private DBClient dbClient;
 	private String xslt;
 	private TraversalContext traversalContext=null;
-	private int cursorDB = 0;
-	
-	
-	
-	public  int getCursorDB() {
-		return cursorDB;
-	}
-
-	public  void setCursorDB(int cursorDB) {
-		this.cursorDB = cursorDB;
-	}
-
-	
+		
 	// Limit on the batch size.
 	private int batchHint = 100;
 
@@ -57,7 +45,6 @@ public class RepositoryHandler{
 	public static RepositoryHandler makeRepositoryHandlerFromConfig(DBConnectorConfig dbConnectorConfig) {
 	     
 		RepositoryHandler repositoryHandler=new RepositoryHandler();
-		repositoryHandler.cursorDB=0;
 		repositoryHandler.dbClient = dbConnectorConfig.getDbClient();
 		repositoryHandler.xslt = dbConnectorConfig.getXslt();
 		repositoryHandler.startTraversal();
@@ -95,10 +82,9 @@ public class RepositoryHandler{
 	  
 	  public LinkedList<DBDocument> executeQueryAndAddDocs()
 		throws DBException {
+	     int cursorDB = 0;
 		 LinkedList<DBDocument> docList = new LinkedList<DBDocument>();
 			List<Map<String, Object>> rows = dbClient.executePartialQuery(cursorDB, 3 * batchHint);
-
-			setCursorDB(getCursorDB() + rows.size());
 			DBDocument dbDoc = null;
 			if (rows != null && rows.size() > 0) {
 
