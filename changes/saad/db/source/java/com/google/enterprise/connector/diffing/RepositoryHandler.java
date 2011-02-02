@@ -19,18 +19,7 @@ public class RepositoryHandler{
 	private TraversalContext traversalContext=null;
 	private int cursorDB = 0;
 
-
-
-	public  int getCursorDB() {
-		return cursorDB;
-	}
-
-	public  void setCursorDB(int cursorDB) {
-		this.cursorDB = cursorDB;
-	}
-
-
-	// Limit on the batch size.
+   // Limit on the batch size.
 	private int batchHint = 100;
 
 	// EXC_NORMAL represents that DB Connector is running in normal mode
@@ -70,10 +59,18 @@ public class RepositoryHandler{
 		this.traversalContext = traversalContext;
 	}
 
+	public  int getCursorDB() {
+		return cursorDB;
+	}
+
+	public  void setCursorDB(int cursorDB) {
+		this.cursorDB = cursorDB;
+	}
+
 	public LinkedList<DBDocument> executeQueryAndAddDocs()
 	throws DBException {
 		LinkedList<DBDocument> docList = new LinkedList<DBDocument>();
-		List<Map<String, Object>> rows = dbClient.executePartialQuery(cursorDB, 2);
+		List<Map<String, Object>> rows = dbClient.executePartialQuery(cursorDB, 3*batchHint);
 		if(rows.size()==0)
 		{
 			setCursorDB(0);
