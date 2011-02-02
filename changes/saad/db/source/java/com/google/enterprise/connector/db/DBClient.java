@@ -33,10 +33,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
-
 import javax.sql.DataSource;
 
-import sun.util.logging.resources.logging;
+
 
 /**
  * A client which gets rows from a database corresponding to a given SQL query.
