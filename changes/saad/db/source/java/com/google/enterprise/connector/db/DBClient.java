@@ -208,29 +208,29 @@ public class DBClient {
 		 * "jar:file:<path_to_jar>/dtd.jar!<path_to_dtd>/sql-map-config-2.dtd"
 		 */
 		sqlMapConfig = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n"
-				+ "<!DOCTYPE sqlMapConfig "
-				+ "PUBLIC \"-//ibatis.apache.org//DTD SQL Map Config 2.0//EN\" "
-				+ "\"http://ibatis.apache.org/dtd/sql-map-config-2.dtd\">\n"
-				+ "<sqlMapConfig>\n"
-				+ "<settings useStatementNamespaces=\"true\"/>\n"
-				+ "<transactionManager type=\"JDBC\">\n"
-				+ " <dataSource type=\"SIMPLE\">\n"
-				+ " <property name=\"JDBC.Driver\" value=\""
-				+ dbContext.getDriverClassName() + "\" />\n"
-				+ " <property name=\"JDBC.ConnectionURL\" value=\""
-				+ dbContext.getConnectionUrl() + "\" />\n"
-				+ " <property name=\"JDBC.Username\" value=\""
-				+ dbContext.getLogin() + "\" />\n"
-				+ " <property name=\"JDBC.Password\" value=\""
-				+ dbContext.getPassword() + "\" />\n"
-				+ " </dataSource></transactionManager>\n"
-				+ " <sqlMap url=\"file:///" + googleConnectorWorkDir
-				+ "/IbatisSqlMap.xml\"/>\n" + "</sqlMapConfig>\n";
+			+ "<!DOCTYPE sqlMapConfig "
+			+ "PUBLIC \"-//ibatis.apache.org//DTD SQL Map Config 2.0//EN\" "
+			+ "\"http://ibatis.apache.org/dtd/sql-map-config-2.dtd\">\n"
+			+ "<sqlMapConfig>\n"
+			+ "<settings useStatementNamespaces=\"true\"/>\n"
+			+ "<transactionManager type=\"JDBC\">\n"
+			+ " <dataSource type=\"SIMPLE\">\n"
+			+ " <property name=\"JDBC.Driver\" value=\""
+			+ dbContext.getDriverClassName() + "\" />\n"
+			+ " <property name=\"JDBC.ConnectionURL\" value=\""
+			+ dbContext.getConnectionUrl() + "\" />\n"
+			+ " <property name=\"JDBC.Username\" value=\""
+			+ dbContext.getLogin() + "\" />\n"
+			+ " <property name=\"JDBC.Password\" value=\""
+			+ dbContext.getPassword() + "\" />\n"
+			+ " </dataSource></transactionManager>\n"
+			+ " <sqlMap url=\"file:///" + googleConnectorWorkDir
+			+ "/IbatisSqlMap.xml\"/>\n" + "</sqlMapConfig>\n";
 
 		String oldString = " <property name=\"JDBC.Password\" value=\""
-				+ dbContext.getPassword() + "\" />";
+			+ dbContext.getPassword() + "\" />";
 		String newString = " <property name=\"JDBC.Password\" value=\""
-				+ "*****" + "\" />";
+			+ "*****" + "\" />";
 
 		LOG.config("Generated sqlMapConfig : \n"
 				+ sqlMapConfig.replace(oldString, newString));
@@ -248,12 +248,12 @@ public class DBClient {
 		 * "jar:file:<path_to_jar>/dtd.jar!<path_to_dtd>/sql-map-config-2.dtd"
 		 */
 		sqlMap = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n"
-				+ "<!DOCTYPE sqlMap "
-				+ "PUBLIC \"-//ibatis.apache.org//DTD SQL Map 2.0//EN\" "
-				+ "\"http://ibatis.apache.org/dtd/sql-map-2.dtd\">\n"
-				+ "<sqlMap namespace=\"IbatisDBClient\">\n"
-				+ " <select id=\"getAll\" resultClass=\"java.util.HashMap\"> \n"
-				+ sqlQuery + "\n </select> \n";
+			+ "<!DOCTYPE sqlMap "
+			+ "PUBLIC \"-//ibatis.apache.org//DTD SQL Map 2.0//EN\" "
+			+ "\"http://ibatis.apache.org/dtd/sql-map-2.dtd\">\n"
+			+ "<sqlMap namespace=\"IbatisDBClient\">\n"
+			+ " <select id=\"getAll\" resultClass=\"java.util.HashMap\"> \n"
+			+ sqlQuery + "\n </select> \n";
 
 		/*
 		 * check if authZ query is provided. If authZ query is there , add
@@ -261,8 +261,8 @@ public class DBClient {
 		 */
 		if (authZQuery != null && authZQuery.trim().length() > 0) {
 			sqlMap = sqlMap
-					+ "<select id=\"getAuthorizedDocs\"  parameterClass=\"java.util.HashMap\"  resultClass=\"java.lang.String\"> \n "
-					+ authZQuery + "</select>";
+			+ "<select id=\"getAuthorizedDocs\"  parameterClass=\"java.util.HashMap\"  resultClass=\"java.lang.String\"> \n "
+			+ authZQuery + "</select>";
 
 			dbContext.setPublicFeed(false);
 		} else {
