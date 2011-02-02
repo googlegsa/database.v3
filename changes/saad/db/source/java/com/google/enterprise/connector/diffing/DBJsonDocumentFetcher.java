@@ -1,12 +1,10 @@
 package com.google.enterprise.connector.diffing;
 
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.logging.Logger;
 import com.google.common.base.Function;
 import com.google.common.collect.Iterators;
 import com.google.enterprise.connector.db.DBDocument;
-import com.google.enterprise.connector.db.DBException;
 
 
 public class DBJsonDocumentFetcher implements JsonDocumentFetcher{
@@ -19,14 +17,11 @@ public class DBJsonDocumentFetcher implements JsonDocumentFetcher{
 		  }
 
 	public Iterator<JsonDocument> iterator()  {
-		LinkedList<DBDocument> results=null;
-		try {
-			results = repositoryHandler.executeQueryAndAddDocs();
-		} catch (DBException e) {
-			LOG.info("DBException while fetching rows");
-		}
+		RepositoryHandlerIterator repositoryHandlerIterator=new RepositoryHandlerIterator(repositoryHandler);
+		
+		
 		final Function<DBDocument,JsonDocument> f = new ConversionFunction();
-	    Iterator<JsonDocument> it1=Iterators.transform(results.iterator(),f);
+	    Iterator<JsonDocument> it1=Iterators.transform(repositoryHandlerIterator,f);
 	    return it1;
 	}
 
