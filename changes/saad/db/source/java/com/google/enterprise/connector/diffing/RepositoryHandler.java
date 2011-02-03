@@ -13,7 +13,7 @@ import com.google.enterprise.connector.spi.TraversalContext;
 
 
 public class RepositoryHandler{
-	private static final Logger LOG = Logger.getLogger(DBTraversalManager.class.getName());
+	private static final Logger LOG = Logger.getLogger(RepositoryHandler.class.getName());
 	private DBClient dbClient;
 	private String xslt;
 	private TraversalContext traversalContext=null;
