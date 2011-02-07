@@ -1,9 +1,7 @@
 package com.google.enterprise.connector.diffing;
 
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.logging.Logger;
-import com.google.enterprise.connector.db.DBDocument;
 
 
 

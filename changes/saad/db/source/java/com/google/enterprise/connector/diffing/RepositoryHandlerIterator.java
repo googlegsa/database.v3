@@ -12,10 +12,7 @@ public class RepositoryHandlerIterator implements Iterator<DBDocument> {
 	private static final Logger LOG = Logger.getLogger(RepositoryHandlerIterator.class.getName()); 
 	private static Iterator<DBDocument> recordList;
 	private static RepositoryHandler repositoryHandler;
-	
-	
-	
-	
+
 	public RepositoryHandlerIterator(RepositoryHandler repositoryHandler)
 	{
 		try {

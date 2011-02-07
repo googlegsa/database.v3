@@ -14,7 +14,6 @@
 
 package com.google.enterprise.connector.db;
 
-import com.google.enterprise.connector.spi.Document;
 import com.google.enterprise.connector.spi.Property;
 import com.google.enterprise.connector.spi.SimpleProperty;
 import com.google.enterprise.connector.spi.SkippedDocumentException;
@@ -35,7 +34,7 @@ import java.util.logging.Logger;
  * An implementation of Document for database records. Each row in the database
  * represents a {@link DBDocument}.
  */
-public class DBDocument implements Document {
+public class DBDocument{
 	private static final Logger LOG = Logger.getLogger(DBDocument.class.getName());
 	private final Map<String, List<Value>> properties = new HashMap<String, List<Value>>();
 	public static final String ROW_CHECKSUM = "dbconnector:checksum";
