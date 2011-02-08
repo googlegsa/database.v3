@@ -14,11 +14,14 @@
 
 package com.google.enterprise.connector.db;
 
+import com.google.enterprise.connector.diffing.JsonDocument;
 import com.google.enterprise.connector.spi.RepositoryException;
 import com.google.enterprise.connector.spi.SpiConstants;
 import com.google.enterprise.connector.spi.TraversalContext;
 
 import org.joda.time.DateTime;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -49,6 +52,7 @@ public class Util {
 	private static final String MIMETYPE = "text/html";
 	private static final String DBCONNECTOR_PROTOCOL = "dbconnector://";
 	private static final String DATABASE_TITLE_PREFIX = "Database Connector Result";
+	public static final String ROW_CHECKSUM = "dbconnector:checksum";
 
 	public static String WITH_BASE_URL = "withBaseURL";
 
@@ -65,36 +69,76 @@ public class Util {
 	 * @return doc
 	 * @throws DBException
 	 */
-	public static DBDocument rowToDoc(String dbName, String[] primaryKeys,
+	public static JsonDocument rowToDoc(String dbName, String[] primaryKeys,
 			Map<String, Object> row, String hostname, String xslt,
 			DBContext dbContext,TraversalContext context) throws DBException {
 
-		DBDocument doc = new DBDocument(context);
+		JSONObject jsonObject = new JSONObject();
 		String contentXMLRow = XmlUtils.getXMLRow(dbName, row, primaryKeys, xslt, dbContext, false);
-		doc.setProperty(SpiConstants.PROPNAME_CONTENT, contentXMLRow);
+		try {
+			jsonObject.put(SpiConstants.PROPNAME_CONTENT, contentXMLRow);
+		} catch (JSONException e) {
+			// TODO Auto-generated catch block
+			LOG.info("JsonException for PROPNAME_CONTENT");
+		}
 		String docId = DocIdUtil.generateDocId(primaryKeys, row);
-		doc.setProperty(SpiConstants.PROPNAME_DOCID, docId);
-		doc.setProperty(SpiConstants.PROPNAME_ACTION, SpiConstants.ActionType.ADD.toString());
+		try {
+			jsonObject.put(SpiConstants.PROPNAME_DOCID, docId);
+		} catch (JSONException e) {
+			// TODO Auto-generated catch block
+			LOG.info("JsonException for PROPNAME_DOCID");
+		}
+		try {
+			jsonObject.put(SpiConstants.PROPNAME_ACTION, SpiConstants.ActionType.ADD.toString());
+		} catch (JSONException e) {
+			// TODO Auto-generated catch block
+			LOG.info("JsonException for PROPNAME_ACTION");
+		}
 		// TODO(meghna): Look into which encoding/charset to use for getBytes()
 		String completeXMLRow = XmlUtils.getXMLRow(dbName, row, primaryKeys, xslt, dbContext, true);
-		doc.setProperty(DBDocument.ROW_CHECKSUM, getChecksum(completeXMLRow.getBytes()));
+		try {
+			jsonObject.put(ROW_CHECKSUM, getChecksum(completeXMLRow.getBytes()));
+		} catch (JSONException e) {
+			// TODO Auto-generated catch block
+			LOG.info("JsonException for ROW_CHECKSUM");
+		}
 		// set "ispublic" false if authZ query is provided by the user.
 		if (dbContext != null && !dbContext.isPublicFeed()) {
-			doc.setProperty(SpiConstants.PROPNAME_ISPUBLIC, "false");
+			try {
+				jsonObject.put(SpiConstants.PROPNAME_ISPUBLIC, "false");
+			} catch (JSONException e) {
+				// TODO Auto-generated catch block
+				LOG.info("JsonException for PROPNAME_ISPUBLIC");
+			}
 		}
 
-		doc.setProperty(SpiConstants.PROPNAME_MIMETYPE, MIMETYPE);
-		doc.setProperty(SpiConstants.PROPNAME_DISPLAYURL, getDisplayUrl(hostname, dbName, docId));
+		try {
+			jsonObject.put(SpiConstants.PROPNAME_MIMETYPE, MIMETYPE);
+		} catch (JSONException e) {
+			// TODO Auto-generated catch block
+			LOG.info("JsonException for PROPNAME_MIMETYPE");
+		}
+		try {
+			jsonObject.put(SpiConstants.PROPNAME_DISPLAYURL, getDisplayUrl(hostname, dbName, docId));
+		} catch (JSONException e) {
+			// TODO Auto-generated catch block
+			LOG.info("JsonException for PROPNAME_DISPLAYURL");
+		}
 
 		// set feed type as content feed
-		doc.setProperty(SpiConstants.PROPNAME_FEEDTYPE, SpiConstants.FeedType.CONTENT.toString());
+		try {
+			jsonObject.put(SpiConstants.PROPNAME_FEEDTYPE, SpiConstants.FeedType.CONTENT.toString());
+		} catch (JSONException e) {
+			// TODO Auto-generated catch block
+			LOG.info("JsonException for PROPNAME_FEEDTYPE");
+		}
 
 		/*
 		 * Set other doc properties
 		 */
-		setOptionalProperties(row, doc, dbContext);
-
-		return doc;
+		setOptionalProperties(row, jsonObject, dbContext);
+		JsonDocument jsonDoc=new JsonDocument(jsonObject);
+		return jsonDoc;
 	}
 
 	private static String getDisplayUrl(String hostname, String dbName,
@@ -235,19 +279,29 @@ public class Util {
 	 * @param isContentFeed true if Feed type is content feed
 	 */
 	private static void setOptionalProperties(Map<String, Object> row,
-			DBDocument doc, DBContext dbContext) {
+			JSONObject jsonObject, DBContext dbContext) {
 		if (dbContext == null) {
 			return;
 		}
 		// set Document Title
 		Object docTitle = row.get(dbContext.getDocumentTitle());
 		if (docTitle != null) {
-			doc.setProperty(SpiConstants.PROPNAME_TITLE, docTitle.toString());
+			try {
+				jsonObject.put(SpiConstants.PROPNAME_TITLE, docTitle.toString());
+			} catch (JSONException e) {
+				// TODO Auto-generated catch block
+				LOG.info("JsonException in setOptionalProperties for PROPNAME_TITLE");
+			}
 		}
 		// set last modified date
 		Object lastModified = row.get(dbContext.getLastModifiedDate());
 		if (lastModified != null && (lastModified instanceof Timestamp)) {
-			doc.setLastModifiedDate(SpiConstants.PROPNAME_LASTMODIFIED, (Timestamp) lastModified);
+			try {
+				jsonObject.put(SpiConstants.PROPNAME_LASTMODIFIED, (Timestamp) lastModified);
+			} catch (JSONException e) {
+				// TODO Auto-generated catch block
+				LOG.info("JsonException in setOptionalProperties for PROPNAME_LASTMODIFIED");
+			}
 		}
 	}
 
@@ -272,7 +326,7 @@ public class Util {
 	 * @return DBDocument
 	 * @throws DBException
 	 */
-	public static DBDocument generateMetadataURLFeed(String dbName,
+	public static JsonDocument generateMetadataURLFeed(String dbName,
 			String[] primaryKeys, Map<String, Object> row, String hostname,
 			DBContext dbContext, String type,TraversalContext context) throws DBException {
 
@@ -295,7 +349,7 @@ public class Util {
 			Object docId = row.get(docIdColumn);
 			/*
 			 * build final document URL if docId is not null. Send null
-			 * DBDocument if document id is null.
+			 * JsonDocument if document id is null.
 			 */
 			if (docId != null) {
 				finalURL = baseURL.trim() + docId.toString();
@@ -313,7 +367,7 @@ public class Util {
 			}
 		}
 
-		DBDocument doc = new DBDocument(context);
+		JSONObject jsonObject = new JSONObject();
 		// get doc id from primary key values
 		String docId = DocIdUtil.generateDocId(primaryKeys, row);
 
@@ -326,30 +380,61 @@ public class Util {
 		 */
 		skipOtherProperties(skipColumns, dbContext);
 
-		doc.setProperty(SpiConstants.PROPNAME_SEARCHURL, finalURL);
-		doc.setProperty(SpiConstants.PROPNAME_DISPLAYURL, finalURL);
+		try {
+			jsonObject.put(SpiConstants.PROPNAME_SEARCHURL, finalURL);
+		} catch (JSONException e) {
+			// TODO Auto-generated catch block
+			LOG.info("JsonException for PROPNAME_SEARCHURL");
+		}
+		try {
+			jsonObject.put(SpiConstants.PROPNAME_DISPLAYURL, finalURL);
+		} catch (JSONException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 
 		// Set feed type as metadata_url
-		doc.setProperty(SpiConstants.PROPNAME_FEEDTYPE, SpiConstants.FeedType.WEB.toString());
+		try {
+			jsonObject.put(SpiConstants.PROPNAME_FEEDTYPE, SpiConstants.FeedType.WEB.toString());
+		} catch (JSONException e) {
+			// TODO Auto-generated catch block
+			LOG.info("JsonException for PROPNAME_FEEDTYPE");
+		}
 		// set doc id
-		doc.setProperty(SpiConstants.PROPNAME_DOCID, docId);
+		try {
+			jsonObject.put(SpiConstants.PROPNAME_DOCID, docId);
+		} catch (JSONException e) {
+			// TODO Auto-generated catch block
+			LOG.info("JsonException for PROPNAME_DOCID");
+		}
 
-		doc.setProperty(DBDocument.ROW_CHECKSUM, getChecksum(xmlRow.getBytes()));
+		try {
+			jsonObject.put(ROW_CHECKSUM, getChecksum(xmlRow.getBytes()));
+		} catch (JSONException e) {
+			// TODO Auto-generated catch block
+			LOG.info("JsonException for ROW_CHECKSUM");
+		}
 		/*
 		 * set action as add. Even when contents are updated the we still we set
 		 * action as add and GSA overrides the old copy with new updated one.
 		 * Hence ADD action is applicable to both add and update
 		 */
-		doc.setProperty(SpiConstants.PROPNAME_ACTION, SpiConstants.ActionType.ADD.toString());
+		try {
+			jsonObject.put(SpiConstants.PROPNAME_ACTION, SpiConstants.ActionType.ADD.toString());
+		} catch (JSONException e) {
+			// TODO Auto-generated catch block
+			LOG.info("JsonException for PROPNAME_ACTION");
+		}
 
 		/*
 		 * Set other doc properties like Last Modified date and document title.
 		 */
-		setOptionalProperties(row, doc, dbContext);
+		setOptionalProperties(row, jsonObject, dbContext);
 		skipColumns.addAll(Arrays.asList(primaryKeys));
-		setMetaInfo(doc, row, skipColumns);
+		setMetaInfo(jsonObject, row, skipColumns);
 
-		return doc;
+		JsonDocument jsonDocument=new JsonDocument(jsonObject);
+		return jsonDocument;
 	}
 
 	/**
@@ -360,7 +445,7 @@ public class Util {
 	 * @param row
 	 * @param skipColumns list of columns needs to ignore while indexing
 	 */
-	private static void setMetaInfo(DBDocument doc, Map<String, Object> row,
+	private static void setMetaInfo(JSONObject jsonObject, Map<String, Object> row,
 			List<String> skipColumns) {
 		// get all column names as key set
 		Set<String> keySet = row.keySet();
@@ -369,7 +454,12 @@ public class Util {
 			if (!skipColumns.contains(key)) {
 				Object value = row.get(key);
 				if (value != null)
-					doc.setProperty(key, value.toString());
+					try {
+						jsonObject.put(key, value.toString());
+					} catch (JSONException e) {
+						// TODO Auto-generated catch block
+						LOG.info("JSONException for metadata indexing of column"+key);
+					}
 			} else {
 				LOG.info("skipping metadata indexing of column " + key);
 			}
@@ -388,7 +478,7 @@ public class Util {
 	 * @return DBDocument for BLOB/CLOB data
 	 * @throws DBException
 	 */
-	public static DBDocument largeObjectToDoc(String dbName,
+	public static JsonDocument largeObjectToDoc(String dbName,
 			String[] primaryKeys, Map<String, Object> row, String hostname,
 			DBContext dbContext, TraversalContext context) throws DBException {
 
@@ -396,7 +486,8 @@ public class Util {
 		String docId = DocIdUtil.generateDocId(primaryKeys, row);
 
 		String clobValue = null;
-		DBDocument doc = new DBDocument(context);
+		JsonDocument jsonDocument;
+		JSONObject jsonObject = new JSONObject();
 
 		/*
 		 * skipColumns maintain the list of column which needs to skip while
@@ -445,7 +536,7 @@ public class Util {
 				 * document is not supported.
 				 */
 
-				doc = setBlobContent(blobContent, doc, dbName, row, dbContext, primaryKeys, context, docId);
+				jsonDocument = setBlobContent(blobContent, jsonObject, dbName, row, dbContext, primaryKeys, context, docId);
 
 			} else if (largeObject instanceof Blob) {
 				int length;
@@ -490,7 +581,7 @@ public class Util {
 						return null;
 					}
 				}
-				doc = setBlobContent(blobContent, doc, dbName, row, dbContext, primaryKeys, context, docId);
+				jsonDocument= setBlobContent(blobContent,jsonObject, dbName, row, dbContext, primaryKeys, context, docId);
 
 			} else {
 				/*
@@ -545,12 +636,22 @@ public class Util {
 					}
 				}
 				if (clobValue != null) {
-					doc.setProperty(SpiConstants.PROPNAME_CONTENT, clobValue.toString());
+					try {
+						jsonObject.put(SpiConstants.PROPNAME_CONTENT, clobValue.toString());
+					} catch (JSONException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
 				} else {
 					LOG.warning("Content of documnet " + docId + " is null");
 					return null;
 				}
-				doc.setProperty(SpiConstants.PROPNAME_MIMETYPE, MIMETYPE);
+				try {
+					jsonObject.put(SpiConstants.PROPNAME_MIMETYPE, MIMETYPE);
+				} catch (JSONException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 
 				// get xml representation of document(exclude the CLOB column).
 				Map<String, Object> rowForXmlDoc = getRowForXmlDoc(row, dbContext);
@@ -562,7 +663,12 @@ public class Util {
 				// get checksum of blob object and other column
 				String docCheckSum = Util.getChecksum((otherColumnCheckSum + clobCheckSum).getBytes());
 				// set checksum of this document
-				doc.setProperty(DBDocument.ROW_CHECKSUM, docCheckSum);
+				try {
+					jsonObject.put(DBDocument.ROW_CHECKSUM, docCheckSum);
+				} catch (JSONException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 				LOG.info("CLOB Data found");
 			}
 			/*
@@ -577,22 +683,47 @@ public class Util {
 			String otherColumnCheckSum = Util.getChecksum(xmlRow.getBytes());
 
 			// set checksum for this document
-			doc.setProperty(DBDocument.ROW_CHECKSUM, otherColumnCheckSum);
+			try {
+				jsonObject.put(ROW_CHECKSUM, otherColumnCheckSum);
+			} catch (JSONException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 			LOG.warning("Content of Document " + docId + " has null value.");
 		}
 
 		// set doc id
-		doc.setProperty(SpiConstants.PROPNAME_DOCID, docId);
+		try {
+			jsonObject.put(SpiConstants.PROPNAME_DOCID, docId);
+		} catch (JSONException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 
 		// set feed type as content feed
-		doc.setProperty(SpiConstants.PROPNAME_FEEDTYPE, SpiConstants.FeedType.CONTENT.toString());
+		try {
+			jsonObject.put(SpiConstants.PROPNAME_FEEDTYPE, SpiConstants.FeedType.CONTENT.toString());
+		} catch (JSONException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 
 		// set action as add
-		doc.setProperty(SpiConstants.PROPNAME_ACTION, SpiConstants.ActionType.ADD.toString());
+		try {
+			jsonObject.put(SpiConstants.PROPNAME_ACTION, SpiConstants.ActionType.ADD.toString());
+		} catch (JSONException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 
 		// set "ispublic" false if authZ query is provided by the user.
 		if (dbContext != null && !dbContext.isPublicFeed()) {
-			doc.setProperty(SpiConstants.PROPNAME_ISPUBLIC, "false");
+			try {
+				jsonObject.put(SpiConstants.PROPNAME_ISPUBLIC, "false");
+			} catch (JSONException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
 
 		/*
@@ -602,24 +733,34 @@ public class Util {
 		 */
 		Object displayURL = row.get(dbContext.getFetchURLField());
 		if (displayURL != null && displayURL.toString().trim().length() > 0) {
-			doc.setProperty(SpiConstants.PROPNAME_DISPLAYURL, displayURL.toString().trim());
+			try {
+				jsonObject.put(SpiConstants.PROPNAME_DISPLAYURL, displayURL.toString().trim());
+			} catch (JSONException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 			skipColumns.add(displayURL.toString());
 		} else {
-			doc.setProperty(SpiConstants.PROPNAME_DISPLAYURL, getDisplayUrl(hostname, dbName, docId));
+			try {
+				jsonObject.put(SpiConstants.PROPNAME_DISPLAYURL, getDisplayUrl(hostname, dbName, docId));
+			} catch (JSONException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
 
 		skipOtherProperties(skipColumns, dbContext);
 		skipColumns.addAll(Arrays.asList(primaryKeys));
 
-		setOptionalProperties(row, doc, dbContext);
+		setOptionalProperties(row, jsonObject, dbContext);
 
-		setMetaInfo(doc, row, skipColumns);
+		setMetaInfo(jsonObject, row, skipColumns);
 
 		/*
 		 * Set other doc properties
 		 */
-
-		return doc;
+jsonDocument=new JsonDocument(jsonObject);
+		return jsonDocument;
 	}
 
 	/**
@@ -700,8 +841,8 @@ public class Util {
 	 * @return DBDocument
 	 * @throws DBException
 	 */
-	private static DBDocument setBlobContent(byte[] blobContent,
-			DBDocument doc, String dbName, Map<String, Object> row,
+	private static JsonDocument setBlobContent(byte[] blobContent,
+			JSONObject jsonObject, String dbName, Map<String, Object> row,
 			DBContext dbContext, String[] primaryKeys,
 			TraversalContext context, String docId) throws DBException {
 		/*
@@ -717,10 +858,20 @@ public class Util {
 
 
 		// set mime type for this document
-		doc.setProperty(SpiConstants.PROPNAME_MIMETYPE, mimeType);
+		try {
+			jsonObject.put(SpiConstants.PROPNAME_MIMETYPE, mimeType);
+		} catch (JSONException e) {
+			// TODO Auto-generated catch block
+			LOG.info("JsonException for PROPNAME_MIMETYPE");
+		}
 
 		// Set content
-		doc.setBinaryContent(SpiConstants.PROPNAME_CONTENT, blobContent);
+		try {
+			jsonObject.put(SpiConstants.PROPNAME_CONTENT, blobContent);
+		} catch (JSONException e) {
+			// TODO Auto-generated catch block
+			LOG.info("JsonException for PROPNAME_CONTENT");
+		}
 		// get xml representation of document(exclude the BLOB column).
 		Map<String, Object> rowForXmlDoc = getRowForXmlDoc(row, dbContext);
 		String xmlRow = XmlUtils.getXMLRow(dbName, rowForXmlDoc, primaryKeys, "", dbContext, true);
@@ -731,8 +882,14 @@ public class Util {
 		// get checksum of blob object and other column
 		String docCheckSum = Util.getChecksum((otherColumnCheckSum + blobCheckSum).getBytes());
 		// set checksum of this document
-		doc.setProperty(DBDocument.ROW_CHECKSUM, docCheckSum);
+		try {
+			jsonObject.put(ROW_CHECKSUM, docCheckSum);
+		} catch (JSONException e) {
+			// TODO Auto-generated catch block
+			LOG.info("JsonException for ROW_CHECKSUM");
+		}
 		LOG.info("BLOB Data found");
-		return doc;
+		JsonDocument jsonDocument=new JsonDocument(jsonObject);
+		return jsonDocument;
 	}
 }
