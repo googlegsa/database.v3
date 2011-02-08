@@ -2,15 +2,13 @@ package com.google.enterprise.connector.diffing;
 
 import java.util.Iterator;
 import java.util.logging.Logger;
-
-import com.google.enterprise.connector.db.DBDocument;
 import com.google.enterprise.connector.db.DBException;
 ;
 
-public class RepositoryHandlerIterator implements Iterator<DBDocument> {
+public class RepositoryHandlerIterator implements Iterator<JsonDocument> {
 
 	private static final Logger LOG = Logger.getLogger(RepositoryHandlerIterator.class.getName()); 
-	private static Iterator<DBDocument> recordList;
+	private static Iterator<JsonDocument> recordList;
 	private static RepositoryHandler repositoryHandler;
 
 	public RepositoryHandlerIterator(RepositoryHandler repositoryHandler)
@@ -51,10 +49,10 @@ public class RepositoryHandlerIterator implements Iterator<DBDocument> {
 	}
 
 	@Override
-	public DBDocument next() {
+	public JsonDocument next() {
 		// TODO Auto-generated method stub
 		
-		return (DBDocument)recordList.next();
+		return (JsonDocument)recordList.next();
 	}
 
 	@Override

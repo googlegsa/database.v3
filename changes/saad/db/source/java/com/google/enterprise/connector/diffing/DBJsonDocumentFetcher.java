@@ -19,19 +19,19 @@ public class DBJsonDocumentFetcher implements JsonDocumentFetcher{
 	public Iterator<JsonDocument> iterator()  {
 		RepositoryHandlerIterator repositoryHandlerIterator=new RepositoryHandlerIterator(repositoryHandler);
 		
-		
-		final Function<DBDocument,JsonDocument> f = new ConversionFunction();
+		return repositoryHandlerIterator;
+		/*final Function<DBDocument,JsonDocument> f = new ConversionFunction();
 	    Iterator<JsonDocument> it1=Iterators.transform(repositoryHandlerIterator,f);
 	    return it1;
-	}
+*/	}
 
 
-	private static class ConversionFunction implements Function<DBDocument,JsonDocument> {
-	    /* @Override */
+	/*private static class ConversionFunction implements Function<DBDocument,JsonDocument> {
+	     @Override 
 	    public JsonDocument apply(DBDocument dbDoc) {
 	      JsonDocument p = JsonDocument.buildFromDBDocument.apply(dbDoc);
 	    LOG.info("The json documents are :" +p.toJson());
 	      return p;
 	    }
-	  }
+	  }*/
 }

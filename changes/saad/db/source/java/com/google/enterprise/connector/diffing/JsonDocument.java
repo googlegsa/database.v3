@@ -14,14 +14,11 @@
 
 package com.google.enterprise.connector.diffing;
 
-import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.google.enterprise.connector.db.DBDocument;
 import com.google.enterprise.connector.spi.Document;
 import com.google.enterprise.connector.spi.RepositoryException;
 import com.google.enterprise.connector.spi.SimpleDocument;
-import com.google.enterprise.connector.spi.SkippedDocumentException;
 import com.google.enterprise.connector.spi.SpiConstants;
 import com.google.enterprise.connector.spi.Value;
 import org.json.JSONException;
@@ -57,9 +54,9 @@ public class JsonDocument extends SimpleDocument {
     }
   }
 
-  public static Function<DBDocument, JsonDocument> buildFromDBDocument =
+  /*public static Function<DBDocument, JsonDocument> buildFromDBDocument =
     new Function<DBDocument, JsonDocument>() {
-    /* @Override */
+     @Override 
     public JsonDocument apply(DBDocument person) {
       return buildJson(person);
     }
@@ -91,12 +88,13 @@ public class JsonDocument extends SimpleDocument {
 	    }
 	    return new JsonDocument(jo);
 	  }
-  
+*/  
 
+  
   public String getDocumentId() {
     return objectId;
   }
-
+  
   public String toJson() {
     return jsonString;
   }

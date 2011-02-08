@@ -67,9 +67,9 @@ public class RepositoryHandler{
 		this.cursorDB = cursorDB;
 	}
 
-	public LinkedList<DBDocument> executeQueryAndAddDocs()
+	public LinkedList<JsonDocument> executeQueryAndAddDocs()
 	throws DBException {
-		LinkedList<DBDocument> docList = new LinkedList<DBDocument>();
+		LinkedList<JsonDocument> docList = new LinkedList<JsonDocument>();
 		List<Map<String, Object>> rows = dbClient.executePartialQuery(cursorDB, 3*batchHint);
 		if(rows.size()==0)
 		{
@@ -79,7 +79,7 @@ public class RepositoryHandler{
 		{
 			setCursorDB(getCursorDB() + rows.size());
 		}
-		DBDocument dbDoc = null;
+		JsonDocument jsonDoc = null;
 		if (rows != null && rows.size() > 0) {
 
 			currentExcMode = getExecutionScenario(dbClient.getDBContext());
@@ -92,27 +92,27 @@ public class RepositoryHandler{
 			case MODE_METADATA_URL:
 
 				for (Map<String, Object> row : rows) {
-					dbDoc = Util.generateMetadataURLFeed(dbClient.getDBContext().getDbName(), dbClient.getPrimaryKeys(), row, dbClient.getDBContext().getHostname(), dbClient.getDBContext(), "",this.traversalContext);
-					docList.add(dbDoc);
+					jsonDoc = Util.generateMetadataURLFeed(dbClient.getDBContext().getDbName(), dbClient.getPrimaryKeys(), row, dbClient.getDBContext().getHostname(), dbClient.getDBContext(), "",this.traversalContext);
+					docList.add(jsonDoc);
 				}
 				break;
 
 				// execute the connector for BLOB data
 			case MODE_METADATA_BASE_URL:
-				dbDoc = null;
+				jsonDoc = null;
 				for (Map<String, Object> row : rows) {
-					dbDoc = Util.generateMetadataURLFeed(dbClient.getDBContext().getDbName(), dbClient.getPrimaryKeys(), row, dbClient.getDBContext().getHostname(), dbClient.getDBContext(), Util.WITH_BASE_URL,this.traversalContext);
-					docList.add(dbDoc);
+					jsonDoc = Util.generateMetadataURLFeed(dbClient.getDBContext().getDbName(), dbClient.getPrimaryKeys(), row, dbClient.getDBContext().getHostname(), dbClient.getDBContext(), Util.WITH_BASE_URL,this.traversalContext);
+					docList.add(jsonDoc);
 				}
 
 				break;
 
 				// execute the connector for CLOB data 
 			case MODE_BLOB_CLOB:
-				dbDoc = null;
+				jsonDoc = null;
 				for (Map<String, Object> row : rows) {
-					dbDoc = Util.largeObjectToDoc(dbClient.getDBContext().getDbName(), dbClient.getPrimaryKeys(), row, dbClient.getDBContext().getHostname(), dbClient.getDBContext(), traversalContext);
-					docList.add(dbDoc);
+					jsonDoc = Util.largeObjectToDoc(dbClient.getDBContext().getDbName(), dbClient.getPrimaryKeys(), row, dbClient.getDBContext().getHostname(), dbClient.getDBContext(), traversalContext);
+					docList.add(jsonDoc);
 				}
 
 				break;
@@ -120,8 +120,8 @@ public class RepositoryHandler{
 				// execute the connector in normal mode
 			default:
 				for (Map<String, Object> row : rows) {
-					dbDoc=Util.rowToDoc(dbClient.getDBContext().getDbName(), dbClient.getPrimaryKeys(), row, dbClient.getDBContext().getHostname(), xslt, dbClient.getDBContext(),this.traversalContext);
-					docList.add(dbDoc);
+					jsonDoc=Util.rowToDoc(dbClient.getDBContext().getDbName(), dbClient.getPrimaryKeys(), row, dbClient.getDBContext().getHostname(), xslt, dbClient.getDBContext(),this.traversalContext);
+					docList.add(jsonDoc);
 				}
 				break;
 			}
