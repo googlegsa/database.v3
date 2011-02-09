@@ -204,32 +204,7 @@ public class Util {
 		return new String(chars);
 	}
 
-	/**
-	 * Creates a checkpoint string of the form (date_time_string)docId.
-	 * 
-	 * @param dt
-	 * @param doc
-	 * @return checkpoint string.
-	 * @throws RepositoryException
-	 */
-	public static String getCheckpointString(DateTime dt, DBDocument doc)
-	throws RepositoryException {
-		StringBuilder str = new StringBuilder();
-		str.append("(");
-		if (null == dt) {
-			str.append(NO_TIMESTAMP);
-		} else {
-			str.append(dt.toString());
-		}
-		str.append(")");
-		if (null == doc) {
-			str.append(NO_DOCID);
-		} else {
-			str.append(doc.findProperty(SpiConstants.PROPNAME_DOCID).nextValue().toString());
-		}
-		return str.toString();
-	}
-
+	
 	/**
 	 * This method set the values for predefined Document properties in
 	 * DBDocument. For example PROPNAME_DISPLAYURL , PROPNAME_TITLE ,
