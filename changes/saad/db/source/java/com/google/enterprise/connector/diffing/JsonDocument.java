@@ -21,6 +21,7 @@ import com.google.enterprise.connector.spi.RepositoryException;
 import com.google.enterprise.connector.spi.SimpleDocument;
 import com.google.enterprise.connector.spi.SpiConstants;
 import com.google.enterprise.connector.spi.Value;
+import com.google.enterprise.connector.spi.SimpleProperty;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -68,7 +69,7 @@ public class JsonDocument extends SimpleDocument {
 	public static void setProperty(JSONObject jsonObject,String propertyName, String propertyValue) {
 		if (propertyValue != null) {
 			try {
-				jsonObject.put(propertyName, Collections.singletonList(Value.getStringValue(propertyValue)));
+				jsonObject.put(propertyName, new SimpleProperty(Collections.singletonList(Value.getStringValue(propertyValue))).nextValue().toString());
 			} catch (JSONException e) {
 				// TODO Auto-generated catch block
 				LOG.info("JSONException for "+propertyName+" with value "+propertyValue);
@@ -91,7 +92,7 @@ public class JsonDocument extends SimpleDocument {
 			return ;
 		}
 		try {
-			jsonObject.put(propertyName, Collections.singletonList(Value.getDateValue(cal)));
+			jsonObject.put(propertyName, new SimpleProperty(Collections.singletonList(Value.getDateValue(cal))).nextValue().toString());
 		} catch (JSONException e) {
 
 			LOG.info("JSONException for "+propertyName+" with value "+propertyValue);
@@ -110,7 +111,7 @@ public class JsonDocument extends SimpleDocument {
 			return;
 		}
 		try {
-			jsonObject.put(propertyName, Collections.singletonList(Value.getBinaryValue((byte[]) propertyValue)));
+			jsonObject.put(propertyName, new SimpleProperty(Collections.singletonList(Value.getBinaryValue((byte[]) propertyValue))).nextValue().toString());
 		} catch (JSONException e) {
 			// TODO Auto-generated catch block
 			LOG.info("JSONException for "+propertyName+" with value "+propertyValue);

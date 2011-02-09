@@ -25,11 +25,16 @@
         <constructor-arg index="18" value="${extMetadataType}"></constructor-arg>
   </bean>
 
+ <bean id="traversal-context-manager"
+    class="com.google.enterprise.connector.util.diffing.TraversalContextManager"
+    singleton="true">
+  </bean>	
  	
   <bean id="repository-handler"
     class="com.google.enterprise.connector.diffing.RepositoryHandler"
     factory-method="makeRepositoryHandlerFromConfig">
     <constructor-arg ref="db-connector-config" />
+  	<constructor-arg ref="traversal-context-manager" />
   </bean>
   
  

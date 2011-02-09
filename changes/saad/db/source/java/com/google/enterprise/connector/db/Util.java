@@ -15,11 +15,8 @@
 package com.google.enterprise.connector.db;
 
 import com.google.enterprise.connector.diffing.JsonDocument;
-import com.google.enterprise.connector.spi.RepositoryException;
 import com.google.enterprise.connector.spi.SpiConstants;
 import com.google.enterprise.connector.spi.TraversalContext;
-
-import org.joda.time.DateTime;
 import org.json.JSONObject;
 import java.io.IOException;
 import java.io.InputStream;
@@ -206,12 +203,11 @@ public class Util {
 
 	
 	/**
-	 * This method set the values for predefined Document properties in
-	 * DBDocument. For example PROPNAME_DISPLAYURL , PROPNAME_TITLE ,
+	 * This method set the values for predefined Document properties 
+	 *  For example PROPNAME_DISPLAYURL , PROPNAME_TITLE ,
 	 * PROPNAME_LASTMODIFIED.
 	 * 
 	 * @param row Map representing database row
-	 * @param doc DB Document
 	 * @param hostname connector host name
 	 * @param dbName database name
 	 * @param docId document id of DB doc
@@ -254,7 +250,7 @@ public class Util {
 	 * @param type represent how to get URL of the document. If value is
 	 *            "withBaseURL" it means we have to build document URL using
 	 *            base URL and document ID.
-	 * @return DBDocument
+	 * @return JsOnDocument
 	 * @throws DBException
 	 */
 	public static JsonDocument generateMetadataURLFeed(String dbName,
@@ -371,14 +367,14 @@ public class Util {
 
 	/**
 	 * This method converts Large Object(BLOB or CLOB) into equivalent
-	 * DBDocument.
+	 * JsonDocument.
 	 * 
 	 * @param dbName
 	 * @param primaryKeys
 	 * @param row
 	 * @param hostname
 	 * @param largeObjectField
-	 * @return DBDocument for BLOB/CLOB data
+	 * @return JsonDocument for BLOB/CLOB data
 	 * @throws DBException
 	 */
 	public static JsonDocument largeObjectToDoc(String dbName,
@@ -692,15 +688,14 @@ public class Util {
 	}
 
 	/**
-	 * This method sets the content of blob data in DBDocument.
+	 * This method sets the content of blob data in JsonDocument.
 	 * 
 	 * @param blobContent BLOB content to be set
-	 * @param doc DBDocument
 	 * @param dbName name of the database
 	 * @param row Map representing row in the database table
 	 * @param dbContext object of DBContext
 	 * @param primaryKeys primary key columns
-	 * @return DBDocument
+	 * @return JsonDocument
 	 * @throws DBException
 	 */
 	private static JsonDocument setBlobContent(byte[] blobContent,
