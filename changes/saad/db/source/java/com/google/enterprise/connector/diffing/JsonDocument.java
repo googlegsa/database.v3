@@ -23,6 +23,10 @@ import com.google.enterprise.connector.spi.SpiConstants;
 import com.google.enterprise.connector.spi.Value;
 import org.json.JSONException;
 import org.json.JSONObject;
+
+import java.sql.Timestamp;
+import java.util.Calendar;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -35,125 +39,149 @@ import java.util.logging.Logger;
  */
 public class JsonDocument extends SimpleDocument {
 
-  private static final Logger LOG = Logger.getLogger(
-      JsonDocument.class.getName());
+	private static final Logger LOG = Logger.getLogger(
+			JsonDocument.class.getName());
 
-  private final String jsonString;
-  private final String objectId;
+	private final String jsonString;
+	private final String objectId;
 
-  public JsonDocument(JSONObject jo) {
-    super(buildJsonProperties(jo));
-    jsonString = jo.toString();
-    try {
-      objectId = Value.getSingleValueString(this, SpiConstants.PROPNAME_DOCID);
-    } catch (RepositoryException e) {
-      throw new IllegalStateException("Internal consistency error", e);
-    }
-    if (objectId == null) {
-      throw new IllegalArgumentException("Internal consistency error: missing docid");
-    }
-  }
+	public JsonDocument(JSONObject jo) {
+		super(buildJsonProperties(jo));
+		jsonString = jo.toString();
+		try {
+			objectId = Value.getSingleValueString(this, SpiConstants.PROPNAME_DOCID);
+		} catch (RepositoryException e) {
+			throw new IllegalStateException("Internal consistency error", e);
+		}
+		if (objectId == null) {
+			throw new IllegalArgumentException("Internal consistency error: missing docid");
+		}
+	}
 
-  /*public static Function<DBDocument, JsonDocument> buildFromDBDocument =
-    new Function<DBDocument, JsonDocument>() {
-     @Override 
-    public JsonDocument apply(DBDocument person) {
-      return buildJson(person);
-    }
-  };
-
-  public static JsonDocument buildJson(DBDocument dbDoc) {
-	    JSONObject jo = new JSONObject();
-	   
-	    {
-	      
-	        try {
-				jo.put(DBDocument.ROW_CHECKSUM, dbDoc.findProperty(DBDocument.ROW_CHECKSUM).nextValue().toString());
-				jo.put(SpiConstants.PROPNAME_CONTENT, dbDoc.findProperty(SpiConstants.PROPNAME_CONTENT).nextValue().toString());
-				jo.put(SpiConstants.PROPNAME_DOCID, dbDoc.findProperty(SpiConstants.PROPNAME_DOCID).nextValue().toString());
-				jo.put(SpiConstants.PROPNAME_ACTION, dbDoc.findProperty(SpiConstants.PROPNAME_ACTION).nextValue().toString());
-				//jo.put(SpiConstants.PROPNAME_ISPUBLIC, dbDoc.findProperty(SpiConstants.PROPNAME_ISPUBLIC).nextValue().toString());
-				jo.put(SpiConstants.PROPNAME_MIMETYPE, dbDoc.findProperty(SpiConstants.PROPNAME_MIMETYPE).nextValue().toString());
-				jo.put(SpiConstants.PROPNAME_DISPLAYURL, dbDoc.findProperty(SpiConstants.PROPNAME_DISPLAYURL).nextValue().toString());
-				jo.put(SpiConstants.PROPNAME_FEEDTYPE, dbDoc.findProperty(SpiConstants.PROPNAME_FEEDTYPE).nextValue().toString());
-				
-			} catch (SkippedDocumentException e) {
-				e.printStackTrace();
-			} catch (RepositoryException e) {
-				e.printStackTrace();
+	/**
+	 * Set a property for this document. If propertyValue is null this does
+	 * nothing.
+	 * 
+	 * @param propertyName
+	 * @param propertyValue
+	 */
+	public static void setProperty(JSONObject jsonObject,String propertyName, String propertyValue) {
+		if (propertyValue != null) {
+			try {
+				jsonObject.put(propertyName, Collections.singletonList(Value.getStringValue(propertyValue)));
+			} catch (JSONException e) {
+				// TODO Auto-generated catch block
+				LOG.info("JSONException for "+propertyName+" with value "+propertyValue);
 			}
-	        catch (JSONException e) {
-	        throw new IllegalStateException();
-	      }
-	    }
-	    return new JsonDocument(jo);
-	  }
-*/  
+		}
+	}
 
-  
-  public String getDocumentId() {
-    return objectId;
-  }
-  
-  public String toJson() {
-    return jsonString;
-  }
+	/**
+	 * This method adds the last modified date property to the DB Document
+	 * 
+	 * @param propertyName
+	 * @param propertyValue
+	 */
+	public static void setLastModifiedDate(JSONObject jsonObject,String propertyName, Timestamp propertyValue) {
+		Timestamp time = propertyValue;
+		Calendar cal = Calendar.getInstance();
+		cal.setTimeInMillis(time.getTime());
 
-  private static Map<String, List<Value>> buildJsonProperties(JSONObject jo) {
-    ImmutableMap.Builder<String, List<Value>> mapBuilder =
-        new ImmutableMap.Builder<String, List<Value>>();
-    Set<String> jsonKeys = getJsonKeys(jo);
-    for (String key : jsonKeys) {
-      if (key.equals(SpiConstants.PROPNAME_DOCID)) {
-        String docid = extractDocid(jo, mapBuilder);
-      } else {
-        extractAttributes(jo, mapBuilder, key);
-      }
-    }
-    return mapBuilder.build();
-  }
+		if (propertyValue == null) {
+			return ;
+		}
+		try {
+			jsonObject.put(propertyName, Collections.singletonList(Value.getDateValue(cal)));
+		} catch (JSONException e) {
 
-  private static void extractAttributes(JSONObject jo,
-      ImmutableMap.Builder<String, List<Value>> mapBuilder, String key) throws IllegalAccessError {
-    String ja;
-    try {
-      ja = (String)jo.get(key);
-    } catch (JSONException e) {
-      LOG.warning("Skipping: " + key);
-      return;
-    }
-    ImmutableList.Builder<Value> builder = new ImmutableList.Builder<Value>();
-    builder.add(Value.getStringValue(ja));
-    ImmutableList<Value> l = builder.build();
-    if (l.size() > 0) {
-      mapBuilder.put(key, l);
-    }
-    return;
-  }
+			LOG.info("JSONException for "+propertyName+" with value "+propertyValue);
+		}
+	}
 
-  private static String extractDocid(JSONObject jo,
-      ImmutableMap.Builder<String, List<Value>> mapBuilder) {
-    String docid;
-    try {
-      docid = jo.getString(SpiConstants.PROPNAME_DOCID);
-    } catch (JSONException e) {
-      throw new IllegalArgumentException("Internal consistency error: missing docid", e);
-    }
-    mapBuilder.put(SpiConstants.PROPNAME_DOCID, ImmutableList.of(Value.getStringValue(docid)));
-    return docid;
-  }
+	/**
+	 * In case of BLOB data iBATIS returns binary array for BLOB data-type. This
+	 * method sets the "binary array" as a content of DB Document.
+	 * 
+	 * @param propertyName
+	 * @param propertyValue
+	 */
+	public static void setBinaryContent(JSONObject jsonObject,String propertyName, Object propertyValue) {
+		if (propertyValue == null) {
+			return;
+		}
+		try {
+			jsonObject.put(propertyName, Collections.singletonList(Value.getBinaryValue((byte[]) propertyValue)));
+		} catch (JSONException e) {
+			// TODO Auto-generated catch block
+			LOG.info("JSONException for "+propertyName+" with value "+propertyValue);
+		}
+	}
 
-  private static Set<String> getJsonKeys(JSONObject jo) {
-    Set<String> result = new TreeSet<String>();
-    Iterator<String> i = getKeys(jo);
-    while (i.hasNext()) {
-      result.add(i.next());
-    }
-    return result;
-  }
 
-  @SuppressWarnings("unchecked")
-  private static Iterator<String> getKeys(JSONObject jo) {
-    return jo.keys();
-  }
+
+	public String getDocumentId() {
+		return objectId;
+	}
+
+	public String toJson() {
+		return jsonString;
+	}
+
+	private static Map<String, List<Value>> buildJsonProperties(JSONObject jo) {
+		ImmutableMap.Builder<String, List<Value>> mapBuilder =
+			new ImmutableMap.Builder<String, List<Value>>();
+		Set<String> jsonKeys = getJsonKeys(jo);
+		for (String key : jsonKeys) {
+			if (key.equals(SpiConstants.PROPNAME_DOCID)) {
+				String docid = extractDocid(jo, mapBuilder);
+			} else {
+				extractAttributes(jo, mapBuilder, key);
+			}
+		}
+		return mapBuilder.build();
+	}
+
+	private static void extractAttributes(JSONObject jo,
+			ImmutableMap.Builder<String, List<Value>> mapBuilder, String key) throws IllegalAccessError {
+		String ja;
+		try {
+			ja = (String)jo.get(key);
+		} catch (JSONException e) {
+			LOG.warning("Skipping: " + key);
+			return;
+		}
+		ImmutableList.Builder<Value> builder = new ImmutableList.Builder<Value>();
+		builder.add(Value.getStringValue(ja));
+		ImmutableList<Value> l = builder.build();
+		if (l.size() > 0) {
+			mapBuilder.put(key, l);
+		}
+		return;
+	}
+
+	private static String extractDocid(JSONObject jo,
+			ImmutableMap.Builder<String, List<Value>> mapBuilder) {
+		String docid;
+		try {
+			docid = jo.getString(SpiConstants.PROPNAME_DOCID);
+		} catch (JSONException e) {
+			throw new IllegalArgumentException("Internal consistency error: missing docid", e);
+		}
+		mapBuilder.put(SpiConstants.PROPNAME_DOCID, ImmutableList.of(Value.getStringValue(docid)));
+		return docid;
+	}
+
+	private static Set<String> getJsonKeys(JSONObject jo) {
+		Set<String> result = new TreeSet<String>();
+		Iterator<String> i = getKeys(jo);
+		while (i.hasNext()) {
+			result.add(i.next());
+		}
+		return result;
+	}
+
+	@SuppressWarnings("unchecked")
+	private static Iterator<String> getKeys(JSONObject jo) {
+		return jo.keys();
+	}
 }
