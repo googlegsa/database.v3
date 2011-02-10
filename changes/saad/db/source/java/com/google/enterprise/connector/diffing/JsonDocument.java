@@ -46,9 +46,9 @@ public class JsonDocument extends SimpleDocument {
 	private final String jsonString;
 	private final String objectId;
 
-	public JsonDocument(JSONObject jo) {
-		super(buildJsonProperties(jo));
-		jsonString = jo.toString();
+	public JsonDocument(JSONObject jsonObject) {
+		super(buildJsonProperties(jsonObject));
+		jsonString = jsonObject.toString();
 		try {
 			objectId = Value.getSingleValueString(this, SpiConstants.PROPNAME_DOCID);
 		} catch (RepositoryException e) {
@@ -78,7 +78,7 @@ public class JsonDocument extends SimpleDocument {
 	}
 
 	/**
-	 * This method adds the last modified date property to the DB Document
+	 * This method adds the last modified date property to the JSON Object
 	 * 
 	 * @param propertyName
 	 * @param propertyValue
@@ -101,7 +101,7 @@ public class JsonDocument extends SimpleDocument {
 
 	/**
 	 * In case of BLOB data iBATIS returns binary array for BLOB data-type. This
-	 * method sets the "binary array" as a content of DB Document.
+	 * method sets the "binary array" as a content of JSON Object.
 	 * 
 	 * @param propertyName
 	 * @param propertyValue

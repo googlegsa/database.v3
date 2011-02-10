@@ -9,6 +9,12 @@ import com.google.common.collect.Iterators;
 import com.google.enterprise.connector.util.diffing.SnapshotRepository;
 import com.google.enterprise.connector.util.diffing.SnapshotRepositoryRuntimeException;
 
+
+/**
+ * DBClass Repository.
+ * Implemented by delegating to an {@link Iterable}<{@link JsonDocument}>
+ */
+
 public class DBClassRepository implements SnapshotRepository<DBClass> {
 
 	private static final Logger LOG = Logger.getLogger(
@@ -32,6 +38,7 @@ public class DBClassRepository implements SnapshotRepository<DBClass> {
 		return DBClassRepository.class.getName();
 	}
 
+	
 	private static class ConversionFunction implements Function<JsonDocument, DBClass> {
 		private int count=0;	   
 		/* @Override */

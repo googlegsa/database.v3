@@ -71,7 +71,6 @@ public class DBClient {
 		this.authZQuery = authZQuery;
 		this.googleConnectorWorkDir = googleConnectorWorkDir;
 		this.primaryKeys = primaryKeys;
-		LOG.info("Google connector Workdir is"+googleConnectorWorkDir);
 		generateSqlMapConfig();
 		generateSqlMap();
 		InputStream resources;

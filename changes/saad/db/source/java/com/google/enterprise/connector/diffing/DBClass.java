@@ -12,6 +12,10 @@ import com.google.enterprise.connector.spi.Value;
 import com.google.enterprise.connector.util.diffing.DocumentHandle;
 import com.google.enterprise.connector.util.diffing.DocumentSnapshot;
 
+/**
+ * This class implements both the {@link DocumentHandle}
+ * and {@link DocumentSnapshot} interfaces. It is backed with a {@link JsonDocument}.
+ */
 public class DBClass implements DocumentHandle, DocumentSnapshot {
 	private final JsonDocument document;
 	private final String documentId;
@@ -35,11 +39,6 @@ public class DBClass implements DocumentHandle, DocumentSnapshot {
 	public DBClass(String jsonString) {
 		// This is implemented by saving the supplied jsonString then making a
 		// JSONObject
-		// (rather than by making a JSONObject then calling the other
-		// constructor) because
-		// I want to make sure that the jsonObject stored in this object is
-		// exactly the
-		// the same as the one supplied. 
 		this.jsonString = jsonString;
 		JSONObject jo;
 		try {

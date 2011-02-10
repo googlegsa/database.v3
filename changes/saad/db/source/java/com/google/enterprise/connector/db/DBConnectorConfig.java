@@ -12,7 +12,7 @@ public class DBConnectorConfig {
 	private final DBClient dbClient;
 	private final DBContext dbContext;
 	private final String xslt;
-	private static final Logger LOG = Logger.getLogger(DBClient.class.getName());
+	private static final Logger LOG = Logger.getLogger(DBConnectorConfig.class.getName());
 
 	  /**
 	   * Sole constructor. This is the injection point for stored configuration, via the
@@ -24,10 +24,7 @@ public class DBConnectorConfig {
 			String lastModifiedDate, String documentTitle,
 			String documentURLField, String documentIdField, String baseURL,
 			String lobField, String fetchURLField, String extMetadataType) throws DBException {
-
-		LOG.info("DBConnectorConfig googleConnectorWorkDir"+googleConnectorWorkDir+"hostname"+hostname);
-		LOG.info("sqlqueryis"+sqlQuery);
-		this.dbContext=new DBContext(connectionUrl, hostname, driverClassName, login, password, dbName, lastModifiedDate, documentTitle, documentURLField, documentIdField, baseURL, lobField, fetchURLField, extMetadataType);
+        this.dbContext=new DBContext(connectionUrl, hostname, driverClassName, login, password, dbName, lastModifiedDate, documentTitle, documentURLField, documentIdField, baseURL, lobField, fetchURLField, extMetadataType);
 		this.dbClient=new DBClient(dbContext, sqlQuery, googleConnectorWorkDir, primaryKeys, authZQuery);
 		this.xslt=xslt;
 	}

@@ -4,7 +4,9 @@ import java.util.ArrayList;
 import java.util.logging.Logger;
 
 
-
+/**
+ * Building-block required by the diffing framework.
+ */
 public class DBDocumentSnapshotRepositoryList extends ArrayList<DBClassRepository> {
 	private static final Logger LOG = Logger.getLogger(DBDocumentSnapshotRepositoryList.class.getName());
 	

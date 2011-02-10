@@ -105,7 +105,7 @@ public class Util {
 	private static String getDisplayUrl(String hostname, String dbName,
 			String docId) {
 		// displayurl is of the form -
-		// dbconnector://meghna-linux.corp.google.com/mysql/2a61639c96ed45ec8f6e3d4e1ab79944cd1d1923
+		// dbconnector://linux.corp.google.com/mysql/2a61639c96ed45ec8f6e3d4e1ab79944cd1d1923
 		String displayUrl = String.format("%s%s/%s/%s", DBCONNECTOR_PROTOCOL, hostname, dbName, docId);
 		return displayUrl;
 	}

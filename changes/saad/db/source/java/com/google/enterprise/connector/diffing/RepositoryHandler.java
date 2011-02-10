@@ -6,11 +6,14 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
-
-import com.google.enterprise.connector.spi.TraversalContext;
 import com.google.enterprise.connector.util.diffing.TraversalContextManager;
 
-
+/**
+ * A class which gets rows from Database using @link DBClient 
+ * and converts them to JsonDocuments using @link Util.
+ * Provides a collection over the JsonDocument  
+ * 
+ */
 
 
 public class RepositoryHandler{
@@ -19,6 +22,12 @@ public class RepositoryHandler{
 	private String xslt;
 	private static TraversalContextManager traversalContextManager;
 	private int cursorDB = 0;
+	
+	/**
+	 * @param dbClient client which gets rows from a database corresponding to a given SQL query.
+	 * @param xslt custom XSLT string provided by the user for displaying result
+	 * @param traversalContextManager gives access to @link TraversalContext object.
+	 */
 
    // Limit on the batch size.
 	private int batchHint = 100;
@@ -58,20 +67,30 @@ public class RepositoryHandler{
 
 
 
-	
+	/**
+	 * Returns CursorDB. 
+	 */
 
 	public  int getCursorDB() {
 		return cursorDB;
 	}
 
+	/**
+	 * Sets the CursorDb.
+	 */
+	
 	public  void setCursorDB(int cursorDB) {
 		this.cursorDB = cursorDB;
 	}
 
-	public LinkedList<JsonDocument> executeQueryAndAddDocs()
+	
+	/**
+	 * Function for fetching Database rows and providing a collection over JsonDocument.
+	 */
+    public LinkedList<JsonDocument> executeQueryAndAddDocs()
 	throws DBException {
 		LinkedList<JsonDocument> docList = new LinkedList<JsonDocument>();
-		List<Map<String, Object>> rows = dbClient.executePartialQuery(cursorDB, 2);
+		List<Map<String, Object>> rows = dbClient.executePartialQuery(cursorDB, 3*batchHint);
 		if(rows.size()==0)
 		{
 			setCursorDB(0);
@@ -131,6 +150,12 @@ public class RepositoryHandler{
 
 		return docList;
 	}
+    
+    /**
+	 * this method will detect the execution mode from the column names(Normal,
+	 * CLOB, BLOB or External Metadata) of the DB Connector and returns the
+	 * integer value representing execution mode
+	 */
 
 	private int getExecutionScenario(DBContext dbContext) {
 
@@ -168,7 +193,13 @@ public class RepositoryHandler{
 			return MODE_NORMAL;
 		}
 	}
-
+	
+	/**
+	 * this method return appropriate log message as per current execution mode.
+	 * 
+	 * @param excMode current execution mode
+	 * @return
+	 */
 	private static String getExcLogMessage(int excMode) {
 
 		switch (excMode) {
