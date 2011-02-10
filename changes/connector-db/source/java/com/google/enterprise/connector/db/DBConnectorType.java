@@ -30,7 +30,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Implementation of {@link ConnectorType} for {@link DBConnector}.
+ * Implementation of {@link ConnectorType} for {@link DBConnectorType}.
  */
 public class DBConnectorType implements ConnectorType {
 	private static final Logger LOG = Logger.getLogger(DBConnectorType.class.getName());
