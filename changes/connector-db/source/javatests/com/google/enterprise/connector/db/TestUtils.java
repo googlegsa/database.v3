@@ -28,7 +28,7 @@ import com.google.enterprise.connector.traversal.ProductionTraversalContext;
 public class TestUtils {
 
 	private static final Logger LOG = Logger.getLogger(TestUtils.class.getName());
-	public static final String TESTCONFIG_DIR = "config/";
+	public static final String TESTCONFIG_DIR = "connector-db/config/";
 	public static final String CONNECTOR_INSTANCE_XML = "connectorInstance.xml";
 	public static final String SQL_DATA_FILE = "connector_test.sql";
 	public static final String UPDATE_SQL_DATA_FILE = "update_connector_test.sql";
