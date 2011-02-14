@@ -435,6 +435,11 @@ public class ValidateUtil  {
 			return result;
 		}
 
+		/**
+		 * This method centralizes the calls to different configuration parameter 
+		 * validation methods.
+		 * @return true if every validation method return true else return false.
+		 */
 		public boolean validate() {
 
 			password = config.get(PASSWORD);
@@ -697,6 +702,11 @@ public class ValidateUtil  {
 		}
 		
 	}
+	
+	/**
+	 * Validation Class to check whether HostName is valid. 
+	 * 
+	 */
 	private static class HostNameFQDNCheck implements ConfigValidation {
 		Map<String, String> config;
 		private String message = "";
