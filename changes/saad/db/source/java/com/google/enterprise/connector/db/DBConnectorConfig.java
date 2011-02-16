@@ -20,12 +20,12 @@ public class DBConnectorConfig {
 	   */
 	public DBConnectorConfig(String connectionUrl, String hostname,
 			String driverClassName, String login, String password,
-			String dbName,String sqlQuery,String googleConnectorWorkDir,String[] primaryKeys,String xslt, String authZQuery,
+			String dbName,String sqlQuery,String googleConnectorWorkDir,String primaryKeys,String xslt, String authZQuery,
 			String lastModifiedDate, String documentTitle,
 			String documentURLField, String documentIdField, String baseURL,
 			String lobField, String fetchURLField, String extMetadataType) throws DBException {
         this.dbContext=new DBContext(connectionUrl, hostname, driverClassName, login, password, dbName, lastModifiedDate, documentTitle, documentURLField, documentIdField, baseURL, lobField, fetchURLField, extMetadataType);
-		this.dbClient=new DBClient(dbContext, sqlQuery, googleConnectorWorkDir, primaryKeys, authZQuery);
+		this.dbClient=new DBClient(dbContext, sqlQuery, googleConnectorWorkDir, primaryKeys.split(Util.PRIMARY_KEYS_SEPARATOR), authZQuery);
 		this.xslt=xslt;
 	}
 
