@@ -52,6 +52,8 @@ public class JsonDocument extends SimpleDocument {
 		if (objectId == null) {
 			throw new IllegalArgumentException("Internal consistency error: missing docid");
 		}
+		
+		
 	}
 
 	
