@@ -23,7 +23,15 @@ public class JsonObjectUtil {
 	 * @param propertyName
 	 * @param propertyValue
 	 */
-	public static void setProperty(JSONObject jsonObject,String propertyName, String propertyValue) {
+	
+	private JSONObject jsonObject;
+	
+	public JsonObjectUtil()
+	{
+		jsonObject=new JSONObject();
+	}
+	
+	public void setProperty(String propertyName, String propertyValue) {
 		if (propertyValue != null) {
 			try {
 				jsonObject.put(propertyName, new SimpleProperty(Collections.singletonList(Value.getStringValue(propertyValue))).nextValue().toString());
@@ -40,7 +48,7 @@ public class JsonObjectUtil {
 	 * @param propertyName
 	 * @param propertyValue
 	 */
-	public static void setLastModifiedDate(JSONObject jsonObject,String propertyName, Timestamp propertyValue) {
+	public void setLastModifiedDate(String propertyName, Timestamp propertyValue) {
 		Timestamp time = propertyValue;
 		Calendar cal = Calendar.getInstance();
 		cal.setTimeInMillis(time.getTime());
@@ -63,7 +71,7 @@ public class JsonObjectUtil {
 	 * @param propertyName
 	 * @param propertyValue
 	 */
-	public static void setBinaryContent(JSONObject jsonObject,String propertyName, Object propertyValue) {
+	public void setBinaryContent(String propertyName, Object propertyValue) {
 		if (propertyValue == null) {
 			return;
 		}
@@ -73,6 +81,10 @@ public class JsonObjectUtil {
 			// TODO Auto-generated catch block
 			LOG.info("JSONException for "+propertyName+" with value "+propertyValue);
 		}
+	}
+
+	public JSONObject getJsonObject() {
+		return jsonObject;
 	}
 
 

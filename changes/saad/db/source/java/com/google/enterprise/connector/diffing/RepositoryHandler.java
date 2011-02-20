@@ -47,6 +47,15 @@ public class RepositoryHandler{
 	// data
 	private static final int MODE_BLOB_CLOB = 4;
 
+	public int getBatchHint() {
+		return batchHint;
+	}
+
+
+	public void setBatchHint(int batchHint) {
+		this.batchHint = batchHint;
+	}
+
 	// current execution mode
 	private int currentExcMode = -1;
 
