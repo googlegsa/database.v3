@@ -15,6 +15,7 @@
 package com.google.enterprise.connector.db;
 
 import com.google.enterprise.connector.diffing.JsonDocument;
+import com.google.enterprise.connector.diffing.JsonObjectUtil;
 import com.google.enterprise.connector.spi.SpiConstants;
 import com.google.enterprise.connector.spi.TraversalContext;
 import org.json.JSONObject;
@@ -71,28 +72,28 @@ public class Util {
 		JSONObject jsonObject = new JSONObject();
 
 		String contentXMLRow = XmlUtils.getXMLRow(dbName, row, primaryKeys, xslt, dbContext, false);
-		JsonDocument.setProperty(jsonObject,SpiConstants.PROPNAME_CONTENT, contentXMLRow);
+		JsonObjectUtil.setProperty(jsonObject,SpiConstants.PROPNAME_CONTENT, contentXMLRow);
 		String docId = DocIdUtil.generateDocId(primaryKeys, row);
 
-		JsonDocument.setProperty(jsonObject,SpiConstants.PROPNAME_DOCID, docId);
+		JsonObjectUtil.setProperty(jsonObject,SpiConstants.PROPNAME_DOCID, docId);
 
-		JsonDocument.setProperty(jsonObject,SpiConstants.PROPNAME_ACTION, SpiConstants.ActionType.ADD.toString());
+		JsonObjectUtil.setProperty(jsonObject,SpiConstants.PROPNAME_ACTION, SpiConstants.ActionType.ADD.toString());
 
 		// : Look into which encoding/charset to use for getBytes()
 		String completeXMLRow = XmlUtils.getXMLRow(dbName, row, primaryKeys, xslt, dbContext, true);
-		JsonDocument.setProperty(jsonObject,ROW_CHECKSUM, getChecksum(completeXMLRow.getBytes()));
+		JsonObjectUtil.setProperty(jsonObject,ROW_CHECKSUM, getChecksum(completeXMLRow.getBytes()));
 
 		// set "ispublic" false if authZ query is provided by the user.
 		if (dbContext != null && !dbContext.isPublicFeed()) {
-			JsonDocument.setProperty(jsonObject,SpiConstants.PROPNAME_ISPUBLIC, "false");
+			JsonObjectUtil.setProperty(jsonObject,SpiConstants.PROPNAME_ISPUBLIC, "false");
 
 		}
 
-		JsonDocument.setProperty(jsonObject,SpiConstants.PROPNAME_MIMETYPE, MIMETYPE);
-		JsonDocument.setProperty(jsonObject,SpiConstants.PROPNAME_DISPLAYURL, getDisplayUrl(hostname, dbName, docId));
+		JsonObjectUtil.setProperty(jsonObject,SpiConstants.PROPNAME_MIMETYPE, MIMETYPE);
+		JsonObjectUtil.setProperty(jsonObject,SpiConstants.PROPNAME_DISPLAYURL, getDisplayUrl(hostname, dbName, docId));
 
 		// set feed type as content feed
-		JsonDocument.setProperty(jsonObject,SpiConstants.PROPNAME_FEEDTYPE, SpiConstants.FeedType.CONTENT.toString());
+		JsonObjectUtil.setProperty(jsonObject,SpiConstants.PROPNAME_FEEDTYPE, SpiConstants.FeedType.CONTENT.toString());
 
 		/*
 		 * Set other doc properties
@@ -221,13 +222,13 @@ public class Util {
 		// set Document Title
 		Object docTitle = row.get(dbContext.getDocumentTitle());
 		if (docTitle != null) {
-			JsonDocument.setProperty(jsonObject,SpiConstants.PROPNAME_TITLE, docTitle.toString());
+			JsonObjectUtil.setProperty(jsonObject,SpiConstants.PROPNAME_TITLE, docTitle.toString());
 
 		}
 		// set last modified date
 		Object lastModified = row.get(dbContext.getLastModifiedDate());
 		if (lastModified != null && (lastModified instanceof Timestamp)) {
-			JsonDocument.setLastModifiedDate(jsonObject,SpiConstants.PROPNAME_LASTMODIFIED, (Timestamp) lastModified);
+			JsonObjectUtil.setLastModifiedDate(jsonObject,SpiConstants.PROPNAME_LASTMODIFIED, (Timestamp) lastModified);
 
 		}
 	}
@@ -307,26 +308,26 @@ public class Util {
 		 */
 		skipOtherProperties(skipColumns, dbContext);
 
-		JsonDocument.setProperty(jsonObject,SpiConstants.PROPNAME_SEARCHURL, finalURL);
+		JsonObjectUtil.setProperty(jsonObject,SpiConstants.PROPNAME_SEARCHURL, finalURL);
 
-		JsonDocument.setProperty(jsonObject,SpiConstants.PROPNAME_DISPLAYURL, finalURL);
+		JsonObjectUtil.setProperty(jsonObject,SpiConstants.PROPNAME_DISPLAYURL, finalURL);
 
 
 		// Set feed type as metadata_url
-		JsonDocument.setProperty(jsonObject,SpiConstants.PROPNAME_FEEDTYPE, SpiConstants.FeedType.WEB.toString());
+		JsonObjectUtil.setProperty(jsonObject,SpiConstants.PROPNAME_FEEDTYPE, SpiConstants.FeedType.WEB.toString());
 
 		// set doc id
-		JsonDocument.setProperty(jsonObject,SpiConstants.PROPNAME_DOCID, docId);
+		JsonObjectUtil.setProperty(jsonObject,SpiConstants.PROPNAME_DOCID, docId);
 
 
-		JsonDocument.setProperty(jsonObject,ROW_CHECKSUM, getChecksum(xmlRow.getBytes()));
+		JsonObjectUtil.setProperty(jsonObject,ROW_CHECKSUM, getChecksum(xmlRow.getBytes()));
 
 		/*
 		 * set action as add. Even when contents are updated the we still we set
 		 * action as add and GSA overrides the old copy with new updated one.
 		 * Hence ADD action is applicable to both add and update
 		 */
-		JsonDocument.setProperty(jsonObject,SpiConstants.PROPNAME_ACTION, SpiConstants.ActionType.ADD.toString());
+		JsonObjectUtil.setProperty(jsonObject,SpiConstants.PROPNAME_ACTION, SpiConstants.ActionType.ADD.toString());
 
 
 		/*
@@ -357,7 +358,7 @@ public class Util {
 			if (!skipColumns.contains(key)) {
 				Object value = row.get(key);
 				if (value != null)
-					JsonDocument.setProperty(jsonObject,key, value.toString());
+					JsonObjectUtil.setProperty(jsonObject,key, value.toString());
 
 			} else {
 				LOG.info("skipping metadata indexing of column " + key);
@@ -536,13 +537,13 @@ public class Util {
 				}
 				if (clobValue != null) {
 
-					JsonDocument.setProperty(jsonObject,SpiConstants.PROPNAME_CONTENT, clobValue.toString());
+					JsonObjectUtil.setProperty(jsonObject,SpiConstants.PROPNAME_CONTENT, clobValue.toString());
 
 				} else {
 					LOG.warning("Content of documnet " + docId + " is null");
 					return null;
 				}
-				JsonDocument.setProperty(jsonObject,SpiConstants.PROPNAME_MIMETYPE, MIMETYPE);
+				JsonObjectUtil.setProperty(jsonObject,SpiConstants.PROPNAME_MIMETYPE, MIMETYPE);
 
 
 				// get xml representation of document(exclude the CLOB column).
@@ -555,7 +556,7 @@ public class Util {
 				// get checksum of blob object and other column
 				String docCheckSum = Util.getChecksum((otherColumnCheckSum + clobCheckSum).getBytes());
 				// set checksum of this document
-				JsonDocument.setProperty(jsonObject,ROW_CHECKSUM, docCheckSum);
+				JsonObjectUtil.setProperty(jsonObject,ROW_CHECKSUM, docCheckSum);
 
 				LOG.info("CLOB Data found");
 			}
@@ -571,24 +572,24 @@ public class Util {
 			String otherColumnCheckSum = Util.getChecksum(xmlRow.getBytes());
 
 			// set checksum for this document
-			JsonDocument.setProperty(jsonObject,ROW_CHECKSUM, otherColumnCheckSum);
+			JsonObjectUtil.setProperty(jsonObject,ROW_CHECKSUM, otherColumnCheckSum);
 			
 			LOG.warning("Content of Document " + docId + " has null value.");
 		}
 
 		// set doc id
-		JsonDocument.setProperty(jsonObject,SpiConstants.PROPNAME_DOCID, docId);
+		JsonObjectUtil.setProperty(jsonObject,SpiConstants.PROPNAME_DOCID, docId);
 		
 
 		// set feed type as content feed
-		JsonDocument.setProperty(jsonObject,SpiConstants.PROPNAME_FEEDTYPE, SpiConstants.FeedType.CONTENT.toString());
+		JsonObjectUtil.setProperty(jsonObject,SpiConstants.PROPNAME_FEEDTYPE, SpiConstants.FeedType.CONTENT.toString());
 				// set action as add
-		JsonDocument.setProperty(jsonObject,SpiConstants.PROPNAME_ACTION, SpiConstants.ActionType.ADD.toString());
+		JsonObjectUtil.setProperty(jsonObject,SpiConstants.PROPNAME_ACTION, SpiConstants.ActionType.ADD.toString());
 		
 
 		// set "ispublic" false if authZ query is provided by the user.
 		if (dbContext != null && !dbContext.isPublicFeed()) {
-			JsonDocument.setProperty(jsonObject,SpiConstants.PROPNAME_ISPUBLIC, "false");
+			JsonObjectUtil.setProperty(jsonObject,SpiConstants.PROPNAME_ISPUBLIC, "false");
 			
 		}
 
@@ -599,11 +600,11 @@ public class Util {
 		 */
 		Object displayURL = row.get(dbContext.getFetchURLField());
 		if (displayURL != null && displayURL.toString().trim().length() > 0) {
-			JsonDocument.setProperty(jsonObject,SpiConstants.PROPNAME_DISPLAYURL, displayURL.toString().trim());
+			JsonObjectUtil.setProperty(jsonObject,SpiConstants.PROPNAME_DISPLAYURL, displayURL.toString().trim());
 			
 			skipColumns.add(displayURL.toString());
 		} else {
-			JsonDocument.setProperty(jsonObject,SpiConstants.PROPNAME_DISPLAYURL, getDisplayUrl(hostname, dbName, docId));
+			JsonObjectUtil.setProperty(jsonObject,SpiConstants.PROPNAME_DISPLAYURL, getDisplayUrl(hostname, dbName, docId));
 			
 		}
 
@@ -715,11 +716,11 @@ public class Util {
 
 
 		// set mime type for this document
-		JsonDocument.setProperty(jsonObject,SpiConstants.PROPNAME_MIMETYPE, mimeType);
+		JsonObjectUtil.setProperty(jsonObject,SpiConstants.PROPNAME_MIMETYPE, mimeType);
 
 
 		// Set content
-		JsonDocument.setBinaryContent(jsonObject,SpiConstants.PROPNAME_CONTENT, blobContent);
+		JsonObjectUtil.setBinaryContent(jsonObject,SpiConstants.PROPNAME_CONTENT, blobContent);
 
 		// get xml representation of document(exclude the BLOB column).
 		Map<String, Object> rowForXmlDoc = getRowForXmlDoc(row, dbContext);
@@ -731,7 +732,7 @@ public class Util {
 		// get checksum of blob object and other column
 		String docCheckSum = Util.getChecksum((otherColumnCheckSum + blobCheckSum).getBytes());
 		// set checksum of this document
-		JsonDocument.setProperty(jsonObject,ROW_CHECKSUM, docCheckSum);
+		JsonObjectUtil.setProperty(jsonObject,ROW_CHECKSUM, docCheckSum);
 		LOG.info("BLOB Data found");
 		JsonDocument jsonDocument=new JsonDocument(jsonObject);
 		return jsonDocument;
