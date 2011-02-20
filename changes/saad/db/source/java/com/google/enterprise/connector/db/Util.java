@@ -436,7 +436,7 @@ public class Util {
 				 * document is not supported.
 				 */
 
-				jsonDocument = setBlobContent(blobContent, jsonObject, dbName, row, dbContext, primaryKeys, context, docId);
+				jsonObject = setBlobContent(blobContent, jsonObject, dbName, row, dbContext, primaryKeys, context, docId);
 
 			} else if (largeObject instanceof Blob) {
 				int length;
@@ -481,7 +481,7 @@ public class Util {
 						return null;
 					}
 				}
-				jsonDocument= setBlobContent(blobContent,jsonObject, dbName, row, dbContext, primaryKeys, context, docId);
+				jsonObject= setBlobContent(blobContent,jsonObject, dbName, row, dbContext, primaryKeys, context, docId);
 
 			} else {
 				/*
@@ -699,7 +699,7 @@ public class Util {
 	 * @return JsonDocument
 	 * @throws DBException
 	 */
-	private static JsonDocument setBlobContent(byte[] blobContent,
+	private static JSONObject setBlobContent(byte[] blobContent,
 			JSONObject jsonObject, String dbName, Map<String, Object> row,
 			DBContext dbContext, String[] primaryKeys,
 			TraversalContext context, String docId) throws DBException {
@@ -716,6 +716,7 @@ public class Util {
 
 
 		// set mime type for this document
+		
 		JsonObjectUtil.setProperty(jsonObject,SpiConstants.PROPNAME_MIMETYPE, mimeType);
 
 
@@ -734,7 +735,7 @@ public class Util {
 		// set checksum of this document
 		JsonObjectUtil.setProperty(jsonObject,ROW_CHECKSUM, docCheckSum);
 		LOG.info("BLOB Data found");
-		JsonDocument jsonDocument=new JsonDocument(jsonObject);
-		return jsonDocument;
+		
+		return jsonObject;
 	}
 }
