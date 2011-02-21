@@ -20,7 +20,7 @@ public class RepositoryHandler{
 	private static final Logger LOG = Logger.getLogger(RepositoryHandler.class.getName());
 	private DBClient dbClient;
 	private String xslt;
-	private static TraversalContextManager traversalContextManager;
+	private  TraversalContextManager traversalContextManager;
 	private int cursorDB = 0;
 	
 	/**
@@ -67,7 +67,7 @@ public class RepositoryHandler{
 	public static RepositoryHandler makeRepositoryHandlerFromConfig(DBConnectorConfig dbConnectorConfig,TraversalContextManager traversalContextManager) {
 
 		RepositoryHandler repositoryHandler=new RepositoryHandler();
-		RepositoryHandler.traversalContextManager=traversalContextManager;
+		repositoryHandler.traversalContextManager=traversalContextManager;
 		repositoryHandler.cursorDB=0;
 		repositoryHandler.dbClient = dbConnectorConfig.getDbClient();
 		repositoryHandler.xslt = dbConnectorConfig.getXslt();
