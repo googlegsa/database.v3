@@ -34,7 +34,7 @@ public class RepositoryHandlerIterator implements Iterator<JsonDocument> {
 	@Override
 	/*
 	 * Returns true if the recordList has more elements.
-	 * Else pings the repositoryHandler for more records.
+	 * Else calls the RepositoryHandler to ping the repositoryHandler for more records.
 	 * Returns true if records are found else returns false 
 	 * 
 	 * */
