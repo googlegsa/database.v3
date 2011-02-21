@@ -14,6 +14,7 @@
 
 package com.google.enterprise.connector.db;
 
+import com.google.enterprise.connector.diffing.JsonDocument;
 import com.google.enterprise.connector.spi.Property;
 import com.google.enterprise.connector.spi.RepositoryException;
 import com.google.enterprise.connector.spi.SkippedDocumentException;
@@ -21,9 +22,6 @@ import com.google.enterprise.connector.spi.SpiConstants;
 import com.google.enterprise.connector.traversal.FileSizeLimitInfo;
 import com.google.enterprise.connector.traversal.MimeTypeMap;
 import com.google.enterprise.connector.traversal.ProductionTraversalContext;
-
-import org.joda.time.DateTime;
-
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -34,7 +32,7 @@ import junit.framework.TestCase;
 
 public class UtilTest extends TestCase {
 	private static final Logger LOG = Logger.getLogger(UtilTest.class.getName());
-
+	public static final String ROW_CHECKSUM = "dbconnector:checksum";
 	/**
 	 * Test for converting DB row to DB Doc.
 	 */
@@ -43,13 +41,13 @@ public class UtilTest extends TestCase {
 		String[] primaryKeys = TestUtils.getStandardPrimaryKeys();
 		try {
 			ProductionTraversalContext context = new ProductionTraversalContext();
-			DBDocument doc = Util.rowToDoc("testdb_", primaryKeys, rowMap, "localhost", null, null,context);
+			JsonDocument doc = Util.rowToDoc("testdb_", primaryKeys, rowMap, "localhost", null, null,context);
 			for (String propName : doc.getPropertyNames()) {
 				Property prop = doc.findProperty(propName);
 				LOG.info(propName + ":    " + prop.nextValue().toString());
 			}
 			assertEquals("MSxsYXN0XzAx", doc.findProperty(SpiConstants.PROPNAME_DOCID).nextValue().toString());
-			assertEquals("7ffd1d7efaf0d1ee260c646d827020651519e7b0", doc.findProperty(DBDocument.ROW_CHECKSUM).nextValue().toString());
+			assertEquals("7ffd1d7efaf0d1ee260c646d827020651519e7b0", doc.findProperty(ROW_CHECKSUM).nextValue().toString());
 		} catch (DBException e) {
 			fail("Could not generate DB document from row.");
 		} catch (RepositoryException e) {
@@ -57,23 +55,7 @@ public class UtilTest extends TestCase {
 		}
 	}
 
-	public final void testGetCheckpointString() throws DBException {
-		Map<String, Object> rowMap = TestUtils.getStandardDBRow();
-		ProductionTraversalContext context = new ProductionTraversalContext();
-		DBDocument doc = Util.rowToDoc("testdb_", TestUtils.getStandardPrimaryKeys(), rowMap, "localhost", null, null,context);
-		try {
-			String checkpointStr = Util.getCheckpointString(null, null);
-			assertEquals("(NO_TIMESTAMP)NO_DOCID", checkpointStr);
-			DateTime dt = new DateTime();
-			checkpointStr = Util.getCheckpointString(dt, doc);
-			assertTrue(checkpointStr.contains(dt.toString()));
-			assertTrue(checkpointStr.contains("MSxsYXN0XzAx"));
-			LOG.info(checkpointStr);
-		} catch (RepositoryException e) {
-			fail("Unexpected exception" + e.toString());
-		}
-	}
-
+	
 	/**
 	 * test case for generateURLMetaFeed()
 	 */
@@ -101,7 +83,7 @@ public class UtilTest extends TestCase {
 		rowMap.put(versionColumn, versionValue);
 		try {
 			ProductionTraversalContext context = new ProductionTraversalContext();
-			DBDocument doc = Util.generateMetadataURLFeed("testdb", primaryKeys, rowMap, "localhost", dbContext, "",context);
+			JsonDocument doc = Util.generateMetadataURLFeed("testdb", primaryKeys, rowMap, "localhost", dbContext, "",context);
 			// test:- column "version" value as metadata
 			assertEquals(versionValue, doc.findProperty(versionColumn).nextValue().toString());
 			// test:- display URL will be same as the actual URL of the
@@ -116,7 +98,7 @@ public class UtilTest extends TestCase {
 			rowMapWithBaseURL.put(dbContext.getDocumentIdField(), docId);
 			rowMapWithBaseURL.put(versionColumn, versionValue);
 
-			DBDocument docWithBaseURL = Util.generateMetadataURLFeed("testdb", primaryKeys, rowMapWithBaseURL, "localhost", dbContext, Util.WITH_BASE_URL,context);
+			JsonDocument docWithBaseURL = Util.generateMetadataURLFeed("testdb", primaryKeys, rowMapWithBaseURL, "localhost", dbContext, Util.WITH_BASE_URL,context);
 
 			// test:- column "version" value as metadata
 			assertEquals(versionValue, docWithBaseURL.findProperty(versionColumn).nextValue().toString());
@@ -197,7 +179,7 @@ public class UtilTest extends TestCase {
 			fileSizeLimitInfo.setMaxDocumentSize(5);
 			context.setFileSizeLimitInfo(fileSizeLimitInfo);
 
-			DBDocument clobDoc = Util.largeObjectToDoc("testdb_", primaryKeys, rowMap, "localhost", dbContext, context);
+			JsonDocument clobDoc = Util.largeObjectToDoc("testdb_", primaryKeys, rowMap, "localhost", dbContext, context);
 			/*
 			 * as the size of the document is more than supported. clobDoc
 			 * should have null value.
@@ -258,7 +240,7 @@ public class UtilTest extends TestCase {
 		context.setFileSizeLimitInfo(fileSizeLimitInfo);
 
 		try {
-			DBDocument blobDoc = Util.largeObjectToDoc("testdb_", primaryKeys, rowMap, "localhost", dbContext, context);
+		   JsonDocument blobDoc = Util.largeObjectToDoc("testdb_", primaryKeys, rowMap, "localhost", dbContext, context);
 			assertNotNull(blobDoc);
 			// test scenario:- this doc will have column name "version" as
 			// metadata key and value will be "2.3.4"
@@ -284,11 +266,9 @@ public class UtilTest extends TestCase {
 			context.setMimeTypeMap(mimeTypeMap);
 			blobDoc = Util.largeObjectToDoc("testdb_", primaryKeys, rowMap, "localhost", dbContext, context);
 			Property docContent = null;
-			try {
+			
 				docContent = blobDoc.findProperty(SpiConstants.PROPNAME_CONTENT);
-			} catch (SkippedDocumentException e) {
-				LOG.info("Connector has thrown SkippedDocumentException which is expected");
-			}
+			
 			// document content should have null value.
 			assertNull(docContent);
 		} catch (DBException e) {

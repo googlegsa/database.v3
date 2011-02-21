@@ -15,7 +15,6 @@
 package com.google.enterprise.connector.db;
 
 import com.google.enterprise.connector.spi.ConfigureResponse;
-
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -29,12 +28,11 @@ import java.util.regex.Pattern;
 import junit.framework.TestCase;
 
 /**
- * This is a JUNit test case for DBConnectorType class.
- * 
- * @author Suresh_Ghuge
+ * This is a JUNit test case for DBConnectorType class. 
  */
 public class DBConnectorTypeTest extends TestCase {
 
+	
 	private static final Logger LOG = Logger.getLogger(DBConnectorTypeTest.class.getName());
 
 	private DBConnectorType connectorType;

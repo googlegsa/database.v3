@@ -16,6 +16,7 @@ package com.google.enterprise.connector.db;
 
 import com.google.enterprise.connector.spi.Connector;
 import com.google.enterprise.connector.spi.ConnectorFactory;
+import com.google.enterprise.connector.util.diffing.DiffingConnector;
 
 import org.springframework.beans.factory.config.PropertyPlaceholderConfigurer;
 import org.springframework.beans.factory.xml.XmlBeanFactory;
@@ -52,7 +53,7 @@ public class MockDBConnectorFactory implements ConnectorFactory {
     PropertyPlaceholderConfigurer cfg = new PropertyPlaceholderConfigurer();
     cfg.setProperties(props);
     cfg.postProcessBeanFactory(factory);
-    DBConnector connector = (DBConnector) factory.getBean("db-connector");
+    DiffingConnector connector = (DiffingConnector) factory.getBean("db-connector-config");
     return connector;
   }
 }

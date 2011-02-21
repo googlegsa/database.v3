@@ -14,23 +14,24 @@
 
 package com.google.enterprise.connector.db;
 
+
 import java.util.ResourceBundle;
 
 /**
  * This class provide the functionality for getting values from resource bundle.
- * 
- * @author Suresh_Ghuge
  */
 public class LanguageResource {
 
+
+	
 	/**
 	 * @param key this is the name of the property you want to access
 	 * @return value of the requested property.
 	 */
 	public static String getPropertyValue(String key) {
 		String value = "";
-		ResourceBundle bundle = ResourceBundle.getBundle("com.google.enterprise.connector.db.config.DatabaseConfiguration");
+		ResourceBundle bundle = ResourceBundle.getBundle("config.DatabaseConfiguration");
 		value = bundle.getString(key);
-		return value;
+				return value;
 	}
 }

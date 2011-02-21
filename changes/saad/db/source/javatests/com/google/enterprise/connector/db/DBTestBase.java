@@ -15,14 +15,8 @@
 package com.google.enterprise.connector.db;
 
 import com.google.enterprise.connector.spi.RepositoryException;
-import com.google.enterprise.connector.spi.Session;
-import com.google.enterprise.connector.traversal.ProductionTraversalContext;
-
-import org.joda.time.DateTime;
-
 import com.ibatis.common.jdbc.ScriptRunner;
 import com.ibatis.common.resources.Resources;
-
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -40,11 +34,8 @@ import junit.framework.TestCase;
 public abstract class DBTestBase extends TestCase {
 
 	private Map<String, String> configMap = new HashMap<String, String>();
-	private GlobalState globalState;
-
-	public GlobalState getGlobalState() {
-		return globalState;
-	}
+	
+	
 
 	public static final String CREATE_TEST_DB_TABLE = "com/google/enterprise/connector/db/config/createTable.sql";
 	public static final String LOAD_TEST_DATA = "com/google/enterprise/connector/db/config/loadTestData.sql";
@@ -78,50 +69,31 @@ public abstract class DBTestBase extends TestCase {
 		configMap.put("lobField", "");
 		configMap.put("fetchURLField", "");
 		configMap.put("extMetadataType", "");
-		globalState = new GlobalState(testDirManager.getTmpDir());
 	}
-
-	protected DBConnector getConnector() {
-		MockDBConnectorFactory mdbConnectorFactory = new MockDBConnectorFactory(
-				TestUtils.TESTCONFIG_DIR + TestUtils.CONNECTOR_INSTANCE_XML);
-
-		DBConnector connector = (DBConnector) mdbConnectorFactory.makeConnector(configMap);
-		return connector;
-	}
-
-	protected Session getSession() throws RepositoryException {
-
-		return getConnector().login();
-	}
-
-	protected DBTraversalManager getDBTraversalManager()
+	
+	protected DBConnectorConfig getDBConnectorConfig()
 			throws RepositoryException {
-		return (DBTraversalManager) getSession().getTraversalManager();
+		
+		DBConnectorConfig dbConnectorConfig;
+		try {
+			dbConnectorConfig = new DBConnectorConfig(configMap.get("connectionUrl"), configMap.get("hostname"), configMap.get("driverClassName"), 
+					configMap.get("login"), configMap.get("password"), configMap.get("dbName"), configMap.get("sqlQuery"),
+					configMap.get("googleConnectorWorkDir"), configMap.get("primaryKeys"),configMap.get("xslt"), configMap.get("authZQuery"),
+					configMap.get("lastModifiedDate"), configMap.get("documentTitle"), configMap.get("documentURLField"), configMap.get("documentIdField"), configMap.get("baseURL"), 
+					configMap.get("lobField"), configMap.get("fetchURLField"), configMap.get("extMetadataType"));
+			return dbConnectorConfig;
+		} catch (DBException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		return null;
 	}
 
 	@Override
 	protected void tearDown() throws Exception {
 		runDBScript(DROP_TEST_DB_TABLE);
 		super.tearDown();
-	}
-
-	/*
-	 * This method will set up initial state of GlobalState class. Test
-	 * documents are added toGlobalState for testing
-	 */
-	protected void setUpInitialState() {
-		DateTime queryExecutionTime = new DateTime();
-		globalState.setQueryExecutionTime(queryExecutionTime);
-		try {
-			for (Map<String, Object> row : TestUtils.getDBRows()) {
-				ProductionTraversalContext context = new ProductionTraversalContext();
-				DBDocument dbDoc = Util.rowToDoc("testdb_", TestUtils.getStandardPrimaryKeys(), row, "localhost", null, TestUtils.getDBContext(),context);
-				globalState.addDocument(dbDoc);
-			}
-		} catch (DBException dbe) {
-			fail("DBException is occured while closing database connection"
-					+ dbe.toString());
-		}
 	}
 
 	/**
@@ -132,7 +104,7 @@ public abstract class DBTestBase extends TestCase {
 	protected void runDBScript(String scriptPath) {
 		Connection connection = null;
 		try {
-			connection = getDBTraversalManager().getDbClient().getSqlMapClient().getDataSource().getConnection();
+			connection = getDBConnectorConfig().getDbClient().getSqlMapClient().getDataSource().getConnection();
 			ScriptRunner runner = new ScriptRunner(connection, false, true);
 			runner.runScript(Resources.getResourceAsReader(scriptPath));
 		} catch (SQLException se) {

@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 
+import com.google.enterprise.connector.diffing.JsonDocument;
 import com.google.enterprise.connector.traversal.ProductionTraversalContext;
 
 /**
@@ -29,6 +30,7 @@ public class TestUtils {
 
 	private static final Logger LOG = Logger.getLogger(TestUtils.class.getName());
 	public static final String TESTCONFIG_DIR = "config/";
+	public static final String TESTCONNECTORCONFIG_DIR = "";
 	public static final String CONNECTOR_INSTANCE_XML = "connectorInstance.xml";
 	public static final String SQL_DATA_FILE = "connector_test.sql";
 	public static final String UPDATE_SQL_DATA_FILE = "update_connector_test.sql";
@@ -80,11 +82,11 @@ public class TestUtils {
 		return rows;
 	}
 
-	public static DBDocument createDBDoc(int id, String firstName,
+	public static JsonDocument createDBDoc(int id, String firstName,
 			String lastName, String email) throws DBException {
 		ProductionTraversalContext context = new ProductionTraversalContext();
-		DBDocument dbDoc = Util.rowToDoc("testdb_", TestUtils.getStandardPrimaryKeys(), getRow(id, firstName, lastName, email), "localhost", null, null,context);
-		return dbDoc;
+		JsonDocument jsonDoc = Util.rowToDoc("testdb_", TestUtils.getStandardPrimaryKeys(), getRow(id, firstName, lastName, email), "localhost", null, null,context);
+		return jsonDoc;
 	}
 
 	public static Map<String, String> getTypeDriverMap() {

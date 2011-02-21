@@ -15,9 +15,7 @@
 package com.google.enterprise.connector.db;
 
 import com.google.common.io.Files;
-
 import junit.framework.TestCase;
-
 import java.io.File;
 import java.io.IOException;
 import java.util.UUID;

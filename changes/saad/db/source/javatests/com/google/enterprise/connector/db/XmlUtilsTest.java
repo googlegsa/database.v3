@@ -111,7 +111,7 @@ public class XmlUtilsTest extends TestCase {
 	}
 
 	public final void testGetStringFromDomDcoument() {
-		String expected = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+		String expected = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>"
 				+ "<testdb_>"
 				+ "<title>Database Connector Result id=1 lastName=last_01 </title>"
 				+ "<id>1</id><lastName>last_01</lastName>"

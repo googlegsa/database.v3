@@ -36,9 +36,8 @@ public class DBConnectorAuthorizationManagerTest extends DBTestBase {
 		 */
 		runDBScript(LOAD_USER_DOC_MAP_TEST_DATA);
 
-		DBTraversalManager traversalManager = getDBTraversalManager();
-		DBClient dbClient = traversalManager.getDbClient();
-		authZmanager = new DBConnectorAuthorizationManager(dbClient);
+		DBConnectorConfig dbConnectorConfig = getDBConnectorConfig();
+        authZmanager = new DBConnectorAuthorizationManager(dbConnectorConfig);
 	}
 
 	/**
