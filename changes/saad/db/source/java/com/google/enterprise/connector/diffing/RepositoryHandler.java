@@ -6,6 +6,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
+
+import com.google.enterprise.connector.spi.TraversalContext;
 import com.google.enterprise.connector.util.diffing.TraversalContextManager;
 
 /**
@@ -99,7 +101,17 @@ public class RepositoryHandler{
     public LinkedList<JsonDocument> executeQueryAndAddDocs()
 	throws DBException {
 		LinkedList<JsonDocument> docList = new LinkedList<JsonDocument>();
+		TraversalContext context=null;
 		List<Map<String, Object>> rows = dbClient.executePartialQuery(cursorDB, 3*batchHint);
+		
+		if(traversalContextManager!=null)
+		{
+		context=traversalContextManager.getTraversalContext();
+		}
+		else
+		{
+			LOG.info("TraversalContextManager not set");
+		}
 		if(rows.size()==0)
 		{
 			setCursorDB(0);
@@ -121,7 +133,7 @@ public class RepositoryHandler{
 			case MODE_METADATA_URL:
 
 				for (Map<String, Object> row : rows) {
-					jsonDoc = Util.generateMetadataURLFeed(dbClient.getDBContext().getDbName(), dbClient.getPrimaryKeys(), row, dbClient.getDBContext().getHostname(), dbClient.getDBContext(), "",traversalContextManager.getTraversalContext());
+					jsonDoc = Util.generateMetadataURLFeed(dbClient.getDBContext().getDbName(), dbClient.getPrimaryKeys(), row, dbClient.getDBContext().getHostname(), dbClient.getDBContext(), "",context);
 					docList.add(jsonDoc);
 				}
 				break;
@@ -130,8 +142,7 @@ public class RepositoryHandler{
 			case MODE_METADATA_BASE_URL:
 				jsonDoc = null;
 				for (Map<String, Object> row : rows) {
-					jsonDoc = Util.generateMetadataURLFeed(dbClient.getDBContext().getDbName(), dbClient.getPrimaryKeys(), row, dbClient.getDBContext().getHostname(), dbClient.getDBContext(), Util.WITH_BASE_URL,traversalContextManager.getTraversalContext()
-							);
+					jsonDoc = Util.generateMetadataURLFeed(dbClient.getDBContext().getDbName(), dbClient.getPrimaryKeys(), row, dbClient.getDBContext().getHostname(), dbClient.getDBContext(), Util.WITH_BASE_URL,context);
 					docList.add(jsonDoc);
 				}
 
@@ -141,7 +152,7 @@ public class RepositoryHandler{
 			case MODE_BLOB_CLOB:
 				jsonDoc = null;
 				for (Map<String, Object> row : rows) {
-					jsonDoc = Util.largeObjectToDoc(dbClient.getDBContext().getDbName(), dbClient.getPrimaryKeys(), row, dbClient.getDBContext().getHostname(), dbClient.getDBContext(), traversalContextManager.getTraversalContext());
+					jsonDoc = Util.largeObjectToDoc(dbClient.getDBContext().getDbName(), dbClient.getPrimaryKeys(), row, dbClient.getDBContext().getHostname(), dbClient.getDBContext(), context);
 					docList.add(jsonDoc);
 				}
 
@@ -150,7 +161,7 @@ public class RepositoryHandler{
 				// execute the connector in normal mode
 			default:
 				for (Map<String, Object> row : rows) {
-					jsonDoc=Util.rowToDoc(dbClient.getDBContext().getDbName(), dbClient.getPrimaryKeys(), row, dbClient.getDBContext().getHostname(), xslt, dbClient.getDBContext(),traversalContextManager.getTraversalContext());
+					jsonDoc=Util.rowToDoc(dbClient.getDBContext().getDbName(), dbClient.getPrimaryKeys(), row, dbClient.getDBContext().getHostname(), xslt, dbClient.getDBContext(),context);
 					docList.add(jsonDoc);
 				}
 				break;

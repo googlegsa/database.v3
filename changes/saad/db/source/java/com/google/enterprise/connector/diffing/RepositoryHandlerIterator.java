@@ -13,6 +13,17 @@ public class RepositoryHandlerIterator implements Iterator<JsonDocument> {
 
 	private static final Logger LOG = Logger.getLogger(RepositoryHandlerIterator.class.getName()); 
 	private static Iterator<JsonDocument> recordList;
+	
+	
+	
+	public static Iterator<JsonDocument> getRecordList() {
+		return recordList;
+	}
+
+	public static void setRecordList(Iterator<JsonDocument> recordList) {
+		RepositoryHandlerIterator.recordList = recordList;
+	}
+
 	private static RepositoryHandler repositoryHandler;
 
 	/*

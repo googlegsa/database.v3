@@ -35,7 +35,8 @@ public class DBClassRepository implements SnapshotRepository<DBClass> {
 
 	/* @Override */
 	public String getName() {
-		return DBClassRepository.class.getName();
+		String result=DBClassRepository.class.getName();
+		return result;
 	}
 
 	
