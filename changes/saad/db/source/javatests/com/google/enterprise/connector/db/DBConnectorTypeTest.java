@@ -77,7 +77,7 @@ public class DBConnectorTypeTest extends TestCase {
 		configMap.put("lobField", "");
 		configMap.put("fetchURLField", "");
 		configMap.put("extMetadataType", "");
-		configMap.put("googleConnectorWorkDir", TestUtils.TESTCONFIG_DIR);
+		configMap.put("googleConnectorWorkDir", "D:/Google/projects/ChangeBranch/db/config");
 	}
 
 	protected void tearDown() throws Exception {
@@ -104,7 +104,7 @@ public class DBConnectorTypeTest extends TestCase {
 		LOG.info("Checking when all required fields are provided...");
 		configMap.put("dbName", LanguageResource.getPropertyValue("dbName"));
 		configRes = this.connectorType.validateConfig(this.configMap, Locale.ENGLISH, mdbConnectorFactory);
-		assertNotNull(configRes);
+		assertNull(configRes);
 		LOG.info("[ validateConfig() ] Test Passed.");
 
 	}
