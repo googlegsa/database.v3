@@ -57,7 +57,7 @@ public abstract class DBTestBase extends TestCase {
 		configMap.put("driverClassName", LanguageResource.getPropertyValue("driverClassName"));
 		configMap.put("sqlQuery", LanguageResource.getPropertyValue("sqlQuery"));
 		configMap.put("primaryKeysString", LanguageResource.getPropertyValue("primaryKeysString"));
-		configMap.put("googleConnectorWorkDir", testDirManager.getTmpDir());
+		configMap.put("googleConnectorWorkDir", "D:/Google/projects/ChangeBranch/db/config");
 		configMap.put("xslt", "");
 		configMap.put("authZQuery", LanguageResource.getPropertyValue("authZQuery"));
 		configMap.put("lastModifiedDate", "");
@@ -78,7 +78,7 @@ public abstract class DBTestBase extends TestCase {
 		try {
 			dbConnectorConfig = new DBConnectorConfig(configMap.get("connectionUrl"), configMap.get("hostname"), configMap.get("driverClassName"), 
 					configMap.get("login"), configMap.get("password"), configMap.get("dbName"), configMap.get("sqlQuery"),
-					configMap.get("googleConnectorWorkDir"), configMap.get("primaryKeys"),configMap.get("xslt"), configMap.get("authZQuery"),
+					configMap.get("googleConnectorWorkDir"), configMap.get("primaryKeysString"),configMap.get("xslt"), configMap.get("authZQuery"),
 					configMap.get("lastModifiedDate"), configMap.get("documentTitle"), configMap.get("documentURLField"), configMap.get("documentIdField"), configMap.get("baseURL"), 
 					configMap.get("lobField"), configMap.get("fetchURLField"), configMap.get("extMetadataType"));
 			return dbConnectorConfig;
@@ -92,7 +92,7 @@ public abstract class DBTestBase extends TestCase {
 
 	@Override
 	protected void tearDown() throws Exception {
-		runDBScript(DROP_TEST_DB_TABLE);
+		//runDBScript(DROP_TEST_DB_TABLE);
 		super.tearDown();
 	}
 

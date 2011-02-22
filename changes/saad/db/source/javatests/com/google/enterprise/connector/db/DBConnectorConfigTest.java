@@ -43,7 +43,7 @@ public class DBConnectorConfigTest extends DBTestBase {
 		Connection connection;
 		try {
 			connection = getDBConnectorConfig().getDbClient().getSqlMapClient().getDataSource().getConnection();
-			assertEquals(true,connection);
+			assertNotNull(connection);
 		} catch (SQLException e) {
 			System.out.println("SQLException");
 			e.printStackTrace();

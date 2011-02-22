@@ -10,6 +10,7 @@ public class DBClassRepositoryTest extends DBTestBase {
 	
 	@Override
 	protected void setUp() throws Exception {
+	super.setUp();
 	DBConnectorConfig dbConnectorConfig=getDBConnectorConfig();
 	RepositoryHandler repositoryHandler=RepositoryHandler.makeRepositoryHandlerFromConfig(dbConnectorConfig, null);
 	DBJsonDocumentFetcher dbJsonDocumentFetcher=new DBJsonDocumentFetcher(repositoryHandler);
@@ -23,7 +24,10 @@ public class DBClassRepositoryTest extends DBTestBase {
 	}
 
 	public void testGetName() {
-		assertEquals("DBClassRepository", dbClassRepository.getName());
+		String expected="com.google.enterprise.connector.diffing.DBClassRepository";
+		String actual=dbClassRepository.getName();
+		
+		assertEquals(expected, actual);
 	}
 
 }
