@@ -30,7 +30,7 @@ public class LanguageResource {
 	 */
 	public static String getPropertyValue(String key) {
 		String value = "";
-		ResourceBundle bundle = ResourceBundle.getBundle("config.DatabaseConfiguration");
+		ResourceBundle bundle = ResourceBundle.getBundle("com.google.enterprise.connector.db.config.DatabaseConfiguration");
 		value = bundle.getString(key);
 				return value;
 	}
