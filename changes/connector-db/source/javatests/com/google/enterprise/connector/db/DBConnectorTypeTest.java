@@ -35,6 +35,7 @@ import junit.framework.TestCase;
  */
 public class DBConnectorTypeTest extends TestCase {
 
+	
 	private static final Logger LOG = Logger.getLogger(DBConnectorTypeTest.class.getName());
 
 	private DBConnectorType connectorType;

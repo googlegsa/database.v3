@@ -14,6 +14,7 @@
 
 package com.google.enterprise.connector.db;
 
+
 import java.util.ResourceBundle;
 
 /**
@@ -23,6 +24,24 @@ import java.util.ResourceBundle;
  */
 public class LanguageResource {
 
+/*	static {
+
+		final Properties properties = new Properties();
+
+		try {
+
+		properties.load(new FileInputStream("source/javatests/com/google/enterprise/connector/db/config/DatabaseConfiguration.properties"));
+		System.out.println("properties are loaded");
+
+		} catch (final IOException e) {
+
+		System.out.println("Unable to load the property file." + e);
+
+		}
+
+	}	
+*/	
+	
 	/**
 	 * @param key this is the name of the property you want to access
 	 * @return value of the requested property.

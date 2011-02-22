@@ -16,12 +16,9 @@ package com.google.enterprise.connector.db;
 
 import com.google.enterprise.connector.spi.RepositoryException;
 import com.google.enterprise.connector.traversal.ProductionTraversalContext;
-
 import org.joda.time.DateTime;
-
 import java.util.Map;
 import java.util.logging.Logger;
-
 import junit.framework.TestCase;
 
 public class DBDocumentListTest extends TestCase {
