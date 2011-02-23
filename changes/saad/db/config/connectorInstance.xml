@@ -70,11 +70,7 @@
     singleton="true">
   </bean>
   
-   <bean id="traversal-context-manager"
-    class="com.google.enterprise.connector.util.diffing.TraversalContextManager"
-    singleton="true">
-  </bean>
-  
+   
 
   <bean id="checkpoint-and-change-queue"
     class="com.google.enterprise.connector.util.diffing.CheckpointAndChangeQueue">
