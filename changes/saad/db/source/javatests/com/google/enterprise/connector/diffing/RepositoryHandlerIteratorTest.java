@@ -17,7 +17,7 @@ public class RepositoryHandlerIteratorTest extends DBTestBase {
 		DBConnectorConfig dbConnectorConfig=getDBConnectorConfig();
 		
 		repositoryHandler=RepositoryHandler.makeRepositoryHandlerFromConfig(dbConnectorConfig, null);
-		repositoryHandler.setBatchHint(1); 
+		repositoryHandler.setNO_OF_ROWS(2); 
 		repositoryHandlerIterator=new RepositoryHandlerIterator(repositoryHandler);
 	}
 	

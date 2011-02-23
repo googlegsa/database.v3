@@ -53,7 +53,7 @@ public class MockDBConnectorFactory implements ConnectorFactory {
     PropertyPlaceholderConfigurer cfg = new PropertyPlaceholderConfigurer();
     cfg.setProperties(props);
     cfg.postProcessBeanFactory(factory);
-    DiffingConnector connector = null;//(DiffingConnector) factory.getBean("db-connector-config");
+    DiffingConnector connector = null;
     return connector;
   }
 }

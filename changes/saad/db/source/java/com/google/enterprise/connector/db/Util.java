@@ -18,7 +18,7 @@ import com.google.enterprise.connector.diffing.JsonDocument;
 import com.google.enterprise.connector.diffing.JsonObjectUtil;
 import com.google.enterprise.connector.spi.SpiConstants;
 import com.google.enterprise.connector.spi.TraversalContext;
-import org.json.JSONObject;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.MessageDigest;
@@ -202,7 +202,7 @@ public class Util {
 		return new String(chars);
 	}
 
-	
+
 	/**
 	 * This method set the values for predefined Document properties 
 	 *  For example PROPNAME_DISPLAYURL , PROPNAME_TITLE ,
@@ -573,24 +573,24 @@ public class Util {
 
 			// set checksum for this document
 			jsonObjectUtil.setProperty(ROW_CHECKSUM, otherColumnCheckSum);
-			
+
 			LOG.warning("Content of Document " + docId + " has null value.");
 		}
 
 		// set doc id
 		jsonObjectUtil.setProperty(SpiConstants.PROPNAME_DOCID, docId);
-		
+
 
 		// set feed type as content feed
 		jsonObjectUtil.setProperty(SpiConstants.PROPNAME_FEEDTYPE, SpiConstants.FeedType.CONTENT.toString());
-				// set action as add
+		// set action as add
 		jsonObjectUtil.setProperty(SpiConstants.PROPNAME_ACTION, SpiConstants.ActionType.ADD.toString());
-		
+
 
 		// set "ispublic" false if authZ query is provided by the user.
 		if (dbContext != null && !dbContext.isPublicFeed()) {
 			jsonObjectUtil.setProperty(SpiConstants.PROPNAME_ISPUBLIC, "false");
-			
+
 		}
 
 		/*
@@ -601,11 +601,11 @@ public class Util {
 		Object displayURL = row.get(dbContext.getFetchURLField());
 		if (displayURL != null && displayURL.toString().trim().length() > 0) {
 			jsonObjectUtil.setProperty(SpiConstants.PROPNAME_DISPLAYURL, displayURL.toString().trim());
-			
+
 			skipColumns.add(displayURL.toString());
 		} else {
 			jsonObjectUtil.setProperty(SpiConstants.PROPNAME_DISPLAYURL, getDisplayUrl(hostname, dbName, docId));
-			
+
 		}
 
 		skipOtherProperties(skipColumns, dbContext);
@@ -716,13 +716,20 @@ public class Util {
 
 
 		// set mime type for this document
-		
+
 		jsonObjectUtil.setProperty(SpiConstants.PROPNAME_MIMETYPE, mimeType);
 
 
 		// Set content
-		jsonObjectUtil.setBinaryContent(SpiConstants.PROPNAME_CONTENT, blobContent);
-
+		int mimeTypeSupportLevel = context.mimeTypeSupportLevel(mimeType);
+		if(mimeTypeSupportLevel==0 || mimeTypeSupportLevel<0)
+		{
+			jsonObjectUtil.setBinaryContent(SpiConstants.PROPNAME_CONTENT, null);
+		}
+		else
+		{
+			jsonObjectUtil.setBinaryContent(SpiConstants.PROPNAME_CONTENT, blobContent);
+		}
 		// get xml representation of document(exclude the BLOB column).
 		Map<String, Object> rowForXmlDoc = getRowForXmlDoc(row, dbContext);
 		String xmlRow = XmlUtils.getXMLRow(dbName, rowForXmlDoc, primaryKeys, "", dbContext, true);
@@ -735,7 +742,7 @@ public class Util {
 		// set checksum of this document
 		jsonObjectUtil.setProperty(ROW_CHECKSUM, docCheckSum);
 		LOG.info("BLOB Data found");
-		
+
 		return jsonObjectUtil;
 	}
 }

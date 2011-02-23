@@ -27,9 +27,7 @@ import junit.framework.TestCase;
 
 /**
  * This is a base class for all test classes that requires interaction with
- * database. This provide methods to interact with database. *
- * 
- * @author Suresh_Ghuge
+ * database. This provide methods to interact with database. 
  */
 public abstract class DBTestBase extends TestCase {
 
@@ -48,7 +46,6 @@ public abstract class DBTestBase extends TestCase {
 
 	@Override
 	protected void setUp() throws Exception {
-		TestDirectoryManager testDirManager = new TestDirectoryManager(this);
 		configMap.put("login", LanguageResource.getPropertyValue("login"));
 		configMap.put("password", LanguageResource.getPropertyValue("password"));
 		configMap.put("connectionUrl", LanguageResource.getPropertyValue("connectionUrl"));
@@ -69,6 +66,8 @@ public abstract class DBTestBase extends TestCase {
 		configMap.put("lobField", "");
 		configMap.put("fetchURLField", "");
 		configMap.put("extMetadataType", "");
+		runDBScript(CREATE_TEST_DB_TABLE);
+		runDBScript(LOAD_TEST_DATA);
 	}
 	
 	protected DBConnectorConfig getDBConnectorConfig()
@@ -92,7 +91,7 @@ public abstract class DBTestBase extends TestCase {
 
 	@Override
 	protected void tearDown() throws Exception {
-		//runDBScript(DROP_TEST_DB_TABLE);
+		runDBScript(DROP_TEST_DB_TABLE);
 		super.tearDown();
 	}
 

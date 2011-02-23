@@ -32,7 +32,7 @@ public class RepositoryHandler{
 	 */
 
    // Limit on the batch size.
-	private int batchHint = 100;
+	private int NO_OF_ROWS = 100;
 
 	// EXC_NORMAL represents that DB Connector is running in normal mode
 	private static final int MODE_NORMAL = 1;
@@ -49,13 +49,15 @@ public class RepositoryHandler{
 	// data
 	private static final int MODE_BLOB_CLOB = 4;
 
-	public int getBatchHint() {
-		return batchHint;
+	
+
+	public int getNO_OF_ROWS() {
+		return NO_OF_ROWS;
 	}
 
 
-	public void setBatchHint(int batchHint) {
-		this.batchHint = batchHint;
+	public void setNO_OF_ROWS(int nOOFROWS) {
+		NO_OF_ROWS = nOOFROWS;
 	}
 
 	// current execution mode
@@ -102,7 +104,7 @@ public class RepositoryHandler{
 	throws DBException {
 		LinkedList<JsonDocument> docList = new LinkedList<JsonDocument>();
 		TraversalContext context=null;
-		List<Map<String, Object>> rows = dbClient.executePartialQuery(cursorDB, 3*batchHint);
+		List<Map<String, Object>> rows = dbClient.executePartialQuery(cursorDB, NO_OF_ROWS);
 		
 		if(traversalContextManager!=null)
 		{

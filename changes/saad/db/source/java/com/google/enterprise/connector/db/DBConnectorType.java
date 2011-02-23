@@ -259,11 +259,11 @@ public class DBConnectorType implements ConnectorType {
 		StringBuilder buf = new StringBuilder();
 		buf.append(getJavaScript());
 		List<String> problemfields;
-	
+
 		ValidateUtil validator=new ValidateUtil(configKeys);
-        ConfigValidation configValidation=validator.validate(config,resource);
+		ConfigValidation configValidation=validator.validate(config,resource);
 		problemfields = configValidation.getProblemFields();
-	
+
 		for (String key : configKeys) {
 			String value = config.get(key);
 			if (problemfields.contains(key)) {
@@ -326,7 +326,7 @@ public class DBConnectorType implements ConnectorType {
 			 * empty or if user has entered value for base URL.
 			 */
 			boolean isChecked = (value != null && value.trim().length() > 0)
-					|| (baseURL != null && baseURL.trim().length() > 0);
+			|| (baseURL != null && baseURL.trim().length() > 0);
 			buf.append(getRadio(DOC_ID, isChecked));
 		} else if (CLOB_BLOB_FIELD.equals(key)) {
 			String fetchURL = null;
@@ -334,7 +334,7 @@ public class DBConnectorType implements ConnectorType {
 				fetchURL = config.get(FETCH_URL_FIELD);
 			}
 			boolean isChecked = (value != null && value.trim().length() > 0)
-					|| (fetchURL != null && fetchURL.trim().length() > 0);
+			|| (fetchURL != null && fetchURL.trim().length() > 0);
 			buf.append(getRadio(BLOB_CLOB, isChecked));
 		}
 		/*
@@ -350,7 +350,7 @@ public class DBConnectorType implements ConnectorType {
 		if (EXT_METADATA.equalsIgnoreCase(key)) {
 			buf.append(BOLD_TEXT_END);
 		}
-		
+
 		/*
 		 * add red asterisk for required fields.
 		 */
@@ -383,7 +383,7 @@ public class DBConnectorType implements ConnectorType {
 		com.google.enterprise.connector.spi.XmlUtils.xmlAppendAttrValuePair(attrName, attrValue, strBuf);
 		buf.append(strBuf.toString());
 	}
-	
+
 	/**
 	 * Gets the initial/blank config form.
 	 * 
@@ -431,9 +431,9 @@ public class DBConnectorType implements ConnectorType {
 			resource = ResourceBundle.getBundle(LOCALE_DB);
 		}
 		ValidateUtil validator=new ValidateUtil(configKeys);
-        ConfigValidation configValidation=validator.validate(config,resource);
+		ConfigValidation configValidation=validator.validate(config,resource);
 		success=configValidation.validate();
-        if (success) {
+		if (success) {
 			try {
 				factory.makeConnector(config);
 			} catch (RepositoryException e) {
@@ -492,19 +492,19 @@ public class DBConnectorType implements ConnectorType {
 		 * editable.
 		 */
 		String javascript = "<SCRIPT> function setReadOnlyProperties(urlField , docIdField , lobField){"
-				+ "document.getElementById('documentURLField').readOnly=urlField ;    "
-				+ "document.getElementById('documentIdField').readOnly=docIdField ;    "
-				+ "document.getElementById('baseURL').readOnly=docIdField ;    "
-				+ "document.getElementById('lobField').readOnly=lobField ;  "
-				+ "document.getElementById('fetchURLField').readOnly=lobField ;"
-				+ "if(urlField){document.getElementById('documentURLField').value='';}"
-				+ "if(docIdField){document.getElementById('documentIdField').value='' ;"
-				+ "document.getElementById('baseURL').value=''}"
-				+ "if(lobField){document.getElementById('lobField').value='';"
-				+ "document.getElementById('fetchURLField').value='';}"
-				+ "if(!lobField){document.getElementById('authZQuery').readOnly=false}"
-				+ "else{document.getElementById('authZQuery').readOnly=true} }"
-				+ "</SCRIPT>";
+			+ "document.getElementById('documentURLField').readOnly=urlField ;    "
+			+ "document.getElementById('documentIdField').readOnly=docIdField ;    "
+			+ "document.getElementById('baseURL').readOnly=docIdField ;    "
+			+ "document.getElementById('lobField').readOnly=lobField ;  "
+			+ "document.getElementById('fetchURLField').readOnly=lobField ;"
+			+ "if(urlField){document.getElementById('documentURLField').value='';}"
+			+ "if(docIdField){document.getElementById('documentIdField').value='' ;"
+			+ "document.getElementById('baseURL').value=''}"
+			+ "if(lobField){document.getElementById('lobField').value='';"
+			+ "document.getElementById('fetchURLField').value='';}"
+			+ "if(!lobField){document.getElementById('authZQuery').readOnly=false}"
+			+ "else{document.getElementById('authZQuery').readOnly=true} }"
+			+ "</SCRIPT>";
 
 		return javascript;
 	}
