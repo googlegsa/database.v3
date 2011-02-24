@@ -8,7 +8,12 @@ import com.google.enterprise.connector.spi.RepositoryException;
 
 public class DBJsonDocumentFetcherTest extends DBTestBase {
 
-
+@Override
+protected void setUp() throws Exception {
+	super.setUp();
+	runDBScript(CREATE_TEST_DB_TABLE);
+	runDBScript(LOAD_TEST_DATA);
+}
 	public void testIterator() {
 	
 		

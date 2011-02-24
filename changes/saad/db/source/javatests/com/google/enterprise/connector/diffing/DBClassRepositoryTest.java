@@ -11,6 +11,8 @@ public class DBClassRepositoryTest extends DBTestBase {
 	@Override
 	protected void setUp() throws Exception {
 	super.setUp();
+	runDBScript(CREATE_TEST_DB_TABLE);
+	runDBScript(LOAD_TEST_DATA);
 	DBConnectorConfig dbConnectorConfig=getDBConnectorConfig();
 	RepositoryHandler repositoryHandler=RepositoryHandler.makeRepositoryHandlerFromConfig(dbConnectorConfig, null);
 	DBJsonDocumentFetcher dbJsonDocumentFetcher=new DBJsonDocumentFetcher(repositoryHandler);

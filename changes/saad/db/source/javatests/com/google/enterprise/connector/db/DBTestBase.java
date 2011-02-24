@@ -66,8 +66,7 @@ public abstract class DBTestBase extends TestCase {
 		configMap.put("lobField", "");
 		configMap.put("fetchURLField", "");
 		configMap.put("extMetadataType", "");
-		runDBScript(CREATE_TEST_DB_TABLE);
-		runDBScript(LOAD_TEST_DATA);
+		
 	}
 	
 	protected DBConnectorConfig getDBConnectorConfig()

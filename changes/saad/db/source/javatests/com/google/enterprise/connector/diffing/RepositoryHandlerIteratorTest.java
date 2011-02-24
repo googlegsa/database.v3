@@ -14,6 +14,8 @@ public class RepositoryHandlerIteratorTest extends DBTestBase {
 	RepositoryHandler repositoryHandler;
 	protected void setUp() throws Exception {
 		super.setUp();
+		runDBScript(CREATE_TEST_DB_TABLE);
+		runDBScript(LOAD_TEST_DATA);
 		DBConnectorConfig dbConnectorConfig=getDBConnectorConfig();
 		
 		repositoryHandler=RepositoryHandler.makeRepositoryHandlerFromConfig(dbConnectorConfig, null);
