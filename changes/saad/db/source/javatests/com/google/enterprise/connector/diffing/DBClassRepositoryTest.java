@@ -30,4 +30,9 @@ public class DBClassRepositoryTest extends DBTestBase {
 		assertEquals(expected, actual);
 	}
 
+	
+	protected void tearDown() throws Exception {
+	
+		super.tearDown();
+	}
 }
