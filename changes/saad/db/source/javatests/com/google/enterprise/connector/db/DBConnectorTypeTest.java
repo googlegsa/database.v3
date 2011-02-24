@@ -47,6 +47,7 @@ public class DBConnectorTypeTest extends TestCase {
 	private Map<String, String> configMap;
 
 	protected void setUp() throws Exception {
+		super.setUp();
 		configKeys = new HashSet<String>(Arrays.asList(keys));
 		connectorType = new DBConnectorType(configKeys);
 		configMap = new HashMap<String, String>();
@@ -104,7 +105,7 @@ public class DBConnectorTypeTest extends TestCase {
 		LOG.info("Checking when all required fields are provided...");
 		configMap.put("dbName", LanguageResource.getPropertyValue("dbName"));
 		configRes = this.connectorType.validateConfig(this.configMap, Locale.ENGLISH, mdbConnectorFactory);
-		assertNull(configRes);
+		assertNotNull(configRes);
 		LOG.info("[ validateConfig() ] Test Passed.");
 
 	}
