@@ -68,13 +68,20 @@ public class RepositoryHandler{
 	}
 	
 	
-	public static RepositoryHandler makeRepositoryHandlerFromConfig(DBConnectorConfig dbConnectorConfig,TraversalContextManager traversalContextManager) {
+	public static RepositoryHandler makeRepositoryHandlerFromConfig(DBConnectorConfig dbConnectorConfig,TraversalContextManager traversalContextManager,String noOfRows) {
 
 		RepositoryHandler repositoryHandler=new RepositoryHandler();
 		repositoryHandler.traversalContextManager=traversalContextManager;
 		repositoryHandler.cursorDB=0;
 		repositoryHandler.dbClient = dbConnectorConfig.getDbClient();
 		repositoryHandler.xslt = dbConnectorConfig.getXslt();
+		try
+		{
+			repositoryHandler.NO_OF_ROWS=Integer.parseInt(noOfRows);
+		}
+		catch (Exception e) {
+			LOG.info("Number Format Exception");
+		}
 		return repositoryHandler;
 	}
 
