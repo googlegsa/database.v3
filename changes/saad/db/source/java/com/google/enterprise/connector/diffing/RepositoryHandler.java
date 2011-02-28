@@ -63,11 +63,6 @@ public class RepositoryHandler{
 	// current execution mode
 	private int currentExcMode = -1;
 
-	public RepositoryHandler() {
-
-	}
-	
-	
 	public static RepositoryHandler makeRepositoryHandlerFromConfig(DBConnectorConfig dbConnectorConfig,TraversalContextManager traversalContextManager,String noOfRows) {
 
 		RepositoryHandler repositoryHandler=new RepositoryHandler();
