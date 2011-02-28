@@ -11,7 +11,7 @@ import com.google.enterprise.connector.util.diffing.SnapshotRepositoryRuntimeExc
 
 
 /**
- * DBClass Repository.
+ * DBClassRepository Implements the @link SnapshotRepository Interface.
  * Implemented by delegating to an {@link Iterable}<{@link JsonDocument}>
  */
 
@@ -39,7 +39,10 @@ public class DBClassRepository implements SnapshotRepository<DBClass> {
 		return result;
 	}
 
-	
+	/**
+	 * Class which implements function interface for transforming JsonDocument objects to 
+	 * DBClass Object. 
+	 */
 	private static class ConversionFunction implements Function<JsonDocument, DBClass> {
 		private int count=0;	   
 		/* @Override */
