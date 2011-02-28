@@ -35,6 +35,7 @@
     factory-method="makeRepositoryHandlerFromConfig">
     <constructor-arg ref="db-connector-config" />
   	<constructor-arg ref="traversal-context-manager" />
+  	<constructor-arg index="2" value="500"></constructor-arg>
   </bean>
   
  
