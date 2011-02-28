@@ -3,7 +3,6 @@ package com.google.enterprise.connector.db;
 
 import java.sql.Connection;
 import java.sql.SQLException;
-
 import com.google.enterprise.connector.spi.RepositoryException;
 
 
@@ -11,7 +10,7 @@ import com.google.enterprise.connector.spi.RepositoryException;
 
 public class DBConnectorConfigTest extends DBTestBase {
 
-	
+
 	@Override
 	protected void setUp() throws Exception {
 		super.setUp();
@@ -43,7 +42,6 @@ public class DBConnectorConfigTest extends DBTestBase {
 
 
 	}
-
 
 	public void testConnectivity() {
 
