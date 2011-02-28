@@ -80,7 +80,7 @@ public class RepositoryHandler{
 			repositoryHandler.NO_OF_ROWS=Integer.parseInt(noOfRows);
 		}
 		catch (Exception e) {
-			LOG.info("Number Format Exception");
+			LOG.info("Number Format Exception while setting the no of rows to be fetched");
 		}
 		return repositoryHandler;
 	}
