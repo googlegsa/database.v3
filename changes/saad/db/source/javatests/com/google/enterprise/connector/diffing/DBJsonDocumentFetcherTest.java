@@ -20,7 +20,7 @@ protected void setUp() throws Exception {
 		DBConnectorConfig dbConnectorConfig;
 		try {
 			dbConnectorConfig = getDBConnectorConfig();
-			RepositoryHandler repositoryHandler=RepositoryHandler.makeRepositoryHandlerFromConfig(dbConnectorConfig, null);
+			RepositoryHandler repositoryHandler=RepositoryHandler.makeRepositoryHandlerFromConfig(dbConnectorConfig, null,"2");
 			DBJsonDocumentFetcher dbJsonDocumentFetcher=new DBJsonDocumentFetcher(repositoryHandler);
 			assertNotNull(dbJsonDocumentFetcher.iterator().hasNext());
 		} catch (RepositoryException e) {

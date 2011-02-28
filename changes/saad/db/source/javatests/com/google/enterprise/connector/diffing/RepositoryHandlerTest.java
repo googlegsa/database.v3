@@ -19,7 +19,7 @@ public class RepositoryHandlerTest extends DBTestBase {
 	public void testMakeRepositoryHandlerFromConfig() {
 		try {
 			DBConnectorConfig dbConnectorConfig=getDBConnectorConfig();
-			RepositoryHandler repositoryHandler=RepositoryHandler.makeRepositoryHandlerFromConfig(dbConnectorConfig, null);
+			RepositoryHandler repositoryHandler=RepositoryHandler.makeRepositoryHandlerFromConfig(dbConnectorConfig, null,"2");
 			assertNotNull(repositoryHandler);
 		} catch (RepositoryException e) {
 		System.out.println("Repository Exception");
@@ -31,7 +31,7 @@ public class RepositoryHandlerTest extends DBTestBase {
 		try {
 			int cursorDB=5;
 			dbConnectorConfig = getDBConnectorConfig();
-			RepositoryHandler repositoryHandler=RepositoryHandler.makeRepositoryHandlerFromConfig(dbConnectorConfig, null);
+			RepositoryHandler repositoryHandler=RepositoryHandler.makeRepositoryHandlerFromConfig(dbConnectorConfig, null,"2");
 			repositoryHandler.setCursorDB(cursorDB);
 			assertEquals(5, repositoryHandler.getCursorDB());
 		} catch (RepositoryException e) {
@@ -44,7 +44,7 @@ public class RepositoryHandlerTest extends DBTestBase {
 	public void testExecuteQueryAndAddDocs() {
 		try {
 			DBConnectorConfig dbConnectorConfig=getDBConnectorConfig();
-			RepositoryHandler repositoryHandler=RepositoryHandler.makeRepositoryHandlerFromConfig(dbConnectorConfig, null);
+			RepositoryHandler repositoryHandler=RepositoryHandler.makeRepositoryHandlerFromConfig(dbConnectorConfig, null,"2");
 			LinkedList<JsonDocument> jsonDocumenList=repositoryHandler.executeQueryAndAddDocs();
 			assertEquals(true,jsonDocumenList.iterator().hasNext());
 		} catch (RepositoryException e) {
