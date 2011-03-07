@@ -1,4 +1,4 @@
-// Copyright 2009 Google Inc.
+// Copyright 2011 Google Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -40,10 +40,9 @@ public class DBConnectorType implements ConnectorType {
 	private static final String NAME = "name";
 	private static final String ID = "id";
 	private static final String TEXT = "text";
-	private static final String RIGHT_ALIGN = "right";
 	private static final String DIV = "div";
 	// Red asterisk for required fields.
-	public static final String RED_ASTERISK = "<font color=\"RED\">*</font>";
+	public static final String RED_ASTERISK = "*";
 
 	private static final String TYPE = "type";
 	private static final String INPUT = "input";
@@ -64,8 +63,6 @@ public class DBConnectorType implements ConnectorType {
 	private static final String PASSWORD = "password";
 	private static final String TR_END = "</tr>\n";
 	private static final String TD_END = "</td>\n";
-	private static final String TD_START = "<td>";
-	private static final String TR_START = "<tr>\n";
 	public static final String BOLD_TEXT_START = "<b>";
 	public static final String BOLD_TEXT_END = "</b>";
 
@@ -73,6 +70,7 @@ public class DBConnectorType implements ConnectorType {
 	private static final String ALIGN = "align";
 	private static final String CENTER = "center";
 	private static final String TD_OPEN = "<td";
+	private static final String TR_OPEN = "<tr";
 	private static final String GROUP = "extMetadataType";
 
 	public static final String COMPLETE_URL = "url";
@@ -259,11 +257,11 @@ public class DBConnectorType implements ConnectorType {
 		StringBuilder buf = new StringBuilder();
 		buf.append(getJavaScript());
 		List<String> problemfields;
-	
-		ValidateUtil validator=new ValidateUtil(configKeys);
-        ConfigValidation configValidation=validator.validate(config,resource);
+
+		ValidateUtil validator = new ValidateUtil(configKeys);
+		ConfigValidation configValidation = validator.validate(config, resource);
 		problemfields = configValidation.getProblemFields();
-	
+
 		for (String key : configKeys) {
 			String value = config.get(key);
 			if (problemfields.contains(key)) {
@@ -287,19 +285,26 @@ public class DBConnectorType implements ConnectorType {
 	private void appendStartRow(StringBuilder buf, String key, boolean red,
 			String value, Map<String, String> config) {
 
-		buf.append(TR_START);
+		buf.append(TR_OPEN);
+		appendAttribute(buf, "valign", "top");
+		buf.append(CLOSE_ELEMENT);
 
 		if (BASE_URL.equalsIgnoreCase(key)
 				|| FETCH_URL_FIELD.equalsIgnoreCase(key)) {
 			buf.append(TD_OPEN + " " + ALIGN + "='" + CENTER + "'"
 					+ CLOSE_ELEMENT);
 		} else {
-			buf.append(TD_START);
+			buf.append(TD_OPEN);
+			appendAttribute(buf, "colspan", "1");
+			appendAttribute(buf, "rowspan", "1");
+			appendAttribute(buf, "style", "white-space:nowrap");
+			buf.append(CLOSE_ELEMENT);
 
 			if (EXT_METADATA.equalsIgnoreCase(key)) {
 				buf.append(BOLD_TEXT_START);
 			}
 		}
+
 		if (red) {
 			buf.append("<font color=\"red\">");
 		}
@@ -341,7 +346,14 @@ public class DBConnectorType implements ConnectorType {
 		 * No label for External Metadata Type(Radio button)
 		 */
 		if (!GROUP.equalsIgnoreCase(key)) {
+			buf.append(OPEN_ELEMENT);
+			buf.append(DIV);
+			appendAttribute(buf, "style", "float: left;");
+			buf.append(CLOSE_ELEMENT);
 			buf.append(resource.getString(key));
+			buf.append(OPEN_ELEMENT_SLASH);
+			buf.append(DIV);
+			buf.append(CLOSE_ELEMENT);
 		}
 
 		if (red) {
@@ -350,14 +362,14 @@ public class DBConnectorType implements ConnectorType {
 		if (EXT_METADATA.equalsIgnoreCase(key)) {
 			buf.append(BOLD_TEXT_END);
 		}
-		
+
 		/*
 		 * add red asterisk for required fields.
 		 */
 		if (requiredFields.contains(key)) {
 			buf.append(OPEN_ELEMENT);
 			buf.append(DIV);
-			buf.append(" " + ALIGN + "=" + "'" + RIGHT_ALIGN + "'");
+			appendAttribute(buf, "style", "text-align: right; color: red; font-weight: bold; margin-right: 0.3em;");
 			buf.append(CLOSE_ELEMENT);
 			buf.append(RED_ASTERISK);
 			buf.append(OPEN_ELEMENT_SLASH);
@@ -366,7 +378,11 @@ public class DBConnectorType implements ConnectorType {
 		}
 
 		buf.append(TD_END);
-		buf.append(TD_START);
+		buf.append(TD_OPEN);
+		appendAttribute(buf, "colspan", "1");
+		appendAttribute(buf, "rowspan", "1");
+		appendAttribute(buf, "style", "white-space:nowrap");
+		buf.append(CLOSE_ELEMENT);
 	}
 
 	private void appendEndRow(StringBuilder buf) {
@@ -383,7 +399,7 @@ public class DBConnectorType implements ConnectorType {
 		com.google.enterprise.connector.spi.XmlUtils.xmlAppendAttrValuePair(attrName, attrValue, strBuf);
 		buf.append(strBuf.toString());
 	}
-	
+
 	/**
 	 * Gets the initial/blank config form.
 	 * 
@@ -430,16 +446,15 @@ public class DBConnectorType implements ConnectorType {
 		} catch (MissingResourceException e) {
 			resource = ResourceBundle.getBundle(LOCALE_DB);
 		}
-		ValidateUtil validator=new ValidateUtil(configKeys);
-        ConfigValidation configValidation=validator.validate(config,resource);
-		success=configValidation.validate();
-        if (success) {
+		ValidateUtil validator = new ValidateUtil(configKeys);
+		ConfigValidation configValidation = validator.validate(config, resource);
+		success = configValidation.validate();
+		if (success) {
 			try {
 				factory.makeConnector(config);
 			} catch (RepositoryException e) {
 				LOG.log(Level.INFO, "failed to create connector", e);
-				return new ConfigureResponse(
-						"Error creating connector: "
+				return new ConfigureResponse("Error creating connector: "
 						+ e.getMessage(), "");
 			}
 			return null;
