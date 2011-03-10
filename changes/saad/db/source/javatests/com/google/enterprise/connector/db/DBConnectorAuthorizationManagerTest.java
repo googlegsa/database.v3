@@ -1,4 +1,4 @@
-//Copyright 2009 Google Inc.
+//Copyright 2011 Google Inc.
 //
 //Licensed under the Apache License, Version 2.0 (the "License");
 //you may not use this file except in compliance with the License.
@@ -14,6 +14,9 @@
 
 package com.google.enterprise.connector.db;
 
+import com.google.enterprise.connector.db.diffing.DBClient;
+import com.google.enterprise.connector.db.diffing.DBConnectorAuthorizationManager;
+import com.google.enterprise.connector.db.diffing.DocIdUtil;
 import com.google.enterprise.connector.spi.AuthenticationIdentity;
 import com.google.enterprise.connector.spi.AuthorizationResponse;
 import com.google.enterprise.connector.spi.RepositoryException;
@@ -24,7 +27,7 @@ import java.util.Collection;
 public class DBConnectorAuthorizationManagerTest extends DBTestBase {
 	private DBConnectorAuthorizationManager authZmanager = null;
 
-	@Override
+    /* @Override */
 	protected void setUp() throws Exception {
 		super.setUp();
 		/*
@@ -36,57 +39,57 @@ public class DBConnectorAuthorizationManagerTest extends DBTestBase {
 		 */
 		runDBScript(LOAD_USER_DOC_MAP_TEST_DATA);
 
-		DBConnectorConfig dbConnectorConfig = getDBConnectorConfig();
-        authZmanager = new DBConnectorAuthorizationManager(dbConnectorConfig);
+        DBClient dbClient = getDbClient();
+		authZmanager = new DBConnectorAuthorizationManager(dbClient);
 	}
 
-	/**
+    /**
 	 * Test method authorizeDocdds
 	 */
 	public void testAuthorizeDocids() {
 
-		/*
+        /*
 		 * Create AuthenticationIdentity for user-name "user1"
 		 */
 		AuthenticationIdentity authNIdentity = new AuthenticationIdentity() {
 
-			private String userName = "user1";
+            private String userName = "user1";
 
-			public String getUsername() {
+            public String getUsername() {
 				return userName;
 			}
 
-			public String getPassword() {
+            public String getPassword() {
 				return null;
 			}
 
-			public String getDomain() {
+            public String getDomain() {
 				return null;
 			}
 		};
 
-		Collection<String> docIds = new ArrayList<String>();
+        Collection<String> docIds = new ArrayList<String>();
 
-		// build doc Ids for testing
+        // build doc Ids for testing
 		String docId1 = DocIdUtil.getBase64EncodedString("1");
 		String docId2 = DocIdUtil.getBase64EncodedString("2");
 		String docId3 = DocIdUtil.getBase64EncodedString("3");
 		String docId4 = DocIdUtil.getBase64EncodedString("4");
 
-		// add doc Ids in the collection of documents to be authorized.
+        // add doc Ids in the collection of documents to be authorized.
 		docIds.add(docId1);
 		docIds.add(docId2);
 		docIds.add(docId3);
 		docIds.add(docId4);
 
-		try {
+        try {
 			/*
 			 * authorized above collection of doc Ids for user-name "user1"
 			 */
 
-			Collection<AuthorizationResponse> authZResponce = authZmanager.authorizeDocids(docIds, authNIdentity);
+            Collection<AuthorizationResponse> authZResponce = authZmanager.authorizeDocids(docIds, authNIdentity);
 
-			assertNotNull(authZResponce);
+            assertNotNull(authZResponce);
 
 			/*
 			 * Iterate over collection of AuthorizationResponse and check for
@@ -97,11 +100,11 @@ public class DBConnectorAuthorizationManagerTest extends DBTestBase {
 			for (AuthorizationResponse responce : authZResponce) {
 				String docId = responce.getDocid();
 
-				if (docId1.equals(docId)) {
+                if (docId1.equals(docId)) {
 					assertTrue(responce.isValid());
 				}
 
-				if (docId2.equals(docId)) {
+                if (docId2.equals(docId)) {
 					assertFalse(responce.isValid());
 				}
 				if (docId3.equals(docId)) {
@@ -116,7 +119,7 @@ public class DBConnectorAuthorizationManagerTest extends DBTestBase {
 		}
 	}
 
-	@Override
+    /* @Override */
 	protected void tearDown() throws Exception {
 		// drop database table under test
 		runDBScript(DROP_USER_DOC_MAP_TABLE);

@@ -1,4 +1,4 @@
-//Copyright 2009 Google Inc.
+//Copyright 2011 Google Inc.
 //
 //Licensed under the Apache License, Version 2.0 (the "License");
 //you may not use this file except in compliance with the License.
@@ -14,6 +14,9 @@
 
 package com.google.enterprise.connector.db;
 
+import com.google.enterprise.connector.db.diffing.DBException;
+import com.google.enterprise.connector.db.diffing.DocIdUtil;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -28,7 +31,7 @@ public class DocIdUtilTest extends TestCase {
 	 */
 	public void testGetDocIdString() {
 
-		// doc Ids under test
+        // doc Ids under test
 		String docId1 = "1,Jan";
 		String docId2 = "2,Feb";
 		String docId3 = "3,Mar";
@@ -38,7 +41,7 @@ public class DocIdUtilTest extends TestCase {
 		docIds.add(docId2);
 		docIds.add(docId3);
 
-		// build expected Doc Id String
+        // build expected Doc Id String
 		String expectedDocIdString = "'" + docId1 + "'," + "'" + docId2 + "',"
 				+ "'" + docId3 + "'";
 		String actualDocIdString = DocIdUtil.getDocIdString(docIds);
@@ -46,7 +49,7 @@ public class DocIdUtilTest extends TestCase {
 		assertEquals(expectedDocIdString, actualDocIdString);
 	}
 
-	/**
+    /**
 	 *test method decodeBase64String
 	 */
 	public void testDecodeBase64String() {
@@ -58,7 +61,7 @@ public class DocIdUtilTest extends TestCase {
 		assertEquals(expectedString, decodedString);
 	}
 
-	/**
+    /**
 	 * test getBase64EncodedString method
 	 */
 	public void testGetBase64EncodedString() {
@@ -69,12 +72,12 @@ public class DocIdUtilTest extends TestCase {
 		assertEquals(expectedString, encodedString);
 	}
 
-	/**
+    /**
 	 *test generateDocId method.
 	 */
 	public void testGenerateDocId() {
 
-		/*
+        /*
 		 * create a row representing a row in database table.
 		 */
 		Map<String, Object> row = new HashMap<String, Object>();
@@ -83,7 +86,7 @@ public class DocIdUtilTest extends TestCase {
 		 */
 		String[] primaryKeys = new String[2];
 
-		String pkCol1 = "id";
+        String pkCol1 = "id";
 		String pkCol2 = "month";
 		/*
 		 * add "id" and "month" as primary key columns.
@@ -91,7 +94,7 @@ public class DocIdUtilTest extends TestCase {
 		primaryKeys[0] = pkCol1;
 		primaryKeys[1] = pkCol2;
 
-		/*
+        /*
 		 * put "id" and "month" column values in map along with other columns.
 		 */
 		row.put(pkCol1, 1);

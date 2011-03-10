@@ -1,4 +1,4 @@
-// Copyright 2009 Google Inc.
+// Copyright 2011 Google Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,6 +14,12 @@
 
 package com.google.enterprise.connector.db;
 
+import com.google.enterprise.connector.db.diffing.DBException;
+import com.google.enterprise.connector.db.diffing.XmlUtils;
+
+import org.w3c.dom.Document;
+import org.xml.sax.SAXException;
+
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.Map;
@@ -28,26 +34,23 @@ import javax.xml.transform.TransformerException;
 
 import junit.framework.TestCase;
 
-import org.w3c.dom.Document;
-import org.xml.sax.SAXException;
-
 public class XmlUtilsTest extends TestCase {
 	private Map<String, Object> rowMap;
 	private static final Logger LOG = Logger.getLogger(XmlUtilsTest.class.getName());
 
-	@Override
+    /* @Override */
 	protected void setUp() throws Exception {
 		super.setUp();
 		rowMap = TestUtils.getStandardDBRow();
 	}
 
-	@Override
+    /* @Override */
 	protected void tearDown() throws Exception {
 		rowMap.clear();
 		super.tearDown();
 	}
 
-	public final void testGetXMLRowNoXslt() {
+    public final void testGetXMLRowNoXslt() {
 		String expected = "<testdb_>"
 				+ "<title>Database Connector Result id=1 lastName=last_01 "
 				+ "</title><email>01@google.com</email>"
@@ -61,7 +64,7 @@ public class XmlUtilsTest extends TestCase {
 		}
 	}
 
-	public final void testGetXmlRowEmptyStylesheet() {
+    public final void testGetXmlRowEmptyStylesheet() {
 		String[] expectedPatterns = new String[] {
 				"<title>Database Connector Result id=1 lastName=last_01 </title>",
 				"<tr bgcolor=\"#9acd32\">", "<th>id</th>", "<th>lastName</th>",
@@ -76,9 +79,9 @@ public class XmlUtilsTest extends TestCase {
 		}
 	}
 
-	public final void testGetXmlRowWithXslt() {
+    public final void testGetXmlRowWithXslt() {
 
-		String xslt = "<?xml version=\"1.0\" encoding=\"ISO-8859-1\" "
+        String xslt = "<?xml version=\"1.0\" encoding=\"ISO-8859-1\" "
 				+ "standalone=\"no\"?><xsl:stylesheet xmlns:xsl="
 				+ "\"http://www.w3.org/1999/XSL/Transform\" version=\"1.0\">\n\n"
 				+ "<xsl:template match=\"/\">\n" + "  <html>\n" + "  <body>\n"
@@ -98,7 +101,7 @@ public class XmlUtilsTest extends TestCase {
 				+ "    </table>\n" + "  </body>\n" + "  </html>\n"
 				+ "</xsl:template>\n" + "</xsl:stylesheet>";
 
-		final String[] expectedPatterns = new String[] {
+        final String[] expectedPatterns = new String[] {
 				"<title>Database Connector Result id=1 lastName=.*</title>",
 				"<td>01@google.com</td>", "<td>first_01</td>", "<td>1</td>",
 				"<td>last_01</td>" };
@@ -110,7 +113,7 @@ public class XmlUtilsTest extends TestCase {
 		}
 	}
 
-	public final void testGetStringFromDomDcoument() {
+    public final void testGetStringFromDomDcoument() {
 		String expected = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>"
 				+ "<testdb_>"
 				+ "<title>Database Connector Result id=1 lastName=last_01 </title>"
@@ -139,7 +142,7 @@ public class XmlUtilsTest extends TestCase {
 		}
 	}
 
-	public final void testGetDocFromBase64Xslt() {
+    public final void testGetDocFromBase64Xslt() {
 		String expectedXslt = "<?xml version=\"1.0\" encoding=\"UTF-8\""
 				+ "?><xsl:stylesheet xmlns:xsl="
 				+ "\"http://www.w3.org/1999/XSL/Transform\" version=\"1.0\">\n\n"
@@ -160,7 +163,7 @@ public class XmlUtilsTest extends TestCase {
 				+ "    </table>\n" + "  </body>\n" + "  </html>\n"
 				+ "</xsl:template>\n" + "</xsl:stylesheet>";
 
-		String[] expectedPatterns = new String[] {
+        String[] expectedPatterns = new String[] {
 				"<xsl:for-each select=\"testdb_\">",
 				"<title><xsl:value-of select=\"title\"/></title>",
 				"<tr bgcolor=\"#9acd32\">", "<th>First Name</th>",
@@ -181,7 +184,7 @@ public class XmlUtilsTest extends TestCase {
 		}
 	}
 
-	/**
+    /**
 	 * Method search for pattern in document string. It gives an assertion error
 	 * when accepted pattern does not found in document string.
 	 * 
@@ -192,10 +195,10 @@ public class XmlUtilsTest extends TestCase {
 	private void assertCheckPatterns(final String docStringUnderTest,
 			final String[] expectedPatterns) {
 
-		Pattern pattern = null;
+        Pattern pattern = null;
 		Matcher match = null;
 
-		for (String strPattern : expectedPatterns) {
+        for (String strPattern : expectedPatterns) {
 			LOG.info("Checking for pattern  :   " + strPattern + "  ...");
 			pattern = Pattern.compile(strPattern);
 			match = pattern.matcher(docStringUnderTest);

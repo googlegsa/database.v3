@@ -1,4 +1,4 @@
-// Copyright 2009 Google Inc.
+// Copyright 2011 Google Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,14 +14,18 @@
 
 package com.google.enterprise.connector.db;
 
+
+import com.google.enterprise.connector.db.diffing.DBContext;
+import com.google.enterprise.connector.db.diffing.DBException;
+import com.google.enterprise.connector.db.diffing.JsonDocument;
+import com.google.enterprise.connector.db.diffing.Util;
+import com.google.enterprise.connector.traversal.ProductionTraversalContext;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
-
-import com.google.enterprise.connector.diffing.JsonDocument;
-import com.google.enterprise.connector.traversal.ProductionTraversalContext;
 
 /**
  * Utility class for unittests.
@@ -42,15 +46,15 @@ public class TestUtils {
 	public static final String DB_TYPE_DB2 = "db2";
 	public static final String DB_TYPE_SYBASE = "sybase";
 
-	// This class is not instantiable.
+    // This class is not instantiable.
 	private TestUtils() {
 	}
 
-	public static Map<String, Object> getStandardDBRow() {
+    public static Map<String, Object> getStandardDBRow() {
 		return getRow(1, "first_01", "last_01", "01@google.com");
 	}
 
-	/**
+    /**
 	 * Creates a Map Object for a row as returned by the executing a query on a
 	 * DB.
 	 */
@@ -65,14 +69,14 @@ public class TestUtils {
 		return rowMap;
 	}
 
-	public static String[] getStandardPrimaryKeys() {
+    public static String[] getStandardPrimaryKeys() {
 		String[] primaryKeys = new String[2];
 		primaryKeys[0] = "id";
 		primaryKeys[1] = "lastName";
 		return primaryKeys;
 	}
 
-	public static List<Map<String, Object>> getDBRows() {
+    public static List<Map<String, Object>> getDBRows() {
 		final List<Map<String, Object>> rows;
 		rows = new ArrayList<Map<String, Object>>();
 		rows.add(getRow(1, "first_01", "last_01", "01@google.com"));
@@ -82,14 +86,14 @@ public class TestUtils {
 		return rows;
 	}
 
-	public static JsonDocument createDBDoc(int id, String firstName,
+    public static JsonDocument createDBDoc(int id, String firstName,
 			String lastName, String email) throws DBException {
 		ProductionTraversalContext context = new ProductionTraversalContext();
-		JsonDocument jsonDoc = Util.rowToDoc("testdb_", TestUtils.getStandardPrimaryKeys(), getRow(id, firstName, lastName, email), "localhost", null, null,context);
+		JsonDocument jsonDoc = Util.rowToDoc("testdb_", TestUtils.getStandardPrimaryKeys(), getRow(id, firstName, lastName, email), "localhost", null, null, context);
 		return jsonDoc;
 	}
 
-	public static Map<String, String> getTypeDriverMap() {
+    public static Map<String, String> getTypeDriverMap() {
 		// Keep it in sync with connectorInstance.xml
 		Map<String, String> dbTypeDriver = new HashMap<String, String>();
 		dbTypeDriver.put(DB_TYPE_MYSQL, "com.mysql.jdbc.Driver");
@@ -100,9 +104,9 @@ public class TestUtils {
 		return dbTypeDriver;
 	}
 
-	public static DBContext getDBContext() throws DBException {
+    public static DBContext getDBContext() throws DBException {
 
-		String connectionUrl = "";
+        String connectionUrl = "";
 		String hostname = "";
 		String driverClassName = "";
 		String login = "";
@@ -117,12 +121,12 @@ public class TestUtils {
 		String fetchURLField = "fetchURL";
 		String extMetadataType = "";
 
-		DBContext dbContext = new DBContext(connectionUrl, hostname,
+        DBContext dbContext = new DBContext(connectionUrl, hostname,
 				driverClassName, login, password, dbName, lastModifiedDate,
 				documentTitle, documentURLField, documentIdField, baseURL,
 				lobField, fetchURLField, extMetadataType);
 
-		return dbContext;
+        return dbContext;
 
-	}
+    }
 }

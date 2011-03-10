@@ -1,4 +1,4 @@
-//Copyright 2009 Google Inc.
+//Copyright 2011 Google Inc.
 //
 //Licensed under the Apache License, Version 2.0 (the "License");
 //you may not use this file except in compliance with the License.
@@ -23,7 +23,6 @@ import java.util.ResourceBundle;
 public class LanguageResource {
 
 
-	
 	/**
 	 * @param key this is the name of the property you want to access
 	 * @return value of the requested property.
@@ -32,6 +31,6 @@ public class LanguageResource {
 		String value = "";
 		ResourceBundle bundle = ResourceBundle.getBundle("com.google.enterprise.connector.db.config.DatabaseConfiguration");
 		value = bundle.getString(key);
-				return value;
+		return value;
 	}
 }
