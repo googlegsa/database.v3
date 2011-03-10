@@ -2,111 +2,117 @@
 <!DOCTYPE beans PUBLIC "-//SPRING//DTD BEAN//EN" "http://www.springframework.org/dtd/spring-beans.dtd">
 <beans>
 
-  <bean id = "db-connector-config"
-        class = "com.google.enterprise.connector.db.DBConnectorConfig">
+    <bean id="db-context" class="com.google.enterprise.connector.db.diffing.DBContext">
         <constructor-arg index="0" value="${connectionUrl}"></constructor-arg>
         <constructor-arg index="1" value="${hostname}"></constructor-arg>
         <constructor-arg index="2" value="${driverClassName}"></constructor-arg>
         <constructor-arg index="3" value="${login}"></constructor-arg>
         <constructor-arg index="4" value="${password}"></constructor-arg>
         <constructor-arg index="5" value="${dbName}"></constructor-arg>
-        <constructor-arg index="6" value="${sqlQuery}"></constructor-arg>
-        <constructor-arg index="7" value="${googleConnectorWorkDir}"></constructor-arg>
-        <constructor-arg index="8" value="${primaryKeysString}"></constructor-arg>
-        <constructor-arg index="9" value="${xslt}"></constructor-arg>
-        <constructor-arg index="10" value="${authZQuery}"></constructor-arg>
-        <constructor-arg index="11" value="${lastModifiedDate}"></constructor-arg>
-        <constructor-arg index="12" value="${documentTitle}"></constructor-arg>
-        <constructor-arg index="13" value="${documentURLField}"></constructor-arg>
-        <constructor-arg index="14" value="${documentIdField}"></constructor-arg>
-        <constructor-arg index="15" value="${baseURL}"></constructor-arg>
-        <constructor-arg index="16" value="${lobField}"></constructor-arg>
-        <constructor-arg index="17" value="${fetchURLField}"></constructor-arg>
-        <constructor-arg index="18" value="${extMetadataType}"></constructor-arg>
-  </bean>
+        <constructor-arg index="6" value="${lastModifiedDate}"></constructor-arg>
+        <constructor-arg index="7" value="${documentTitle}"></constructor-arg>
+        <constructor-arg index="8" value="${documentURLField}"></constructor-arg>
+        <constructor-arg index="9" value="${documentIdField}"></constructor-arg>
+        <constructor-arg index="10" value="${baseURL}"></constructor-arg>
+        <constructor-arg index="11" value="${lobField}"></constructor-arg>
+        <constructor-arg index="12" value="${fetchURLField}"></constructor-arg>
+        <constructor-arg index="13" value="${extMetadataType}"></constructor-arg>
+    </bean>
 
- <bean id="traversal-context-manager"
-    class="com.google.enterprise.connector.util.diffing.TraversalContextManager"
-    singleton="true">
-  </bean>	
- 	
-  <bean id="repository-handler"
-    class="com.google.enterprise.connector.diffing.RepositoryHandler"
-    factory-method="makeRepositoryHandlerFromConfig">
-    <constructor-arg ref="db-connector-config" />
-  	<constructor-arg ref="traversal-context-manager" />
-  	<!--Parameter for fetching number of rows in a single call to the repository -->
-  	<constructor-arg index="2" value="500"></constructor-arg>
-  </bean>
-  
- 
-  
+    <bean id="db-client" class="com.google.enterprise.connector.db.diffing.DBClient">
+        <constructor-arg index="0" ref="db-context" />
+        <constructor-arg index="1" value="${sqlQuery}"></constructor-arg>
+        <constructor-arg index="2" value="${googleConnectorWorkDir}"></constructor-arg>
+        <constructor-arg index="3" value="${primaryKeysString}"></constructor-arg>
+        <constructor-arg index="4" value="${authZQuery}"></constructor-arg>
+    </bean>
 
-  <bean id="db-document-snapshot-repository-list"
-    class="com.google.enterprise.connector.diffing.DBDocumentSnapshotRepositoryList"
-    singleton="true">
-    <constructor-arg ref="repository-handler" />
-  </bean>
+    <bean id="traversal-context-manager"
+        class="com.google.enterprise.connector.util.diffing.TraversalContextManager"
+        singleton="true">
+    </bean>
 
-  <bean id="change-queue" class=" com.google.enterprise.connector.util.diffing.ChangeQueue">
-    <constructor-arg index="0" value="100" />
-    <constructor-arg index="1" value="10000" />
-  </bean>
+    <bean id="repository-handler"
+        class="com.google.enterprise.connector.db.diffing.RepositoryHandler"
+        factory-method="makeRepositoryHandlerFromConfig">
+        <constructor-arg index="0" ref="db-client" />
+        <constructor-arg index="1" ref="traversal-context-manager" />
+        <!--
+            Parameter for fetching number of rows in a single call to the
+            repository
+        -->
+        <constructor-arg index="2" value="500"></constructor-arg>
+         <constructor-arg index="3" value="${xslt}"></constructor-arg>
+    </bean>
 
-  <bean id="queue-dir" class="java.io.File" singleton="false">
-    <constructor-arg index="0" value="${googleConnectorWorkDir}/queue" />
-  </bean>
+    <bean id="db-document-snapshot-repository-list"
+        class="com.google.enterprise.connector.db.diffing.DBDocumentSnapshotRepositoryList"
+        singleton="true">
+        <constructor-arg ref="repository-handler" />
+    </bean>
 
-  <bean id="snapshot-dir" class="java.io.File" singleton="false">
-    <constructor-arg index="0" value="${googleConnectorWorkDir}/snapshots" />
-  </bean>
+    <bean id="change-queue"
+        class=" com.google.enterprise.connector.util.diffing.ChangeQueue">
+        <constructor-arg index="0" value="100" />
+        <constructor-arg index="1" value="10000" />
+    </bean>
 
-  <bean id="internal-document-handle-factory"
-    class=" com.google.enterprise.connector.util.diffing.DeleteDocumentHandleFactory"
-    singleton="true">
-  </bean>
+    <bean id="queue-dir" class="java.io.File" singleton="false">
+        <constructor-arg index="0"
+            value="${googleConnectorWorkDir}/queue" />
+    </bean>
 
-   
-  
-  <bean id="db-class-factory" class="com.google.enterprise.connector.diffing.DBClassFactory"
-    singleton="true">
-  </bean>
-  
-   
+    <bean id="snapshot-dir" class="java.io.File" singleton="false">
+        <constructor-arg index="0"
+            value="${googleConnectorWorkDir}/snapshots" />
+    </bean>
 
-  <bean id="checkpoint-and-change-queue"
-    class="com.google.enterprise.connector.util.diffing.CheckpointAndChangeQueue">
-    <constructor-arg ref="change-queue" />
-    <constructor-arg ref="queue-dir" />
-    <constructor-arg ref="internal-document-handle-factory" />
-    <constructor-arg ref="db-class-factory" />
-  </bean>
+    <bean id="internal-document-handle-factory"
+        class=" com.google.enterprise.connector.util.diffing.DeleteDocumentHandleFactory"
+        singleton="true">
+    </bean>
 
-  <bean id="checksum-generator" class="com.google.enterprise.connector.util.BasicChecksumGenerator">
-    <constructor-arg index="0" value="SHA1" />
-  </bean>
- 
-  <bean id="authz" class="com.google.enterprise.connector.db.DBConnectorAuthorizationManager"
-    singleton="false">
-   <constructor-arg ref="db-connector-config" />
-  </bean>
+    <bean id="db-class-factory"
+        class="com.google.enterprise.connector.db.diffing.DBClassFactory"
+        singleton="true">
+    </bean>
 
-  <bean id="monitor-manager"
-    class="com.google.enterprise.connector.util.diffing.DocumentSnapshotRepositoryMonitorManagerImpl"
-    singleton="true">
-    <constructor-arg ref="db-document-snapshot-repository-list" />
-    <constructor-arg ref="db-class-factory" />
-    <constructor-arg ref="snapshot-dir" />
-    <constructor-arg ref="checksum-generator" />
-    <constructor-arg ref="change-queue" />
-    <constructor-arg ref="checkpoint-and-change-queue" />
-  </bean>
+    <bean id="checkpoint-and-change-queue"
+        class="com.google.enterprise.connector.util.diffing.CheckpointAndChangeQueue">
+        <constructor-arg ref="change-queue" />
+        <constructor-arg ref="queue-dir" />
+        <constructor-arg ref="internal-document-handle-factory" />
+        <constructor-arg ref="db-class-factory" />
+    </bean>
 
-  <bean id="db-connector" class="com.google.enterprise.connector.util.diffing.DiffingConnector"
-    singleton="false">
-    <constructor-arg ref="authz" />
-    <constructor-arg ref="monitor-manager" />
-    <constructor-arg ref="traversal-context-manager" />
-  </bean>
+    <bean id="checksum-generator"
+        class="com.google.enterprise.connector.util.BasicChecksumGenerator">
+        <constructor-arg index="0" value="SHA1" />
+    </bean>
+
+    <bean id="authz"
+        class="com.google.enterprise.connector.db.diffing.DBConnectorAuthorizationManager"
+        singleton="false">
+        <constructor-arg ref="db-client" />
+    </bean>
+
+    <bean id="monitor-manager"
+        class="com.google.enterprise.connector.util.diffing.DocumentSnapshotRepositoryMonitorManagerImpl"
+        singleton="true">
+        <constructor-arg ref="db-document-snapshot-repository-list" />
+        <constructor-arg ref="db-class-factory" />
+        <constructor-arg ref="snapshot-dir" />
+        <constructor-arg ref="checksum-generator" />
+        <constructor-arg ref="change-queue" />
+        <constructor-arg ref="checkpoint-and-change-queue" />
+    </bean>
+
+    <bean id="db-connector"
+        class="com.google.enterprise.connector.util.diffing.DiffingConnector"
+        singleton="false">
+        <constructor-arg ref="authz" />
+        <constructor-arg ref="monitor-manager" />
+        <constructor-arg ref="traversal-context-manager" />
+    </bean>
 
 </beans>

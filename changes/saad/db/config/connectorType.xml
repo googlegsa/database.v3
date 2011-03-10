@@ -2,7 +2,7 @@
 <!DOCTYPE beans PUBLIC "-//SPRING//DTD BEAN//EN"
    "http://www.springframework.org/dtd/spring-beans.dtd">
 <beans>
-    <bean id="DBConnector" class="com.google.enterprise.connector.db.DBConnectorType">
+    <bean id="DBConnector" class="com.google.enterprise.connector.db.diffing.DBConnectorType">
         <constructor-arg>
             <set>
                 <value>login</value>
