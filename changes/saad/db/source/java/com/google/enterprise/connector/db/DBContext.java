@@ -1,4 +1,4 @@
-// Copyright 2009 Google Inc.
+// Copyright 2011 Google Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,118 +14,165 @@
 
 package com.google.enterprise.connector.db;
 
+import java.util.logging.Logger;
+
 /**
- * This is mostly a data holder class for a particular database connection.
+ * An encapsulation of all the config needed for a working Database Connector
+ * instance.
  */
 public class DBContext {
-	private final String connectionUrl;
-	private final String hostname;
-	private final String login;
-	private final String password;
-	private final String dbName;
-	private final String driverClassName;
+    private static final Logger LOG = Logger.getLogger(DBContext.class.getName());
+    private final String connectionUrl;
+    private final String hostname;
+    private final String login;
+    private final String password;
+    private final String dbName;
+    private final String sqlQuery;
+    private final String authZQuery;
+    private final String googleConnectorWorkDir;
+    private final String[] primaryKeys;
+    private final String xslt;
+    private final String driverClassName;
+    private String documentURLField;
+    private String documentIdField;
+    private String baseURL;
+    private String lobField;
+    private String fetchURLField;
+    private String lastModifiedDate;
+    private String documentTitle;
+    private String extMetadataType;
+	private int NO_OF_ROWS = 200;
+    private boolean publicFeed = true;
 
-	private String documentURLField;
-	private String documentIdField;
-	private String baseURL;
-	private String lobField;
-	private String fetchURLField;
-	private String lastModifiedDate;
-	private String documentTitle;
-	private String extMetadataType;
+    public DBContext(String connectionUrl, String hostname,
+            String driverClassName, String login, String password,
+            String dbName, String sqlQuery, String googleConnectorWorkDir,
+            String primaryKeysString, String xslt, String authZQuery,
+            String lastModifiedDate, String documentTitle,
+            String documentURLField, String documentIdField, String baseURL,
+            String lobField, String fetchURLField, String extMetadataType,
+            String noOfRows) {
 
-	private boolean publicFeed = true;
+        this.connectionUrl = connectionUrl;
+        this.hostname = hostname;
+        this.driverClassName = driverClassName;
+        this.login = login;
+        this.password = password;
+        this.dbName = dbName;
+        this.sqlQuery = sqlQuery;
+        this.googleConnectorWorkDir = googleConnectorWorkDir;
+        this.primaryKeys = primaryKeysString.split(Util.PRIMARY_KEYS_SEPARATOR);;
+        this.xslt = xslt;
+        this.authZQuery = authZQuery;
+        this.extMetadataType = extMetadataType;
+        this.documentURLField = documentURLField;
+        this.documentIdField = documentIdField;
+        this.baseURL = baseURL;
+        this.lobField = lobField;
+        this.fetchURLField = fetchURLField;
+        this.lastModifiedDate = lastModifiedDate;
+        this.documentTitle = documentTitle;
+        try {
+            this.NO_OF_ROWS = Integer.parseInt(noOfRows);
+        } catch (Exception e) {
+			LOG.warning("Number Format Exception while setting the no of rows to be fetched");
+        }
 
-	public DBContext(String connectionUrl, String hostname,
-			String driverClassName, String login, String password,
-			String dbName, String lastModifiedDate, String documentTitle,
-			String documentURLField, String documentIdField, String baseURL,
-			String lobField, String fetchURLField, String extMetadataType) {
+    }
 
-		this.connectionUrl = connectionUrl;
-		this.hostname = hostname;
-		this.driverClassName = driverClassName;
-		this.login = login;
-		this.password = password;
-		this.dbName = dbName;
+    public int getNO_OF_ROWS() {
+        return NO_OF_ROWS;
+    }
 
-		this.extMetadataType = extMetadataType;
-		this.documentURLField = documentURLField;
-		this.documentIdField = documentIdField;
-		this.baseURL = baseURL;
-		this.lobField = lobField;
-		this.fetchURLField = fetchURLField;
+    public void setNO_OF_ROWS(int nOOFROWS) {
+        NO_OF_ROWS = nOOFROWS;
+    }
 
-		this.lastModifiedDate = lastModifiedDate;
-		this.documentTitle = documentTitle;
+    public String getGoogleConnectorWorkDir() {
+        return googleConnectorWorkDir;
+    }
 
-	}
+    public void setExtMetadataType(String extMetadataType) {
+        this.extMetadataType = extMetadataType;
+    }
 
-	public void setExtMetadataType(String extMetadataType) {
-		this.extMetadataType = extMetadataType;
-	}
+    public String getConnectionUrl() {
+        return connectionUrl;
+    }
 
-	public String getConnectionUrl() {
-		return connectionUrl;
-	}
+    public String getHostname() {
+        return hostname;
+    }
 
-	public String getHostname() {
-		return hostname;
-	}
+    public String getSqlQuery() {
+        return sqlQuery;
+    }
 
-	public String getLogin() {
-		return login;
-	}
+    public String getAuthZQuery() {
+        return authZQuery;
+    }
 
-	public String getPassword() {
-		return password;
-	}
+	public String[] getPrimaryKeys() {
+		return primaryKeys;
+    }
 
-	public String getDbName() {
-		return dbName;
-	}
+    public String getXslt() {
+        return xslt;
+    }
 
-	public String getDriverClassName() {
-		return driverClassName;
-	}
+    public String getLogin() {
+        return login;
+    }
 
-	public String getLastModifiedDate() {
-		return lastModifiedDate;
-	}
+    public String getPassword() {
+        return password;
+    }
 
-	public String getDocumentTitle() {
-		return documentTitle;
-	}
+    public String getDbName() {
+        return dbName;
+    }
 
-	public String getExtMetadataType() {
-		return extMetadataType;
-	}
+    public String getDriverClassName() {
+        return driverClassName;
+    }
 
-	public String getDocumentURLField() {
-		return documentURLField;
-	}
+    public String getLastModifiedDate() {
+        return lastModifiedDate;
+    }
 
-	public String getDocumentIdField() {
-		return documentIdField;
-	}
+    public String getDocumentTitle() {
+        return documentTitle;
+    }
 
-	public String getBaseURL() {
-		return baseURL;
-	}
+    public String getExtMetadataType() {
+        return extMetadataType;
+    }
 
-	public String getLobField() {
-		return lobField;
-	}
+    public String getDocumentURLField() {
+        return documentURLField;
+    }
 
-	public String getFetchURLField() {
-		return fetchURLField;
-	}
+    public String getDocumentIdField() {
+        return documentIdField;
+    }
 
-	public boolean isPublicFeed() {
-		return publicFeed;
-	}
+    public String getBaseURL() {
+        return baseURL;
+    }
 
-	public void setPublicFeed(boolean publicFeed) {
-		this.publicFeed = publicFeed;
-	}
+    public String getLobField() {
+        return lobField;
+    }
+
+    public String getFetchURLField() {
+        return fetchURLField;
+    }
+
+    public boolean isPublicFeed() {
+        return publicFeed;
+    }
+
+    public void setPublicFeed(boolean publicFeed) {
+        this.publicFeed = publicFeed;
+    }
 }

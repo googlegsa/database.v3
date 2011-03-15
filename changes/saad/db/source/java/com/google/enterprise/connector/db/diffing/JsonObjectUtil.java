@@ -53,9 +53,8 @@ public class JsonObjectUtil {
 				jsonObject.put(propertyName, new SimpleProperty(
 						Collections.singletonList(Value.getStringValue(propertyValue))).nextValue().toString());
 			} catch (JSONException e) {
-				// TODO Auto-generated catch block
-				LOG.warning("JSONException for " + propertyName
-						+ " with value " + propertyValue);
+				LOG.warning("Exception for " + propertyName + " with value "
+						+ propertyValue + "\n" + e);
 			}
 		}
 	}
@@ -79,8 +78,8 @@ public class JsonObjectUtil {
 					Collections.singletonList(Value.getDateValue(cal))).nextValue().toString());
 		} catch (JSONException e) {
 
-            LOG.warning("JSONException for " + propertyName + " with value "
-					+ propertyValue);
+            LOG.warning("Exception for " + propertyName + " with value "
+					+ propertyValue + "\n" + e);
 		}
 	}
 
@@ -99,9 +98,8 @@ public class JsonObjectUtil {
 			jsonObject.put(propertyName, new SimpleProperty(
 					Collections.singletonList(Value.getBinaryValue((byte[]) propertyValue))).nextValue().toString());
 		} catch (JSONException e) {
-			// TODO Auto-generated catch block
-			LOG.warning("JSONException for " + propertyName + " with value "
-					+ propertyValue);
+			LOG.warning("Exception for " + propertyName + " with value "
+					+ propertyValue + "\n" + e);
 		}
 	}
 

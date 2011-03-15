@@ -97,7 +97,8 @@ public class JsonDocument extends SimpleDocument {
         try {
             ja = (String) jo.get(key);
         } catch (JSONException e) {
-			LOG.warning("JSONException thrown while extracting key: " + key);
+			LOG.warning("Exception thrown while extracting key: " + key + "\n"
+					+ e);
             return;
         }
         ImmutableList.Builder<Value> builder = new ImmutableList.Builder<Value>();
@@ -114,7 +115,7 @@ public class JsonDocument extends SimpleDocument {
         String docid;
         try {
             docid = jo.getString(SpiConstants.PROPNAME_DOCID);
-        } catch (JSONException e) {
+		} catch (Exception e) {
             throw new IllegalArgumentException(
                     "Internal consistency error: missing docid", e);
         }

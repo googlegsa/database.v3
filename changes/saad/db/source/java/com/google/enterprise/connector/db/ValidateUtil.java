@@ -1,4 +1,4 @@
-// Copyright 2009 Google Inc.
+// Copyright 2011 Google Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,7 +16,9 @@ package com.google.enterprise.connector.db;
 
 
 import com.google.enterprise.connector.spi.ConnectorType;
+
 import com.ibatis.common.jdbc.SimpleDataSource;
+
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
@@ -47,8 +49,7 @@ public class ValidateUtil  {
 	// Red asterisk for required fields.
 	public static final String RED_ASTERISK = "<font color=\"RED\">*</font>";
 
-	
-	private static final String PASSWORD = "password";
+    private static final String PASSWORD = "password";
 	public static final String BOLD_TEXT_START = "<b>";
 	public static final String BOLD_TEXT_END = "</b>";
     public static final String COMPLETE_URL = "url";
@@ -72,10 +73,9 @@ public class ValidateUtil  {
 	private static final String BASE_URL = "baseURL";
 	private static final String CLOB_BLOB_FIELD = "lobField";
 	private static final String FETCH_URL_FIELD = "fetchURLField";
-		public static final String NO_EXT_METADATA = "noExt";
+	public static final String NO_EXT_METADATA = "noExt";
 
-
-	private final Set<String> configKeys;
+    private final Set<String> configKeys;
 	/*
 	 * List of required fields.
 	 */
@@ -83,7 +83,7 @@ public class ValidateUtil  {
 			CONNECTION_URL, DB_NAME, LOGIN, DRIVER_CLASS_NAME, SQL_QUERY,
 			PRIMARY_KEYS_STRING });
 
-	/**
+    /**
 	 * @param configKeys names of required configuration variables.
 	 */
 	public ValidateUtil(Set<String> configKeys) {
@@ -93,11 +93,7 @@ public class ValidateUtil  {
 		this.configKeys = configKeys;
 	}
 
-	
-	
-
-
-	/**
+    /**
 	 * Tests the connectivity to the database.
 	 */
 	private static class TestDbFields implements ConfigValidation {
@@ -106,7 +102,7 @@ public class ValidateUtil  {
 		private static final String JDBC_USERNAME_STR = "JDBC.Username";
 		private static final String JDBC_PASSWORD_STR = "JDBC.Password";
 
-		private String driverClassName = null;
+        private String driverClassName = null;
 		private String login = null;
 		private String connectionUrl = null;
 		private String password = null;
@@ -117,21 +113,21 @@ public class ValidateUtil  {
 		private ResourceBundle res;
 		List<String> columnNames = new ArrayList<String>();
 
-		private static final String USERNAME_PLACEHOLDER = "#username#";
+        private static final String USERNAME_PLACEHOLDER = "#username#";
 		private static final String DOCI_IDS_PLACEHOLDER = "$docIds$";
 
-		Statement stmt = null;
+        Statement stmt = null;
 		Connection conn = null;
 		ResultSet resultSet = null;
 		boolean result = false;
 		SimpleDataSource sds = null;
 
-		public TestDbFields(Map<String, String> config, ResourceBundle res) {
+        public TestDbFields(Map<String, String> config, ResourceBundle res) {
 			this.config = config;
 			this.res = res;
 		}
 
-		private boolean testDriverClass() {
+        private boolean testDriverClass() {
 			if (driverClassName != null && connectionUrl != null
 					&& login != null && password != null) {
 				Map<String, String> jdbcProps = new TreeMap<String, String>();
@@ -140,7 +136,7 @@ public class ValidateUtil  {
 				jdbcProps.put(JDBC_USERNAME_STR, login);
 				jdbcProps.put(JDBC_PASSWORD_STR, password);
 
-				/*
+                /*
 				 * to test JDBC driver class
 				 */
 				try {
@@ -154,12 +150,12 @@ public class ValidateUtil  {
 			}
 			result = sds != null;
 
-			return result;
+            return result;
 		}
 
-		private boolean testDBConnectivity() {
+        private boolean testDBConnectivity() {
 
-			/*
+            /*
 			 * below if block is for testing connection with the database with
 			 * given values of input parameters.
 			 */
@@ -177,12 +173,12 @@ public class ValidateUtil  {
 				}
 			}
 
-			result = conn != null;
+            result = conn != null;
 
-			return result;
+            return result;
 		}
 
-		private boolean validateSQLCrawlQuery() {
+        private boolean validateSQLCrawlQuery() {
 
 			/*
 			 * Block to test SQL query. SQL query should be of type SELECT, it
@@ -207,32 +203,32 @@ public class ValidateUtil  {
 				}
 			}
 
-			return result;
+            return result;
 		}
 
-		/**
+        /**
 		 * @return true if all primary key
 		 */
 
-		private boolean validatePrimaryKeyColumns() {
+        private boolean validatePrimaryKeyColumns() {
 			boolean flag = false;
 
-			try {
+            try {
 				resultSet = stmt.getResultSet();
 				if (resultSet != null) {
 
-					ResultSetMetaData rsMeta = resultSet.getMetaData();
+                    ResultSetMetaData rsMeta = resultSet.getMetaData();
 					int columnCount = rsMeta.getColumnCount();
 
-					// copy column names
+                    // copy column names
 					for (int i = 1; i <= columnCount; i++) {
 						String colName = rsMeta.getColumnLabel(i);
 						columnNames.add(colName);
 					}
 
-					String[] primaryKeys = config.get(PRIMARY_KEYS_STRING).split(",");
+                    String[] primaryKeys = config.get(PRIMARY_KEYS_STRING).split(",");
 
-					for (String key : primaryKeys) {
+                    for (String key : primaryKeys) {
 						flag = false;
 						for (int i = 1; i <= columnCount; i++) {
 							if (key.trim().equalsIgnoreCase(rsMeta.getColumnLabel(i))) {
@@ -258,7 +254,7 @@ public class ValidateUtil  {
 			return flag;
 		}
 
-		/**
+        /**
 		 * This method search for expected placeholders(#username# and $docIds$)
 		 * in authZ query and validates authZ query syntax.
 		 * 
@@ -306,19 +302,19 @@ public class ValidateUtil  {
 						stmt.close();
 					}
 
-				} catch (SQLException e) {
+                } catch (SQLException e) {
 					LOG.warning("Caught SQLException " + e.toString());
 				}
 
-			} else {
+            } else {
 				message = res.getString(INVALID_AUTH_QUERY);
 				problemFields.add(AUTHZ_QUERY);
 			}
 
-			return flag;
+            return flag;
 		}
 
-		/**
+        /**
 		 * This method validate the names
 		 * 
 		 * @return true if external metadata related columns are there SQL crawl
@@ -326,12 +322,12 @@ public class ValidateUtil  {
 		 */
 		private boolean validateExternalMetadataFields() {
 
-			boolean result = true;
+            boolean result = true;
 
-			// validate Document URL field
+            // validate Document URL field
 			String documentURLField = config.get(DOCUMENT_URL_FIELD);
 
-			if (documentURLField != null
+            if (documentURLField != null
 					&& documentURLField.trim().length() > 0) {
 				if (!columnNames.contains(documentURLField.trim())) {
 					result = false;
@@ -340,11 +336,11 @@ public class ValidateUtil  {
 				}
 			}
 
-			// validate DocID and Base URL fields
+            // validate DocID and Base URL fields
 			String documentIdField = config.get(DOCUMENT_ID_FIELD);
 			String baseURL = config.get(BASE_URL);
 
-			// check if Base URL field exists without DocId Field
+            // check if Base URL field exists without DocId Field
 			if ((baseURL != null && baseURL.trim().length() > 0)
 					&& (documentIdField == null || documentIdField.trim().length() == 0)) {
 				result = false;
@@ -355,7 +351,7 @@ public class ValidateUtil  {
 			// Validate documnet ID column name
 			if (documentIdField != null && documentIdField.trim().length() > 0) {
 
-				if (!columnNames.contains(documentIdField)) {
+                if (!columnNames.contains(documentIdField)) {
 					result = false;
 					message = res.getString(INVALID_COLUMN_NAME);
 					problemFields.add(DOCUMENT_ID_FIELD);
@@ -367,13 +363,13 @@ public class ValidateUtil  {
 					problemFields.add(BASE_URL);
 				}
 
-			}
+            }
 
-			// validate BLOB/CLOB and Fetch URL field
+            // validate BLOB/CLOB and Fetch URL field
 			String blobClobField = config.get(CLOB_BLOB_FIELD);
 			String fetchURL = config.get(FETCH_URL_FIELD);
 
-			// check if Fetch URL field exists without BLOB/CLOB Field
+            // check if Fetch URL field exists without BLOB/CLOB Field
 			if ((fetchURL != null && fetchURL.trim().length() > 0)
 					&& (blobClobField == null || blobClobField.trim().length() == 0)) {
 				result = false;
@@ -382,7 +378,7 @@ public class ValidateUtil  {
 				problemFields.add(CLOB_BLOB_FIELD);
 			}
 
-			// check for valid BLOB/CLOB column name
+            // check for valid BLOB/CLOB column name
 			if (blobClobField != null && blobClobField.trim().length() > 0) {
 				if (!columnNames.contains(blobClobField)) {
 					result = false;
@@ -390,7 +386,7 @@ public class ValidateUtil  {
 					problemFields.add(CLOB_BLOB_FIELD);
 				}
 
-				if (fetchURL != null && fetchURL.trim().length() > 0
+                if (fetchURL != null && fetchURL.trim().length() > 0
 						&& !columnNames.contains(fetchURL)) {
 					result = false;
 					message = res.getString(INVALID_COLUMN_NAME);
@@ -398,10 +394,10 @@ public class ValidateUtil  {
 				}
 			}
 
-			return result;
+            return result;
 		}
 
-		/**
+        /**
 		 *This method validates the name of the document title column
 		 * 
 		 * @return true if result set contains the document title column entered
@@ -418,7 +414,7 @@ public class ValidateUtil  {
 			return result;
 		}
 
-		/**
+        /**
 		 * This method validates the name of last modified date column
 		 * 
 		 * @return true if result set contains the last modified date column
@@ -435,19 +431,21 @@ public class ValidateUtil  {
 			return result;
 		}
 
-		/**
-		 * This method centralizes the calls to different configuration parameter 
-		 * validation methods.
-		 * @return true if every validation method return true else return false.
+        /**
+		 * This method centralizes the calls to different configuration
+		 * parameter validation methods.
+		 * 
+		 * @return true if every validation method return true else return
+		 *         false.
 		 */
 		public boolean validate() {
 
-			password = config.get(PASSWORD);
+            password = config.get(PASSWORD);
 			login = config.get(LOGIN);
 			connectionUrl = config.get(CONNECTION_URL);
 			driverClassName = config.get(DRIVER_CLASS_NAME);
 
-			// Test JDBC driver class
+            // Test JDBC driver class
 			success = testDriverClass();
 			if (!success) {
 				return success;
@@ -458,25 +456,25 @@ public class ValidateUtil  {
 				return success;
 			}
 
-			// validate SQL crawl Query
+            // validate SQL crawl Query
 			success = validateSQLCrawlQuery();
 			if (!success) {
 				return success;
 			}
 
-			// validate primary key column names
+            // validate primary key column names
 			success = validatePrimaryKeyColumns();
 			if (!success) {
 				return success;
 			}
 
-			// validate external metadata fields
+            // validate external metadata fields
 			success = validateExternalMetadataFields();
 			if (!success) {
 				return success;
 			}
 
-			// validate last modified date column name
+            // validate last modified date column name
 			String lastModDateColumn = config.get(LAST_MODIFIED_DATE_FIELD);
 			if (lastModDateColumn != null
 					&& lastModDateColumn.trim().length() > 0) {
@@ -486,7 +484,7 @@ public class ValidateUtil  {
 				}
 			}
 
-			// validate document title column name
+            // validate document title column name
 			String docTitleColumn = config.get(DOC_TITLE_FIELD);
 			if (docTitleColumn != null && docTitleColumn.trim().length() > 0) {
 				success = validateDocTitleField();
@@ -495,7 +493,7 @@ public class ValidateUtil  {
 				}
 			}
 
-			String authZQuery = config.get(AUTHZ_QUERY);
+            String authZQuery = config.get(AUTHZ_QUERY);
 			/*
 			 * validate authZ query if connector admin has provided one.
 			 */
@@ -503,7 +501,7 @@ public class ValidateUtil  {
 				success = validateAuthZQuery(authZQuery);
 			}
 
-			/*
+            /*
 			 * close database connection, result set and statement
 			 */
 			try {
@@ -520,19 +518,19 @@ public class ValidateUtil  {
 				LOG.warning("Caught SQLException " + e.toString());
 			}
 
-			return success;
+            return success;
 		}
 
-		public String getMessage() {
+        public String getMessage() {
 			return message;
 		}
 
-		public List<String> getProblemFields() {
+        public List<String> getProblemFields() {
 			return problemFields;
 		}
 	}
 
-	/**
+    /**
 	 * Tests if any of the attributes are missing.
 	 */
 	private class MissingAttributes implements ConfigValidation {
@@ -542,20 +540,20 @@ public class ValidateUtil  {
 		private List<String> problemFields;
 		ResourceBundle res;
 
-		public MissingAttributes(Map<String, String> config, ResourceBundle res) {
+        public MissingAttributes(Map<String, String> config, ResourceBundle res) {
 			this.config = config;
 			this.res = res;
 		}
 
-		public String getMessage() {
+        public String getMessage() {
 			return message;
 		}
 
-		public List<String> getProblemFields() {
+        public List<String> getProblemFields() {
 			return problemFields;
 		}
 
-		public boolean validate() {
+        public boolean validate() {
 			List<String> missingAttributes = new ArrayList<String>();
 			for (Object configKey : configKeys) {
 				if (!config.containsKey(configKey)
@@ -583,7 +581,7 @@ public class ValidateUtil  {
 		}
 	}
 
-	/**
+    /**
 	 * Tests if any of the required fields are missing.
 	 */
 	private static class RequiredFields implements ConfigValidation {
@@ -596,20 +594,20 @@ public class ValidateUtil  {
 		private List<String> problemFields;
 		ResourceBundle res;
 
-		public RequiredFields(Map<String, String> config, ResourceBundle res) {
+        public RequiredFields(Map<String, String> config, ResourceBundle res) {
 			this.config = config;
 			this.res = res;
 		}
 
-		public String getMessage() {
+        public String getMessage() {
 			return message;
 		}
 
-		public List<String> getProblemFields() {
+        public List<String> getProblemFields() {
 			return problemFields;
 		}
 
-		public boolean validate() {
+        public boolean validate() {
 			for (String field : requiredFields) {
 				if (config.get(field).equals("")) {
 					missingFields.add(field);
@@ -634,78 +632,71 @@ public class ValidateUtil  {
 			return success;
 		}
 	}
-	/**
-	 * Checks if the Document Title field is entered in the configuration form and also provided in the XSLT,
-	 * if present in both the places then shows an error message .
-	 * 
-	 * Checks if  record Title elements are selected in the XSLT , if present then the Title value needs to be 
-	 * indexed appropriately ,else an error message is shown.
+
+    /**
+	 * Checks if the Document Title field is entered in the configuration form
+	 * and also provided in the XSLT, if present in both the places then shows
+	 * an error message . Checks if record Title elements are selected in the
+	 * XSLT , if present then the Title value needs to be indexed appropriately
+	 * ,else an error message is shown.
 	 */
-	private static class XSLTCheck implements ConfigValidation
-	{
+	private static class XSLTCheck implements ConfigValidation {
 		Map<String, String> config;
 		private String message = "";
 		private boolean success = false;
 		private List<String> problemFields = new ArrayList<String>();
 		StringBuilder xslt;
 		ResourceBundle res;
-		public XSLTCheck(Map<String, String> config, ResourceBundle res) {
+
+        public XSLTCheck(Map<String, String> config, ResourceBundle res) {
 			this.config = config;
 			this.res = res;
 		}
-		
-		public String getMessage() {
+
+        public String getMessage() {
 			return message;
 		}
 
-		public List<String> getProblemFields() {
+        public List<String> getProblemFields() {
 			return problemFields;
 		}
 
-		public boolean validate() {
-			xslt = new StringBuilder (config.get(XSLT));
-			if(xslt!=null)
-			{
+        public boolean validate() {
+			xslt = new StringBuilder(config.get(XSLT));
+			if (xslt != null) {
 				String XSLT_RECORD_TITLE_ELEMENT;
 				int index3;
-				
-				XSLT_RECORD_TITLE_ELEMENT="<td><xsl:value-of select=\"title";
-				index3=xslt.indexOf(XSLT_RECORD_TITLE_ELEMENT);
-				
-				if(!config.get(DOC_TITLE_FIELD).equals("")&&index3!=-1)
-				{
-					success=false;
+
+                XSLT_RECORD_TITLE_ELEMENT = "<td><xsl:value-of select=\"title";
+				index3 = xslt.indexOf(XSLT_RECORD_TITLE_ELEMENT);
+
+                if (!config.get(DOC_TITLE_FIELD).equals("") && index3 != -1) {
+					success = false;
 					message = res.getString("XSLT_DOCUMENT_TITLE");
 					return success;
-				}
-				else
-				{
-					
-					String XSLT_RECORD_TITLE_ELEMENT2;
+				} else {
+
+                    String XSLT_RECORD_TITLE_ELEMENT2;
 					int index2;
-					XSLT_RECORD_TITLE_ELEMENT2="<td><xsl:value-of select=\"title\"/>";
-					index2=xslt.indexOf(XSLT_RECORD_TITLE_ELEMENT2);
-				
-					if(index2!=-1)
-					{
-						success=false;
+					XSLT_RECORD_TITLE_ELEMENT2 = "<td><xsl:value-of select=\"title\"/>";
+					index2 = xslt.indexOf(XSLT_RECORD_TITLE_ELEMENT2);
+
+                    if (index2 != -1) {
+						success = false;
 						message = res.getString("XSLT_VALIDATE");
 						problemFields.add(XSLT);
-					}
-					else
-					{
-					success=true;
+					} else {
+						success = true;
 					}
 				}
 			}
 			return success;
 		}
-		
-	}
-	
+
+    }
+
 	/**
-	 * Validation Class to check whether HostName is valid. 
-	 * 
+	 * Validation Class to check whether HostName is valid.
 	 */
 	private static class HostNameFQDNCheck implements ConfigValidation {
 		Map<String, String> config;
@@ -715,20 +706,20 @@ public class ValidateUtil  {
 		String hostName;
 		ResourceBundle res;
 
-		public HostNameFQDNCheck(Map<String, String> config, ResourceBundle res) {
+        public HostNameFQDNCheck(Map<String, String> config, ResourceBundle res) {
 			this.config = config;
 			this.res = res;
 		}
 
-		public String getMessage() {
+        public String getMessage() {
 			return message;
 		}
 
-		public List<String> getProblemFields() {
+        public List<String> getProblemFields() {
 			return problemFields;
 		}
 
-		public boolean validate() {
+        public boolean validate() {
 			hostName = config.get(HOSTNAME);
 			if (hostName.contains(".")) {
 				success = true;
@@ -740,12 +731,12 @@ public class ValidateUtil  {
 		}
 	}
 
-	
-	public ConfigValidation validate(Map<String, String> config,
-		ResourceBundle resource) {
+
+    public ConfigValidation validate(Map<String, String> config,
+			ResourceBundle resource) {
 		boolean success = false;
-		
-		ConfigValidation configValidation = new MissingAttributes(config,
+
+        ConfigValidation configValidation = new MissingAttributes(config,
 				resource);
 		success = configValidation.validate();
 		if (success) {
@@ -757,24 +748,24 @@ public class ValidateUtil  {
 				if (success) {
 					configValidation = new HostNameFQDNCheck(config, resource);
 					success = configValidation.validate();
-					
-					if (success) {
+
+                    if (success) {
 						configValidation = new XSLTCheck(config, resource);
 						success = configValidation.validate();
-					
-					
-							if (success) {
-								return configValidation;
-							}
-					}			
+
+
+                        if (success) {
+							return configValidation;
+						}
+					}
 				}
 			}
 		}
-		
-		return configValidation;
+
+        return configValidation;
 	}
 
-	
 
-	
-	}
+
+
+}

@@ -1,4 +1,4 @@
-//Copyright 2010 Google Inc.
+//Copyright 2011 Google Inc.
 //
 //Licensed under the Apache License, Version 2.0 (the "License");
 //you may not use this file except in compliance with the License.
@@ -28,29 +28,26 @@ import java.util.Set;
 import java.util.logging.Logger;
 
 /**
- * This class provides an implementation of AuthorizationManager SPI provided
- * by CM for authorize the search users against Database documents.
- * 
- * 
+ * This class provides an implementation of AuthorizationManager SPI provided by
+ * CM for authorize the search users against Database documents.
  */
-
 public class DBConnectorAuthorizationManager implements AuthorizationManager {
 
 	private static final Logger LOG = Logger.getLogger(DBConnectorAuthorizationManager.class.getName());
 
-	private final DBClient dbClient;
+    private final DBClient dbClient;
 
-	public DBConnectorAuthorizationManager(DBConnectorConfig dbConnectorConfig) {
-		this.dbClient = dbConnectorConfig.getDbClient();
+    public DBConnectorAuthorizationManager(DBClient dbClient) {
+		this.dbClient = dbClient;
 	}
 
-	public Collection<AuthorizationResponse> authorizeDocids(
+    public Collection<AuthorizationResponse> authorizeDocids(
 			Collection<String> docIds, AuthenticationIdentity identity)
 			throws RepositoryException {
 
-		LOG.info("Documents to be authorized: " + docIds);
+        LOG.info("Documents to be authorized: " + docIds);
 
-		String userName = identity.getUsername();
+        String userName = identity.getUsername();
 		Map<String, String> docIdMap = DocIdUtil.getDocIdMap(docIds);
 		String docIdString = DocIdUtil.getDocIdString(docIdMap.keySet());
 		List<AuthorizationResponse> encodedDocuments = new ArrayList<AuthorizationResponse>();
@@ -63,7 +60,7 @@ public class DBConnectorAuthorizationManager implements AuthorizationManager {
 		for (String docId : authorizedDocIdList) {
 			String encodedDocId = docIdMap.get(docId);
 
-			if (encodedDocId != null) {
+            if (encodedDocId != null) {
 				encodedDocuments.add(new AuthorizationResponse(Status.PERMIT,
 						encodedDocId));
 				logMessage.append(encodedDocId + ", ");

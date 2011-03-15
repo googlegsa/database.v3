@@ -1,4 +1,4 @@
-// Copyright 2009 Google Inc.
+// Copyright 2011 Google Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
+
 import javax.sql.DataSource;
 
 
@@ -47,30 +48,20 @@ public class DBClient {
 
 	private static final Logger LOG = Logger.getLogger(DBClient.class.getName());
 
-	private final DBContext dbContext;
+    private final DBContext dbContext;
 	private final SqlMapClient sqlMapClient;
-	private final String sqlQuery;
-	private final String googleConnectorWorkDir;
-	private final String[] primaryKeys;
 	private String sqlMapConfig = null;
 	private String sqlMap = null;
-	private final String authZQuery;
 
-	/**
+    /**
 	 * @param dbContext holds the database context.
 	 * @param sqlQuery SQL query to execute on the database.
 	 * @param googleConnectorWorkDir working directory of DB connector.
 	 * @param primaryKeys primary keys for the result DB table.
 	 * @throws DBException
 	 */
-	public DBClient(DBContext dbContext, String sqlQuery,
-			String googleConnectorWorkDir, String[] primaryKeys,
-			String authZQuery) throws DBException {
+	public DBClient(DBContext dbContext) throws DBException {
 		this.dbContext = dbContext;
-		this.sqlQuery = sqlQuery;
-		this.authZQuery = authZQuery;
-		this.googleConnectorWorkDir = googleConnectorWorkDir;
-		this.primaryKeys = primaryKeys;
 		generateSqlMapConfig();
 		generateSqlMap();
 		InputStream resources;
@@ -81,10 +72,11 @@ public class DBClient {
 		}
 		this.sqlMapClient = SqlMapClientBuilder.buildSqlMapClient(resources);
 
-		LOG.info("DBClient for database " + getDatabaseInfo()
+        LOG.info("DBClient for database " + getDatabaseInfo()
 				+ " is instantiated");
 
-	}
+    }
+
 
 	/**
 	 * getter method for sqlMapClient, so that it can be used outside to perform
@@ -94,32 +86,20 @@ public class DBClient {
 	 *         CRUD.
 	 */
 
-	public SqlMapClient getSqlMapClient() {
+    public SqlMapClient getSqlMapClient() {
 		return sqlMapClient;
 	}
 
-	/**
-	 * @return the googleConnectorWorkDir
-	 */
-	public String getGoogleConnectorWorkDir() {
-		return googleConnectorWorkDir;
-	}
 
-	/**
-	 * @return primaryKeys
-	 */
-	public String[] getPrimaryKeys() {
-		return primaryKeys;
-	}
 
-	/**
+    /**
 	 * @return dbContext
 	 */
 	public DBContext getDBContext() {
 		return dbContext;
 	}
 
-	/**
+    /**
 	 * @return rows - result of executing the SQL query. E.g., result table with
 	 *         columns id and lastName and two rows will be returned as
 	 * 
@@ -140,7 +120,7 @@ public class DBClient {
 		return rows;
 	}
 
-	/**
+    /**
 	 * @param skipRows number of rows to skip in the database.
 	 * @param maxRows max number of rows to return.
 	 * @return rows - subset of the result of executing the SQL query. E.g.,
@@ -173,18 +153,19 @@ public class DBClient {
 			Connection conn = null;
 			try {
 				conn = ds.getConnection();
-				LOG.info("Could not execute SQL query on the database\n"
+				LOG.warning("Could not execute SQL query on the database\n"
 						+ e.toString());
 				rows = new ArrayList<Map<String, Object>>();
 			} catch (SQLException e1) {
-				LOG.info("Unable to connect to the database\n" + e.toString());
+				LOG.warning("Unable to connect to the database\n"
+						+ e1.toString());
 				throw new DBException(e);
 			} finally {
 				if (conn != null) {
 					try {
 						conn.close();
 					} catch (SQLException e1) {
-						LOG.info("Could not close database connection: "
+						LOG.warning("Could not close database connection: "
 								+ e1.toString());
 					}
 				}
@@ -194,7 +175,7 @@ public class DBClient {
 		return rows;
 	}
 
-	/**
+    /**
 	 * Generates the SqlMapConfig for mysql database. It contains a reference to
 	 * the SqlMap which should be a url or a file. It assumes that the SqlMap is
 	 * in IbatisSqlMap.xml in the googleConnectorWorkDir.
@@ -207,35 +188,36 @@ public class DBClient {
 		 * "jar:file:<path_to_jar>/dtd.jar!<path_to_dtd>/sql-map-config-2.dtd"
 		 */
 		sqlMapConfig = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n"
-			+ "<!DOCTYPE sqlMapConfig "
-			+ "PUBLIC \"-//ibatis.apache.org//DTD SQL Map Config 2.0//EN\" "
-			+ "\"http://ibatis.apache.org/dtd/sql-map-config-2.dtd\">\n"
-			+ "<sqlMapConfig>\n"
-			+ "<settings useStatementNamespaces=\"true\"/>\n"
-			+ "<transactionManager type=\"JDBC\">\n"
-			+ " <dataSource type=\"SIMPLE\">\n"
-			+ " <property name=\"JDBC.Driver\" value=\""
-			+ dbContext.getDriverClassName() + "\" />\n"
-			+ " <property name=\"JDBC.ConnectionURL\" value=\""
-			+ dbContext.getConnectionUrl() + "\" />\n"
-			+ " <property name=\"JDBC.Username\" value=\""
-			+ dbContext.getLogin() + "\" />\n"
-			+ " <property name=\"JDBC.Password\" value=\""
-			+ dbContext.getPassword() + "\" />\n"
-			+ " </dataSource></transactionManager>\n"
-			+ " <sqlMap url=\"file:///" + googleConnectorWorkDir
-			+ "/IbatisSqlMap.xml\"/>\n" + "</sqlMapConfig>\n";
+				+ "<!DOCTYPE sqlMapConfig "
+				+ "PUBLIC \"-//ibatis.apache.org//DTD SQL Map Config 2.0//EN\" "
+				+ "\"http://ibatis.apache.org/dtd/sql-map-config-2.dtd\">\n"
+				+ "<sqlMapConfig>\n"
+				+ "<settings useStatementNamespaces=\"true\"/>\n"
+				+ "<transactionManager type=\"JDBC\">\n"
+				+ " <dataSource type=\"SIMPLE\">\n"
+				+ " <property name=\"JDBC.Driver\" value=\""
+				+ dbContext.getDriverClassName() + "\" />\n"
+				+ " <property name=\"JDBC.ConnectionURL\" value=\""
+				+ dbContext.getConnectionUrl() + "\" />\n"
+				+ " <property name=\"JDBC.Username\" value=\""
+				+ dbContext.getLogin() + "\" />\n"
+				+ " <property name=\"JDBC.Password\" value=\""
+				+ dbContext.getPassword() + "\" />\n"
+				+ " </dataSource></transactionManager>\n"
+				+ " <sqlMap url=\"file:///"
+				+ dbContext.getGoogleConnectorWorkDir()
+				+ "/IbatisSqlMap.xml\"/>\n" + "</sqlMapConfig>\n";
 
-		String oldString = " <property name=\"JDBC.Password\" value=\""
-			+ dbContext.getPassword() + "\" />";
+        String oldString = " <property name=\"JDBC.Password\" value=\""
+				+ dbContext.getPassword() + "\" />";
 		String newString = " <property name=\"JDBC.Password\" value=\""
-			+ "*****" + "\" />";
+				+ "*****" + "\" />";
 
-		LOG.config("Generated sqlMapConfig : \n"
+        LOG.config("Generated sqlMapConfig : \n"
 				+ sqlMapConfig.replace(oldString, newString));
 	}
 
-	/**
+    /**
 	 * Generates the SqlMap which contains the SQL query. It writes the SqlMap
 	 * in IbatisSqlMap.xml under googleConnectorWorkDir.
 	 * 
@@ -247,31 +229,33 @@ public class DBClient {
 		 * "jar:file:<path_to_jar>/dtd.jar!<path_to_dtd>/sql-map-config-2.dtd"
 		 */
 		sqlMap = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n"
-			+ "<!DOCTYPE sqlMap "
-			+ "PUBLIC \"-//ibatis.apache.org//DTD SQL Map 2.0//EN\" "
-			+ "\"http://ibatis.apache.org/dtd/sql-map-2.dtd\">\n"
-			+ "<sqlMap namespace=\"IbatisDBClient\">\n"
-			+ " <select id=\"getAll\" resultClass=\"java.util.HashMap\"> \n"
-			+ sqlQuery + "\n </select> \n";
+				+ "<!DOCTYPE sqlMap "
+				+ "PUBLIC \"-//ibatis.apache.org//DTD SQL Map 2.0//EN\" "
+				+ "\"http://ibatis.apache.org/dtd/sql-map-2.dtd\">\n"
+				+ "<sqlMap namespace=\"IbatisDBClient\">\n"
+				+ " <select id=\"getAll\" resultClass=\"java.util.HashMap\"> \n"
+				+ dbContext.getSqlQuery() + "\n </select> \n";
 
-		/*
+        /*
 		 * check if authZ query is provided. If authZ query is there , add
 		 * 'select' element for getting authorized documents.
 		 */
-		if (authZQuery != null && authZQuery.trim().length() > 0) {
+		if (dbContext.getAuthZQuery() != null
+				&& dbContext.getAuthZQuery().trim().length() > 0) {
 			sqlMap = sqlMap
-			+ "<select id=\"getAuthorizedDocs\"  parameterClass=\"java.util.HashMap\"  resultClass=\"java.lang.String\"> \n "
-			+ authZQuery + "</select>";
+					+ "<select id=\"getAuthorizedDocs\"  parameterClass=\"java.util.HashMap\"  resultClass=\"java.lang.String\"> \n "
+					+ dbContext.getAuthZQuery() + "</select>";
 
-			dbContext.setPublicFeed(false);
+            dbContext.setPublicFeed(false);
 		} else {
 			dbContext.setPublicFeed(true);
 		}
 		// close 'sqlMap' element
 		sqlMap = sqlMap + " </sqlMap> \n";
 
-		LOG.config("Generated sqlMap : \n" + sqlMap);
-		File file = new File(googleConnectorWorkDir, "IbatisSqlMap.xml");
+        LOG.config("Generated sqlMap : \n" + sqlMap);
+		File file = new File(dbContext.getGoogleConnectorWorkDir(),
+				"IbatisSqlMap.xml");
 		Writer output;
 		try {
 			output = new BufferedWriter(new FileWriter(file));
@@ -279,11 +263,12 @@ public class DBClient {
 			output.close();
 		} catch (IOException e) {
 			throw new DBException("Could not write to/close Sql Map "
-					+ googleConnectorWorkDir + "/IbatisSqlMap.xml", e);
+					+ dbContext.getGoogleConnectorWorkDir()
+					+ "/IbatisSqlMap.xml", e);
 		}
 	}
 
-	/**
+    /**
 	 * This method return the database name and version details.
 	 * 
 	 * @author Suresh_Ghuge
@@ -322,7 +307,7 @@ public class DBClient {
 		return dbDetails;
 	}
 
-	/**
+    /**
 	 * This method executes the authZ query for given user-name and list of
 	 * documents and returns the list of authorized documents.
 	 * 
@@ -332,7 +317,7 @@ public class DBClient {
 	 */
 	public List<String> executeAuthZQuery(String userName, String docIds) {
 
-		List<String> authorizedDocs = new ArrayList<String>();
+        List<String> authorizedDocs = new ArrayList<String>();
 		/*
 		 * Create a hashmap as to provide input parameters user-name and list of
 		 * documents to authZ query.

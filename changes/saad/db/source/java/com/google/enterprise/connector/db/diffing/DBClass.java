@@ -60,17 +60,19 @@ public class DBClass implements DocumentHandle, DocumentSnapshot {
 			jo = new JSONObject(jsonString);
 		} catch (JSONException e) {
 
-            LOG.warning("JSONException thrown while creating JSONObject from string"
-					+ jsonString);
-			throw new IllegalArgumentException();
+            LOG.warning("Exception thrown while creating JSONObject from string"
+					+ jsonString + "\n" + e);
+			throw new IllegalArgumentException(
+					"Exception thrown for illegal JsonString" + jsonString
+							+ "\n" + e);
 
         }
 		document = new JsonDocument(jo);
 		try {
 			documentId = Value.getSingleValueString(document, SpiConstants.PROPNAME_DOCID);
 		} catch (RepositoryException e) {
-			LOG.warning("Repository Exception thrown while extracting docId for Document"
-					+ document);
+			LOG.warning("Exception thrown while extracting docId for Document"
+					+ document + "\n" + e);
 			// Thrown to indicate an inappropriate argument has been passed to
 			// Value.getSingleValueString() method.
 			throw new IllegalArgumentException();
@@ -106,7 +108,9 @@ public class DBClass implements DocumentHandle, DocumentSnapshot {
 		// if the parameter is non-null, then it should be an DBClass
 		// (it was created via an DBClassRepository).
 		if (!(onGsa instanceof DBClass)) {
-			throw new IllegalArgumentException();
+			throw new IllegalArgumentException(
+					"Illegal parameter passed to getUpdate of DocumentSnapshot."
+							+ "The paramater passed is not a instance of DBCLass");
 		}
 		DBClass p = DBClass.class.cast(onGsa);
 		// we just assume that if the serialized form is the same, then nothing

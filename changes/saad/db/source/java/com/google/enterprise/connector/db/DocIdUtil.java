@@ -1,4 +1,4 @@
-//Copyright 2010 Google Inc.
+//Copyright 2011 Google Inc.
 //
 //Licensed under the Apache License, Version 2.0 (the "License");
 //you may not use this file except in compliance with the License.
@@ -34,7 +34,7 @@ public class DocIdUtil {
 	private static final Logger LOG = Logger.getLogger(DocIdUtil.class.getName());
 	public static final String PRIMARY_KEYS_SEPARATOR = ",";
 
-	/**
+    /**
 	 * This method decode the Base64 encoded doc ids and returns the comma
 	 * separated String of document ids.
 	 * 
@@ -44,14 +44,14 @@ public class DocIdUtil {
 	public static String getDocIdString(Collection<String> docIds) {
 		StringBuilder docIdString = new StringBuilder("");
 
-		for (String docId : docIds) {
+        for (String docId : docIds) {
 			docIdString.append("'" + docId + "'" + ",");
 		}
 
-		return docIdString.substring(0, docIdString.length() - 1);
+        return docIdString.substring(0, docIdString.length() - 1);
 	}
 
-	/**
+    /**
 	 * This method creates and returns a map of decoded and encoded docIds. Here
 	 * decoded docIds are used as keys and encoded docIds are used as values.
 	 * 
@@ -66,7 +66,7 @@ public class DocIdUtil {
 		return docIdMap;
 	}
 
-	/**
+    /**
 	 * This method decode the Base64 encoded input string.
 	 * 
 	 * @param inputString
@@ -74,17 +74,17 @@ public class DocIdUtil {
 	 * @throws IOException
 	 */
 
-	public static String decodeBase64String(String inputString) {
+    public static String decodeBase64String(String inputString) {
 		byte[] docId = Base64.decodeBase64(inputString.getBytes());
 		return new String(docId);
 	}
 
-	public static String getBase64EncodedString(String inputString) {
+    public static String getBase64EncodedString(String inputString) {
 		byte[] base64Encoded = Base64.encodeBase64(inputString.getBytes());
 		return new String(base64Encoded);
 	}
 
-	/**
+    /**
 	 * Generates the docId for a DB row. Base 64 encode comma separated key
 	 * values are used as document id. For example, if the primary keys are id
 	 * and lastName and their corresponding values are 1 and last_01, then the
@@ -97,14 +97,14 @@ public class DocIdUtil {
 	 * @throws DBException
 	 */
 
-	public static String generateDocId(String[] primaryKeys,
+    public static String generateDocId(String[] primaryKeys,
 			Map<String, Object> row) throws DBException {
 
-		StringBuilder docIdString = new StringBuilder();
+        StringBuilder docIdString = new StringBuilder();
 		if (row != null && (primaryKeys != null && primaryKeys.length > 0)) {
 			Set<String> keySet = row.keySet();
 
-			for (String primaryKey : primaryKeys) {
+            for (String primaryKey : primaryKeys) {
 				/*
 				 * If user enters primary key column names in different case in
 				 * database connector config form, we need to map primary key
@@ -113,7 +113,7 @@ public class DocIdUtil {
 				 * entered by user with actual column names in result set(map).
 				 */
 
-				for (String key : keySet) {
+                for (String key : keySet) {
 					if (primaryKey.equalsIgnoreCase(key)) {
 						primaryKey = key;
 						break;

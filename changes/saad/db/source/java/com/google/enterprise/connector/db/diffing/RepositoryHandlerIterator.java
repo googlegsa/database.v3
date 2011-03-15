@@ -13,6 +13,8 @@
 // limitations under the License.
 package com.google.enterprise.connector.db.diffing;
 
+import com.google.enterprise.connector.db.DBException;
+
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.logging.Logger;
@@ -65,7 +67,8 @@ public class RepositoryHandlerIterator implements Iterator<JsonDocument> {
                 return true;
             } catch (DBException e) {
 
-				LOG.warning("DBEXception in hasnext of RepositoryHandlerIterator");
+				LOG.warning("Exception in hasnext of RepositoryHandlerIterator"
+						+ "\n" + e);
             }
 
         }
@@ -84,12 +87,16 @@ public class RepositoryHandlerIterator implements Iterator<JsonDocument> {
 
 	/**
 	 * Implementation required for the inherited abstract method
-	 * Iterator<JsonDocument>.remove().
+	 * Iterator<JsonDocument>.remove(). As this is a read-only iterator, the
+	 * remove operation does not require implementation.
 	 */
 	/* @Override */
 	public void remove() {
 		// TODO Auto-generated method stub
 
-	}
+		throw new UnsupportedOperationException(
+				"Remove Operation not Supportrd for RepositoryHandlerIterator");
+
+    }
 
 }

@@ -17,9 +17,14 @@ import java.util.ArrayList;
 import java.util.logging.Logger;
 
 /**
- * Building-block required by the diffing framework. The diffing framework(@link
- * DocumentSnapshotRepositoryMonitorManagerImpl class) uses this class for
- * accessing the SnapshotRepository's.
+ * Building-block required by the diffing framework. Gives a collection of
+ * SnapshotRepository to the diffing framework(@link
+ * DocumentSnapshotRepositoryMonitorManagerImpl class) for accessing the
+ * SnapshotRepository's.Depending upon the number of SnapshotRepository's the
+ * Monitor Manager creates number of monitor threads.But in case of Database
+ * connector the List consists of only one SnapshotRepository Object(as database
+ * cannot be crawled in segments) hence the Monitor Manager creates only one
+ * thread to crawl the database.
  */
 public class DBDocumentSnapshotRepositoryList extends ArrayList<DBClassRepository> {
     private static final Logger LOG = Logger.getLogger(DBDocumentSnapshotRepositoryList.class.getName());

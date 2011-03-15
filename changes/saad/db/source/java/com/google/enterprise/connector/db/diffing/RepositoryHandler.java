@@ -14,10 +14,12 @@
 
 package com.google.enterprise.connector.db.diffing;
 
-import com.google.enterprise.connector.spi.RepositoryException;
-import com.google.enterprise.connector.spi.SpiConstants;
+import com.google.enterprise.connector.db.DBClient;
+import com.google.enterprise.connector.db.DBConnectorType;
+import com.google.enterprise.connector.db.DBContext;
+import com.google.enterprise.connector.db.DBException;
+import com.google.enterprise.connector.db.Util;
 import com.google.enterprise.connector.spi.TraversalContext;
-import com.google.enterprise.connector.spi.Value;
 import com.google.enterprise.connector.util.diffing.TraversalContextManager;
 
 import java.util.LinkedList;
@@ -33,13 +35,9 @@ import java.util.logging.Logger;
 public class RepositoryHandler{
 	private static final Logger LOG = Logger.getLogger(RepositoryHandler.class.getName());
 	private DBClient dbClient;
-	private String xslt;
 	private TraversalContextManager traversalContextManager;
 	private TraversalContext traversalContext;
 	private int cursorDB = 0;
-
-    // Limit on the batch size.
-	private int NO_OF_ROWS = 100;
 
     // EXC_NORMAL represents that DB Connector is running in normal mode
 	private static final int MODE_NORMAL = 1;
@@ -64,34 +62,16 @@ public class RepositoryHandler{
 		this.traversalContext = traversalContext;
 	}
 
-
-    public int getNO_OF_ROWS() {
-		return NO_OF_ROWS;
-	}
-
-
-    public void setNO_OF_ROWS(int nOOFROWS) {
-		NO_OF_ROWS = nOOFROWS;
-	}
-
     // current execution mode
 	private int currentExcMode = -1;
 
     public static RepositoryHandler makeRepositoryHandlerFromConfig(
-            DBClient dbClient, TraversalContextManager traversalContextManager,
-            String noOfRows, String xslt) {
+			DBClient dbClient, TraversalContextManager traversalContextManager) {
 
         RepositoryHandler repositoryHandler = new RepositoryHandler();
         repositoryHandler.traversalContextManager = traversalContextManager;
         repositoryHandler.cursorDB = 0;
         repositoryHandler.dbClient = dbClient;
-        repositoryHandler.xslt = xslt;
-        try {
-            repositoryHandler.NO_OF_ROWS = Integer.parseInt(noOfRows);
-        } catch (Exception e) {
-            LOG.info("Number Format Exception while setting the no of rows to be fetched");
-        }
-		LOG.info("RepositoryHandler Instantiated");
         return repositoryHandler;
     }
 
@@ -119,9 +99,9 @@ public class RepositoryHandler{
     public LinkedList<JsonDocument> executeQueryAndAddDocs()
  throws DBException {
         LinkedList<JsonDocument> docList = new LinkedList<JsonDocument>();
-        List<Map<String, Object>> rows = dbClient.executePartialQuery(cursorDB, NO_OF_ROWS);
+		List<Map<String, Object>> rows = dbClient.executePartialQuery(cursorDB, dbClient.getDBContext().getNO_OF_ROWS());
 
-		if (traversalContext == null) {
+        if (traversalContext == null) {
 			setTraversalContext(traversalContextManager.getTraversalContext());
         } else {
             LOG.info("TraversalContextManager not set");
@@ -144,7 +124,7 @@ public class RepositoryHandler{
             case MODE_METADATA_URL:
 
                 for (Map<String, Object> row : rows) {
-					jsonDoc = Util.generateMetadataURLFeed(dbClient.getDBContext().getDbName(), dbClient.getPrimaryKeys(), row, dbClient.getDBContext().getHostname(), dbClient.getDBContext(), "", traversalContext);
+					jsonDoc = Util.generateMetadataURLFeed(dbClient.getDBContext().getDbName(), dbClient.getDBContext().getPrimaryKeys(), row, dbClient.getDBContext().getHostname(), dbClient.getDBContext(), "", traversalContext);
                     docList.add(jsonDoc);
                 }
                 break;
@@ -153,7 +133,7 @@ public class RepositoryHandler{
             case MODE_METADATA_BASE_URL:
                 jsonDoc = null;
                 for (Map<String, Object> row : rows) {
-					jsonDoc = Util.generateMetadataURLFeed(dbClient.getDBContext().getDbName(), dbClient.getPrimaryKeys(), row, dbClient.getDBContext().getHostname(), dbClient.getDBContext(), Util.WITH_BASE_URL, traversalContext);
+					jsonDoc = Util.generateMetadataURLFeed(dbClient.getDBContext().getDbName(), dbClient.getDBContext().getPrimaryKeys(), row, dbClient.getDBContext().getHostname(), dbClient.getDBContext(), Util.WITH_BASE_URL, traversalContext);
                     docList.add(jsonDoc);
                 }
 
@@ -163,23 +143,10 @@ public class RepositoryHandler{
             case MODE_BLOB_CLOB:
                 jsonDoc = null;
                 for (Map<String, Object> row : rows) {
-					jsonDoc = Util.largeObjectToDoc(dbClient.getDBContext().getDbName(), dbClient.getPrimaryKeys(), row, dbClient.getDBContext().getHostname(), dbClient.getDBContext(), traversalContext);
-
-                    // Add the document only if not in excluded MimeType list
-					try {
-						String mimeType = Value.getSingleValueString(jsonDoc, SpiConstants.PROPNAME_MIMETYPE);
-						int mimeTypeSupportLevel = traversalContext.mimeTypeSupportLevel(mimeType);
-						if (!(mimeTypeSupportLevel < 0)) {
-							docList.add(jsonDoc);
-						} else {
-							LOG.info("Skipping Document beacuse MimeType not supported for Document "
-									+ jsonDoc);
-						}
-					} catch (RepositoryException e) {
-						LOG.warning("Repository Exception while extractin property MimeType for Document+ "
-								+ jsonDoc);
+					jsonDoc = Util.largeObjectToDoc(dbClient.getDBContext().getDbName(), dbClient.getDBContext().getPrimaryKeys(), row, dbClient.getDBContext().getHostname(), dbClient.getDBContext(), traversalContext);
+					if (jsonDoc != null) {
+						docList.add(jsonDoc);
 					}
-
                 }
 
                 break;
@@ -187,22 +154,11 @@ public class RepositoryHandler{
                 // execute the connector in normal mode
             default:
                 for (Map<String, Object> row : rows) {
-					jsonDoc = Util.rowToDoc(dbClient.getDBContext().getDbName(), dbClient.getPrimaryKeys(), row, dbClient.getDBContext().getHostname(), xslt, dbClient.getDBContext(), traversalContext);
-					// Add the document only if not in excluded MimeType list
-					try {
-						String mimeType = Value.getSingleValueString(jsonDoc, SpiConstants.PROPNAME_MIMETYPE);
-						int mimeTypeSupportLevel = traversalContext.mimeTypeSupportLevel(mimeType);
-						if (!(mimeTypeSupportLevel < 0)) {
-							docList.add(jsonDoc);
-						} else {
-							LOG.info("Skipping Document beacuse MimeType not supported for Document "
-									+ jsonDoc);
-						}
-					} catch (RepositoryException e) {
-						LOG.warning("Repository Exception while extractin property MimeType for Document+ "
-								+ jsonDoc);
+					jsonDoc = Util.rowToDoc(dbClient.getDBContext().getDbName(), dbClient.getDBContext().getPrimaryKeys(), row, dbClient.getDBContext().getHostname(), dbClient.getDBContext().getXslt(), dbClient.getDBContext(), traversalContext);
+					if (jsonDoc != null) {
+						docList.add(jsonDoc);
 					}
-                }
+				}
                 break;
             }
         }

@@ -1,4 +1,4 @@
-// Copyright 2009 Google Inc.
+// Copyright 2011 Google Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ public class XmlUtils {
 	private XmlUtils() {
 	}
 
-	/**
+    /**
 	 * Converts a DB row into its xml representation. E.g., A following DB row
 	 * of test database:
 	 * 
@@ -92,10 +92,10 @@ public class XmlUtils {
 			DocumentBuilder builder = factory.newDocumentBuilder();
 			doc = builder.newDocument();
 		} catch (ParserConfigurationException e) {
-			throw new DBException("Unable to get XML for row.");
+			throw new DBException("Unable to get XML for row." + "\n" + e);
 		}
 
-		Element top = doc.createElement(dbName);
+        Element top = doc.createElement(dbName);
 		doc.appendChild(top);
 		Element title = doc.createElement("title");
 		title.appendChild(doc.createTextNode(Util.getTitle(primaryKeys, row)));
@@ -103,7 +103,7 @@ public class XmlUtils {
 		TreeSet<String> sortedKeySet = new TreeSet<String>(row.keySet());
 		Iterator<String> it = sortedKeySet.iterator();
 
-		if (isCompleteDoc) {
+        if (isCompleteDoc) {
 			while (it.hasNext()) {
 				String key = it.next();
 				Element keyElement = doc.createElement(key);
@@ -131,26 +131,27 @@ public class XmlUtils {
 			}
 		}
 
-		String xmlString;
+        String xmlString;
 		try {
 			if (null == xslt) {
 				xmlString = getStringFromDomDocument(doc, null);
 			} else if (xslt.length() == 0) {
 				xmlString = getStringFromDomDocument(doc, getDomDocFromXslt(getDefaultStyleSheet(dbName, row, dbContext, isCompleteDoc)));
 			} else {
-			      xmlString = getStringFromDomDocument(doc, getDomDocFromXslt(xslt));
+				xmlString = getStringFromDomDocument(doc, getDomDocFromXslt(xslt));
 			}
 		} catch (TransformerException e) {
-			
-			throw new DBException(
-					"Unable to create XML string from the DOM document");
-			
-		}
+
+            throw new DBException(
+					"Unable to create XML string from the DOM document" + "\n"
+							+ e);
+
+        }
 		return xmlString;
 	}
-	
 
-	/**
+
+    /**
 	 * @param dbName name of the Database instance
 	 * @param row map representing database row
 	 * @param dbContext dbContext instance of DBContext
@@ -186,19 +187,19 @@ public class XmlUtils {
 		buf.append(dbName).append("\"><tr>");
 		for (String column : columnNames) {
 			if (isCompleteDoc) {
-				if(column.equalsIgnoreCase("title"))
-				buf.append("<td><xsl:value-of select=\"").append(column).append("[2]\"/></td>");
+				if (column.equalsIgnoreCase("title"))
+					buf.append("<td><xsl:value-of select=\"").append(column).append("[2]\"/></td>");
 				else
 					buf.append("<td><xsl:value-of select=\"").append(column).append("\"/></td>");
 			} else {
 				if (dbContext != null
 						&& !column.equalsIgnoreCase(dbContext.getDocumentTitle())
 						&& !column.equalsIgnoreCase(dbContext.getLastModifiedDate())) {
-					if(column.equalsIgnoreCase("title"))
+					if (column.equalsIgnoreCase("title"))
 						buf.append("<td><xsl:value-of select=\"").append(column).append("[2]\"/></td>");
-						else
-							buf.append("<td><xsl:value-of select=\"").append(column).append("\"/></td>");
-						}
+					else
+						buf.append("<td><xsl:value-of select=\"").append(column).append("\"/></td>");
+				}
 			}
 		}
 		buf.append("</tr></xsl:for-each></table></body></html>"
@@ -206,7 +207,7 @@ public class XmlUtils {
 		return buf.toString();
 	}
 
-	/**
+    /**
 	 * Converts a DOM document to an xml String.
 	 * 
 	 * @param doc DOM document
@@ -230,7 +231,7 @@ public class XmlUtils {
 		return writer.toString();
 	}
 
-	/**
+    /**
 	 * Converts a String(xslt) into a DOM document.
 	 * 
 	 * @param xslt string xslt.
