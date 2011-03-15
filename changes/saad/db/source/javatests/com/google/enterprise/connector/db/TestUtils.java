@@ -15,10 +15,7 @@
 package com.google.enterprise.connector.db;
 
 
-import com.google.enterprise.connector.db.diffing.DBContext;
-import com.google.enterprise.connector.db.diffing.DBException;
 import com.google.enterprise.connector.db.diffing.JsonDocument;
-import com.google.enterprise.connector.db.diffing.Util;
 import com.google.enterprise.connector.traversal.ProductionTraversalContext;
 
 import java.util.ArrayList;
@@ -104,29 +101,5 @@ public class TestUtils {
 		return dbTypeDriver;
 	}
 
-    public static DBContext getDBContext() throws DBException {
 
-        String connectionUrl = "";
-		String hostname = "";
-		String driverClassName = "";
-		String login = "";
-		String password = "";
-		String dbName = "";
-		String lastModifiedDate = null;
-		String documentTitle = "title";
-		String documentURLField = "docURL";
-		String documentIdField = "docId";
-		String baseURL = "http://myhost/app/";
-		String lobField = "lob";
-		String fetchURLField = "fetchURL";
-		String extMetadataType = "";
-
-        DBContext dbContext = new DBContext(connectionUrl, hostname,
-				driverClassName, login, password, dbName, lastModifiedDate,
-				documentTitle, documentURLField, documentIdField, baseURL,
-				lobField, fetchURLField, extMetadataType);
-
-        return dbContext;
-
-    }
 }

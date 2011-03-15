@@ -14,10 +14,6 @@
 
 package com.google.enterprise.connector.db;
 
-import com.google.enterprise.connector.db.diffing.DBClient;
-import com.google.enterprise.connector.db.diffing.DBContext;
-import com.google.enterprise.connector.db.diffing.DBException;
-import com.google.enterprise.connector.db.diffing.Util;
 import com.google.enterprise.connector.spi.RepositoryException;
 import com.google.enterprise.connector.traversal.ProductionTraversalContext;
 
@@ -64,50 +60,53 @@ public abstract class DBTestBase extends TestCase {
         configMap.put("xslt", "");
         configMap.put("authZQuery", LanguageResource.getPropertyValue("authZQuery"));
         configMap.put("lastModifiedDate", "");
-        configMap.put("documentTitle", "");
+		configMap.put("documentTitle", "title");
         configMap.put("externalMetadata", "");
-        configMap.put("documentURLField", "");
-        configMap.put("documentIdField", "");
-        configMap.put("baseURL", "");
-        configMap.put("lobField", "");
-        configMap.put("fetchURLField", "");
+		configMap.put("documentURLField", "docURL");
+		configMap.put("documentIdField", "docId");
+		configMap.put("baseURL", "http://myhost/app/");
+		configMap.put("lobField", "lob");
+		configMap.put("fetchURLField", "fetchURL");
         configMap.put("extMetadataType", "");
+		configMap.put("noOfRows", "2");
 
     }
 
-	protected ProductionTraversalContext getProductionTraversalContext() {
+    protected ProductionTraversalContext getProductionTraversalContext() {
 		ProductionTraversalContext context = new ProductionTraversalContext();
 		return context;
-	}
+    }
 
-    protected String getXslt() {
-		return configMap.get("xslt");
-	}
+
+
+    protected DBContext getDbContext() {
+		DBContext dbContext;
+
+        dbContext = new DBContext(configMap.get("connectionUrl"),
+				configMap.get("hostname"), configMap.get("driverClassName"),
+				configMap.get("login"), configMap.get("password"),
+				configMap.get("dbName"), configMap.get("sqlQuery"),
+				configMap.get("googleConnectorWorkDir"),
+				configMap.get("primaryKeysString"), configMap.get("xslt"),
+				configMap.get("authZQuery"), configMap.get("lastModifiedDate"),
+				configMap.get("documentTitle"),
+				configMap.get("documentURLField"),
+				configMap.get("documentIdField"), configMap.get("baseURL"),
+				configMap.get("lobField"), configMap.get("fetchURLField"),
+				configMap.get("extMetadataType"), configMap.get("noOfRows"));
+
+        return dbContext;
+    }
+
 
     protected DBClient getDbClient()
  throws RepositoryException {
 
-        DBContext dbContext;
         DBClient dbClient;
         try {
 
-            dbContext = new DBContext(configMap.get("connectionUrl"),
-                    configMap.get("hostname"),
-                    configMap.get("driverClassName"), configMap.get("login"),
-                    configMap.get("password"), configMap.get("dbName"),
-                    configMap.get("lastModifiedDate"),
-                    configMap.get("documentTitle"),
-                    configMap.get("documentURLField"),
-                    configMap.get("documentIdField"), configMap.get("baseURL"),
-                    configMap.get("lobField"), configMap.get("fetchURLField"),
-                    configMap.get("extMetadataType"));
 
-            dbClient = new DBClient(
-                    dbContext,
-                    configMap.get("sqlQuery"),
-                    configMap.get("googleConnectorWorkDir"),
-                    configMap.get("primaryKeysString").split(Util.PRIMARY_KEYS_SEPARATOR),
-					configMap.get("authZQuery"));
+			dbClient = new DBClient(getDbContext());
             return dbClient;
         } catch (DBException e) {
             // TODO Auto-generated catch block

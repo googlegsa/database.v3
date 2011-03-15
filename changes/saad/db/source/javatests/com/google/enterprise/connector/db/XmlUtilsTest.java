@@ -14,8 +14,8 @@
 
 package com.google.enterprise.connector.db;
 
-import com.google.enterprise.connector.db.diffing.DBException;
-import com.google.enterprise.connector.db.diffing.XmlUtils;
+import com.google.enterprise.connector.db.DBException;
+import com.google.enterprise.connector.db.XmlUtils;
 
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;

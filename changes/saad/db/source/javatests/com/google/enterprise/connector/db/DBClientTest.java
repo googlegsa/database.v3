@@ -15,7 +15,7 @@ package com.google.enterprise.connector.db;
 
 
 
-import com.google.enterprise.connector.db.diffing.DBClient;
+import com.google.enterprise.connector.db.DBClient;
 import com.google.enterprise.connector.spi.RepositoryException;
 
 import java.sql.Connection;

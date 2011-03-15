@@ -1,7 +1,5 @@
 package com.google.enterprise.connector.db;
 
-import com.google.enterprise.connector.db.diffing.DBClient;
-import com.google.enterprise.connector.db.diffing.DBException;
 import com.google.enterprise.connector.db.diffing.JsonDocument;
 import com.google.enterprise.connector.db.diffing.RepositoryHandler;
 import com.google.enterprise.connector.spi.RepositoryException;
@@ -21,7 +19,7 @@ public class RepositoryHandlerTest extends DBTestBase {
     public void testMakeRepositoryHandlerFromConfig() {
 		try {
 			DBClient dbClient = getDbClient();
-			RepositoryHandler repositoryHandler = RepositoryHandler.makeRepositoryHandlerFromConfig(dbClient, null, "2", "");
+			RepositoryHandler repositoryHandler = RepositoryHandler.makeRepositoryHandlerFromConfig(dbClient, null);
 			assertNotNull(repositoryHandler);
 		} catch (RepositoryException e) {
 			fail();
@@ -33,7 +31,7 @@ public class RepositoryHandlerTest extends DBTestBase {
 		try {
 			int cursorDB = 5;
 			dbClient = getDbClient();
-			RepositoryHandler repositoryHandler = RepositoryHandler.makeRepositoryHandlerFromConfig(dbClient, null, "2", "");
+			RepositoryHandler repositoryHandler = RepositoryHandler.makeRepositoryHandlerFromConfig(dbClient, null);
 			repositoryHandler.setCursorDB(cursorDB);
 			assertEquals(5, repositoryHandler.getCursorDB());
 		} catch (RepositoryException e) {
@@ -46,7 +44,7 @@ public class RepositoryHandlerTest extends DBTestBase {
     public void testExecuteQueryAndAddDocs() {
 		try {
 			DBClient dbClient = getDbClient();
-			RepositoryHandler repositoryHandler = RepositoryHandler.makeRepositoryHandlerFromConfig(dbClient, null, "2", "");
+			RepositoryHandler repositoryHandler = RepositoryHandler.makeRepositoryHandlerFromConfig(dbClient, null);
 			repositoryHandler.setTraversalContext(new ProductionTraversalContext());
 			LinkedList<JsonDocument> jsonDocumenList = repositoryHandler.executeQueryAndAddDocs();
 			assertEquals(true, jsonDocumenList.iterator().hasNext());

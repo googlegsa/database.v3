@@ -14,9 +14,9 @@
 
 package com.google.enterprise.connector.db;
 
-import com.google.enterprise.connector.db.diffing.DBClient;
-import com.google.enterprise.connector.db.diffing.DBConnectorAuthorizationManager;
-import com.google.enterprise.connector.db.diffing.DocIdUtil;
+import com.google.enterprise.connector.db.DBClient;
+import com.google.enterprise.connector.db.DBConnectorAuthorizationManager;
+import com.google.enterprise.connector.db.DocIdUtil;
 import com.google.enterprise.connector.spi.AuthenticationIdentity;
 import com.google.enterprise.connector.spi.AuthorizationResponse;
 import com.google.enterprise.connector.spi.RepositoryException;

@@ -15,10 +15,7 @@
 package com.google.enterprise.connector.db;
 
 
-import com.google.enterprise.connector.db.diffing.DBContext;
-import com.google.enterprise.connector.db.diffing.DBException;
 import com.google.enterprise.connector.db.diffing.JsonDocument;
-import com.google.enterprise.connector.db.diffing.Util;
 import com.google.enterprise.connector.spi.Property;
 import com.google.enterprise.connector.spi.RepositoryException;
 import com.google.enterprise.connector.spi.SkippedDocumentException;
@@ -33,9 +30,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.logging.Logger;
 
-import junit.framework.TestCase;
-
-public class UtilTest extends TestCase {
+public class UtilTest extends DBTestBase {
 	private static final Logger LOG = Logger.getLogger(UtilTest.class.getName());
 	public static final String ROW_CHECKSUM = "dbconnector:checksum";
 
@@ -68,12 +63,10 @@ public class UtilTest extends TestCase {
 		Map<String, Object> rowMap = new HashMap<String, Object>();
 		Map<String, Object> rowMapWithBaseURL = new HashMap<String, Object>();
 		DBContext dbContext = null;
-		try {
-			dbContext = TestUtils.getDBContext();
-		} catch (DBException dbe) {
-			fail("Unexpected exception" + dbe.toString());
-		}
-		String primaryKeyColumn = "id";
+
+        dbContext = getDbContext();
+
+        String primaryKeyColumn = "id";
 		String[] primaryKeys = { primaryKeyColumn };
 		String documentURL = "http://myhost/app/welcome.html";
 		String baseURL = "http://myhost/app/";
@@ -125,11 +118,7 @@ public class UtilTest extends TestCase {
 		Map<String, Object> rowMap = new HashMap<String, Object>();
 		Map<String, Object> rowMapWithBaseURL = new HashMap<String, Object>();
 		DBContext dbContext = null;
-		try {
-			dbContext = TestUtils.getDBContext();
-		} catch (DBException dbe) {
-			fail("Unexpected exception" + dbe.toString());
-		}
+		dbContext = getDbContext();
 		// define common test data
 		String primaryKeyColumn = "id";
 		String[] primaryKeys = { primaryKeyColumn };
@@ -165,11 +154,7 @@ public class UtilTest extends TestCase {
         LOG.info("Testing largeObjectToDoc() for CLOB data");
 
         DBContext dbContext = null;
-		try {
-			dbContext = TestUtils.getDBContext();
-		} catch (DBException dbe) {
-			fail("Unexpected exception" + dbe.toString());
-		}
+		dbContext = getDbContext();
 
         // In iBATIS CLOB data is represented as String or char array.
 		// Define CLOB data for this test case
@@ -262,12 +247,14 @@ public class UtilTest extends TestCase {
 			// will be used as display URL in feed.
 			assertEquals(fetchURL, blobDoc.findProperty(SpiConstants.PROPNAME_DISPLAYURL).nextValue().toString());
 
-            // set "text/plain" mime type in ignore list. Now we should get null
-			// value for DB document as this document is ignored by connector.
-			Set<String> ignoredMime = new HashSet<String>();
-			ignoredMime.add("text/plain");
+            // set "text/plain" mime type in unsupoorted list. Now we should get
+			// null
+			// value for DB document content as this document is in unsupported
+			// mimetype list.
+			Set<String> unsupportedMime = new HashSet<String>();
+			unsupportedMime.add("text/plain");
 			MimeTypeMap mimeTypeMap = new MimeTypeMap();
-			mimeTypeMap.setUnsupportedMimeTypes(ignoredMime);
+			mimeTypeMap.setUnsupportedMimeTypes(unsupportedMime);
 			context.setMimeTypeMap(mimeTypeMap);
 			blobDoc = Util.largeObjectToDoc("testdb_", primaryKeys, rowMap, "localhost", dbContext, context);
 			Property docContent = null;
@@ -276,7 +263,15 @@ public class UtilTest extends TestCase {
 
             // document content should have null value.
 			assertNull(docContent);
-		} catch (DBException e) {
+
+            // set "text/plain" mime type in ignore list. Now we should get null
+			// value for DB document as this document is ignored by connector.
+			mimeTypeMap.setExcludedMimeTypes(unsupportedMime);
+			context.setMimeTypeMap(mimeTypeMap);
+			blobDoc = Util.largeObjectToDoc("testdb_", primaryKeys, rowMap, "localhost", dbContext, context);
+			assertNull(blobDoc);
+
+        } catch (DBException e) {
 			fail("Unexpected exception" + e.toString());
 		} catch (SkippedDocumentException e) {
 			fail("Unexpected exception" + e.toString());

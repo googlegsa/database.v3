@@ -1,7 +1,7 @@
 package com.google.enterprise.connector.db;
 
+
 import com.google.enterprise.connector.db.diffing.DBClassRepository;
-import com.google.enterprise.connector.db.diffing.DBClient;
 import com.google.enterprise.connector.db.diffing.DBJsonDocumentFetcher;
 import com.google.enterprise.connector.db.diffing.RepositoryHandler;
 import com.google.enterprise.connector.traversal.ProductionTraversalContext;
@@ -17,7 +17,7 @@ public class DBClassRepositoryTest extends DBTestBase {
 		runDBScript(CREATE_TEST_DB_TABLE);
 		runDBScript(LOAD_TEST_DATA);
 		DBClient dbClient = getDbClient();
-		RepositoryHandler repositoryHandler = RepositoryHandler.makeRepositoryHandlerFromConfig(dbClient, null, "2", "");
+		RepositoryHandler repositoryHandler = RepositoryHandler.makeRepositoryHandlerFromConfig(dbClient, null);
 		repositoryHandler.setTraversalContext(new ProductionTraversalContext());
 		DBJsonDocumentFetcher dbJsonDocumentFetcher = new DBJsonDocumentFetcher(
 				repositoryHandler);

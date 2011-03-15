@@ -14,7 +14,7 @@
 
 package com.google.enterprise.connector.db;
 
-import com.google.enterprise.connector.db.diffing.DBConnectorType;
+import com.google.enterprise.connector.db.DBConnectorType;
 import com.google.enterprise.connector.spi.ConfigureResponse;
 
 import java.util.Arrays;

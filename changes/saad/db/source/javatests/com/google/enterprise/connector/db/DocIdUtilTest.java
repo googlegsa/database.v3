@@ -14,8 +14,8 @@
 
 package com.google.enterprise.connector.db;
 
-import com.google.enterprise.connector.db.diffing.DBException;
-import com.google.enterprise.connector.db.diffing.DocIdUtil;
+import com.google.enterprise.connector.db.DBException;
+import com.google.enterprise.connector.db.DocIdUtil;
 
 import java.util.ArrayList;
 import java.util.Collection;
