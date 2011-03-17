@@ -128,6 +128,10 @@ Go to $CATALINA_HOME/webapps/connector-manager/WEB-INF/classes. Open logging.pro
 * Q. Can I configure Database connector to handle authentication?* 
  No. Current version of Database connector does not support authentication.
 
+
+* Q. Does DB connector support ssl for database connections?* 
+ No. Current version of Database connector does not support ssl for database connections.
+
 * Q. Can I configure Database connector handle authorization?*
  Yes. You can configure Database connector to handle authorization. Click [http://code.google.com/p/google-enterprise-connector-database/wiki/HandlingAuthZinDatabaseConnector here] for more details.
 
