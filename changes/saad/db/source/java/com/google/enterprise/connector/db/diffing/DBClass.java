@@ -61,10 +61,10 @@ public class DBClass implements DocumentHandle, DocumentSnapshot {
 		} catch (JSONException e) {
 
             LOG.warning("Exception thrown while creating JSONObject from string"
-					+ jsonString + "\n" + e);
+					+ jsonString + "\n" + e.toString());
 			throw new IllegalArgumentException(
 					"Exception thrown for illegal JsonString" + jsonString
-							+ "\n" + e);
+							+ "\n", e);
 
         }
 		document = new JsonDocument(jo);
@@ -72,7 +72,7 @@ public class DBClass implements DocumentHandle, DocumentSnapshot {
 			documentId = Value.getSingleValueString(document, SpiConstants.PROPNAME_DOCID);
 		} catch (RepositoryException e) {
 			LOG.warning("Exception thrown while extracting docId for Document"
-					+ document + "\n" + e);
+					+ document + "\n" + e.toString());
 			// Thrown to indicate an inappropriate argument has been passed to
 			// Value.getSingleValueString() method.
 			throw new IllegalArgumentException();

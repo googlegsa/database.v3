@@ -735,11 +735,11 @@ public class Util {
         int mimeTypeSupportLevel = context.mimeTypeSupportLevel(mimeType);
         if (mimeTypeSupportLevel == 0) {
             jsonObjectUtil.setBinaryContent(SpiConstants.PROPNAME_CONTENT, null);
-			LOG.info("Setting Contents null beacuse MimeType not supported for Document with id "
-					+ docId);
+			LOG.info("Setting Contents null beacuse MimeType" + mimeType
+					+ " not supported for Document with id " + docId);
 		} else if (mimeTypeSupportLevel < 0) {
-			LOG.info("Skipping Document beacuse MimeType not supported for Document with Id: "
-					+ docId);
+			LOG.info("Skipping Document beacuse MimeType " + mimeType
+					+ "is excluded for Document with Id: " + docId);
 			// Return null if mimetype for the document is not supported
 			return null;
         } else {

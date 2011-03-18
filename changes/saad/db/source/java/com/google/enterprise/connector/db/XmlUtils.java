@@ -92,7 +92,7 @@ public class XmlUtils {
 			DocumentBuilder builder = factory.newDocumentBuilder();
 			doc = builder.newDocument();
 		} catch (ParserConfigurationException e) {
-			throw new DBException("Unable to get XML for row." + "\n" + e);
+			throw new DBException("Unable to get XML for row." + "\n" + e, e);
 		}
 
         Element top = doc.createElement(dbName);
@@ -144,7 +144,7 @@ public class XmlUtils {
 
             throw new DBException(
 					"Unable to create XML string from the DOM document" + "\n"
-							+ e);
+							+ e, e);
 
         }
 		return xmlString;

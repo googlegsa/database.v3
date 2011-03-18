@@ -68,7 +68,7 @@ public class RepositoryHandlerIterator implements Iterator<JsonDocument> {
             } catch (DBException e) {
 
 				LOG.warning("Exception in hasnext of RepositoryHandlerIterator"
-						+ "\n" + e);
+						+ "\n" + e.toString());
             }
 
         }

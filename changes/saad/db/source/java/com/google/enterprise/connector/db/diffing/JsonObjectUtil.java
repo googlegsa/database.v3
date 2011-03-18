@@ -54,7 +54,7 @@ public class JsonObjectUtil {
 						Collections.singletonList(Value.getStringValue(propertyValue))).nextValue().toString());
 			} catch (JSONException e) {
 				LOG.warning("Exception for " + propertyName + " with value "
-						+ propertyValue + "\n" + e);
+						+ propertyValue + "\n" + e.toString());
 			}
 		}
 	}
@@ -79,7 +79,7 @@ public class JsonObjectUtil {
 		} catch (JSONException e) {
 
             LOG.warning("Exception for " + propertyName + " with value "
-					+ propertyValue + "\n" + e);
+					+ propertyValue + "\n" + e.toString());
 		}
 	}
 
@@ -99,7 +99,7 @@ public class JsonObjectUtil {
 					Collections.singletonList(Value.getBinaryValue((byte[]) propertyValue))).nextValue().toString());
 		} catch (JSONException e) {
 			LOG.warning("Exception for " + propertyName + " with value "
-					+ propertyValue + "\n" + e);
+					+ propertyValue + "\n" + e.toString());
 		}
 	}
 

@@ -98,7 +98,7 @@ public class JsonDocument extends SimpleDocument {
             ja = (String) jo.get(key);
         } catch (JSONException e) {
 			LOG.warning("Exception thrown while extracting key: " + key + "\n"
-					+ e);
+					+ e.toString());
             return;
         }
         ImmutableList.Builder<Value> builder = new ImmutableList.Builder<Value>();

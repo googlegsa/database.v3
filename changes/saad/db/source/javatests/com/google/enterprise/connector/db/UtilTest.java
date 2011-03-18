@@ -18,7 +18,6 @@ package com.google.enterprise.connector.db;
 import com.google.enterprise.connector.db.diffing.JsonDocument;
 import com.google.enterprise.connector.spi.Property;
 import com.google.enterprise.connector.spi.RepositoryException;
-import com.google.enterprise.connector.spi.SkippedDocumentException;
 import com.google.enterprise.connector.spi.SpiConstants;
 import com.google.enterprise.connector.traversal.FileSizeLimitInfo;
 import com.google.enterprise.connector.traversal.MimeTypeMap;
@@ -272,8 +271,6 @@ public class UtilTest extends DBTestBase {
 			assertNull(blobDoc);
 
         } catch (DBException e) {
-			fail("Unexpected exception" + e.toString());
-		} catch (SkippedDocumentException e) {
 			fail("Unexpected exception" + e.toString());
 		} catch (RepositoryException e) {
 			fail("Unexpected exception" + e.toString());
