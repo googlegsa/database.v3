@@ -22,6 +22,7 @@ import com.google.enterprise.connector.db.Util;
 import com.google.enterprise.connector.spi.TraversalContext;
 import com.google.enterprise.connector.util.diffing.TraversalContextManager;
 
+import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -107,6 +108,11 @@ public class RepositoryHandler{
             LOG.info("TraversalContextManager not set");
         }
         if (rows.size() == 0) {
+			LOG.info("Crawl cycle of database "
+					+ dbClient.getDBContext().getDbName()
+					+ " is completed at: " + new Date() + "\nTotal "
+					+ getCursorDB()
+					+ " records are crawled during this crawl cycle");
             setCursorDB(0);
         } else {
             setCursorDB(getCursorDB() + rows.size());
@@ -162,7 +168,8 @@ public class RepositoryHandler{
                 break;
             }
         }
-
+		LOG.info(docList.size() + " document(s) to be fed to GSA"
+				+ " at time: " + new Date());
         return docList;
     }
 

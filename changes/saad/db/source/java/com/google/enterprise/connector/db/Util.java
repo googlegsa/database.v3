@@ -100,7 +100,8 @@ public class Util {
          * Set other doc properties
          */
         setOptionalProperties(row, jsonObjectUtil, dbContext);
-        JsonDocument jsonDoc = new JsonDocument(jsonObjectUtil.getJsonObject());
+		JsonDocument jsonDoc = new JsonDocument(jsonObjectUtil.getProperties(),
+				jsonObjectUtil.getJsonObject());
         return jsonDoc;
     }
 
@@ -257,7 +258,7 @@ public class Util {
     public static JsonDocument generateMetadataURLFeed(String dbName,
             String[] primaryKeys, Map<String, Object> row, String hostname,
             DBContext dbContext, String type, TraversalContext context)
-			throws DBException {
+            throws DBException {
 
         boolean isWithBaseURL = type.equalsIgnoreCase(Util.WITH_BASE_URL);
 
@@ -338,7 +339,8 @@ public class Util {
         skipColumns.addAll(Arrays.asList(primaryKeys));
         setMetaInfo(jsonObjectUtil, row, skipColumns);
 
-        JsonDocument jsonDocument = new JsonDocument(
+		JsonDocument jsonDocument = new JsonDocument(
+				jsonObjectUtil.getProperties(),
                 jsonObjectUtil.getJsonObject());
         return jsonDocument;
     }
@@ -421,6 +423,11 @@ public class Util {
 
             if (largeObject instanceof byte[]) {
                 blobContent = (byte[]) largeObject;
+
+				byte[] blobData = new byte[blobContent.length];
+				for (int i = 0; i < blobContent.length; i++)
+					blobData[i] = blobContent[i];
+
                 int length = blobContent.length;
                 /*
                  * Check if the size of document exceeds Max document size that
@@ -438,7 +445,7 @@ public class Util {
                  * document is not supported.
                  */
 
-                jsonObjectUtil = setBlobContent(blobContent, jsonObjectUtil, dbName, row, dbContext, primaryKeys, context, docId);
+				jsonObjectUtil = setBlobContent(blobData, jsonObjectUtil, dbName, row, dbContext, primaryKeys, context, docId);
 				if (jsonObjectUtil == null) {
 					// Return null if the mimetype not supported for the
 					// document
@@ -629,7 +636,8 @@ public class Util {
         /*
          * Set other doc properties
          */
-		jsonDocument = new JsonDocument(jsonObjectUtil.getJsonObject());
+		jsonDocument = new JsonDocument(jsonObjectUtil.getProperties(),
+				jsonObjectUtil.getJsonObject());
 		return jsonDocument;
     }
 

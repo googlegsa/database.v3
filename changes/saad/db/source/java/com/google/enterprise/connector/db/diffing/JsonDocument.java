@@ -35,93 +35,119 @@ import java.util.logging.Logger;
  */
 public class JsonDocument extends SimpleDocument {
 
-    private static final Logger LOG = Logger.getLogger(JsonDocument.class.getName());
+	private static final Logger LOG = Logger.getLogger(JsonDocument.class.getName());
 
-    private final String jsonString;
-    private final String objectId;
+	private final String jsonString;
+	private final String objectId;
+
+	/**
+	 * Constructor used by @link Util.java for creating a JsonDocument object
+	 * used by @link RepositoryHandler.java for building a collection over JsonDocument
+	 */
+	public JsonDocument(Map<String, List<Value>> properties,
+			JSONObject jsonObject) {
+		super(properties);
+		jsonString = jsonObject.toString();
+		try {
+			objectId = Value.getSingleValueString(this, SpiConstants.PROPNAME_DOCID);
+		} catch (RepositoryException e) {
+			throw new IllegalStateException("Internal consistency error", e);
+		}
+		if (objectId == null) {
+			throw new IllegalArgumentException(
+					"Unable to parse for docID from the JSON string:"
+					+ jsonString);
+		}
+
+	}
+
+	/**
+	 * Constructor used by DBClass for creating JsonDocument for change Detection purpose.
+	 */
 
 	public JsonDocument(JSONObject jsonObject) {
-        super(buildJsonProperties(jsonObject));
-        jsonString = jsonObject.toString();
-        try {
-            objectId = Value.getSingleValueString(this, SpiConstants.PROPNAME_DOCID);
-        } catch (RepositoryException e) {
-            throw new IllegalStateException("Internal consistency error", e);
-        }
-        if (objectId == null) {
-            throw new IllegalArgumentException(
-                    "Unable to parse for docID from the JSON string:"
-							+ jsonString);
-        }
+		super(buildJsonProperties(jsonObject));
+		jsonString = jsonObject.toString();
+		try {
+			objectId = Value.getSingleValueString(this, SpiConstants.PROPNAME_DOCID);
+		} catch (RepositoryException e) {
+			throw new IllegalStateException("Internal consistency error", e);
+		}
+		if (objectId == null) {
+			throw new IllegalArgumentException(
+					"Unable to parse for docID from the JSON string:"
+					+ jsonString);
+		}
 
-    }
+	}
 
-    public String getDocumentId() {
-        return objectId;
-    }
 
-    public String toJson() {
-        return jsonString;
-    }
+	public String getDocumentId() {
+		return objectId;
+	}
 
-    /**
-     * A class level method for extracting attributes from JSONObject object and
-     * creating a Map<String,List<Value>> used by the superclass(@link
-     * SimpleDocument) constructor and hence creating a JsonDocument Object.
-     */
+	public String toJson() {
+		return jsonString;
+	}
+
+	/**
+	 * A class level method for extracting attributes from JSONObject object and
+	 * creating a Map<String,List<Value>> used by the superclass(@link
+	 * SimpleDocument) constructor and hence creating a JsonDocument Object.
+	 */
 	@SuppressWarnings("unchecked")
 	private static Map<String, List<Value>> buildJsonProperties(JSONObject jo) {
-        ImmutableMap.Builder<String, List<Value>> mapBuilder = new ImmutableMap.Builder<String, List<Value>>();
+		ImmutableMap.Builder<String, List<Value>> mapBuilder = new ImmutableMap.Builder<String, List<Value>>();
 		Iterator<String> jsonKeys = jo.keys();
 		while (jsonKeys.hasNext()) {
 
-            String key = jsonKeys.next();
-            if (key.equals(SpiConstants.PROPNAME_DOCID)) {
-                extractDocid(jo, mapBuilder);
-            } else {
-                extractAttributes(jo, mapBuilder, key);
-            }
-        }
+			String key = jsonKeys.next();
+			if (key.equals(SpiConstants.PROPNAME_DOCID)) {
+				extractDocid(jo, mapBuilder);
+			} else {
+				extractAttributes(jo, mapBuilder, key);
+			}
+		}
 
-        return mapBuilder.build();
-    }
+		return mapBuilder.build();
+	}
 
-    /**
-     * A class level method for extracting attributes from JSONObject object
-     * used by buildJsonProperties.
-     */
-    private static void extractAttributes(JSONObject jo,
-            ImmutableMap.Builder<String, List<Value>> mapBuilder, String key)
-			throws IllegalAccessError {
-        String ja;
-        try {
-            ja = (String) jo.get(key);
-        } catch (JSONException e) {
+	/**
+	 * A class level method for extracting attributes from JSONObject object
+	 * used by buildJsonProperties.
+	 */
+	private static void extractAttributes(JSONObject jo,
+			ImmutableMap.Builder<String, List<Value>> mapBuilder, String key)
+	throws IllegalAccessError {
+		String ja;
+		try {
+			ja = (String) jo.get(key);
+		} catch (JSONException e) {
 			LOG.warning("Exception thrown while extracting key: " + key + "\n"
-					+ e.toString());
-            return;
-        }
-        ImmutableList.Builder<Value> builder = new ImmutableList.Builder<Value>();
-        builder.add(Value.getStringValue(ja));
-        ImmutableList<Value> l = builder.build();
-        if (l.size() > 0) {
-            mapBuilder.put(key, l);
-        }
-        return;
-    }
+					+ e);
+			return;
+		}
+		ImmutableList.Builder<Value> builder = new ImmutableList.Builder<Value>();
+		builder.add(Value.getStringValue(ja));
+		ImmutableList<Value> l = builder.build();
+		if (l.size() > 0) {
+			mapBuilder.put(key, l);
+		}
+		return;
+	}
 
-    private static void extractDocid(JSONObject jo,
-            ImmutableMap.Builder<String, List<Value>> mapBuilder) {
-        String docid;
-        try {
-            docid = jo.getString(SpiConstants.PROPNAME_DOCID);
+	private static void extractDocid(JSONObject jo,
+			ImmutableMap.Builder<String, List<Value>> mapBuilder) {
+		String docid;
+		try {
+			docid = jo.getString(SpiConstants.PROPNAME_DOCID);
 		} catch (Exception e) {
-            throw new IllegalArgumentException(
-                    "Internal consistency error: missing docid", e);
-        }
-        mapBuilder.put(SpiConstants.PROPNAME_DOCID, ImmutableList.of(Value.getStringValue(docid)));
+			throw new IllegalArgumentException(
+					"Internal consistency error: missing docid", e);
+		}
+		mapBuilder.put(SpiConstants.PROPNAME_DOCID, ImmutableList.of(Value.getStringValue(docid)));
 
-    }
+	}
 
 
 }
