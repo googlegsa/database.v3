@@ -147,3 +147,6 @@ Go to $CATALINA_HOME/webapps/connector-manager/WEB-INF/classes. Open logging.pro
 
 * Q. I have BLOB/CLOB data stored in database. Can I configure Database Connector to crawl BLOB/CLOB data?*
  Yes. You can configure Database Connector to crawl and index BLOB or CLOB data. Click [http://code.google.com/p/google-enterprise-connector-database/wiki/ExternalMetadataIndexingUsingDBConnector here] for more details.
+
+* Q. Can we use stylesheet to let admin decide which fields to be sent in as metadata using the "<meta>" Tag?* 
+ No. Current version of Database connector does not support this feature.
