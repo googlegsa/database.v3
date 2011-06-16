@@ -31,7 +31,7 @@ Below example explain how to write "AuthZ Query" for "USER_REPORT_MAP" table. Th
 Here ReportId and ReportTitle are primary key columns in REPORT Table.
 
 
-SELECT CONCAT(ReportId ,",", ReportTitle) FROM USER_REPORT_MAP Where username='#username#'  AND CONCAT(ReportId ,",", ReportTitle) IN($docId$)
+SELECT CONCAT(ReportId ,",", ReportTitle) FROM USER_REPORT_MAP Where username='#username#'  AND CONCAT(ReportId ,",", ReportTitle) IN($docIds$)
 
 
 The above query may produce output for some user "alvin_2" as show below.
