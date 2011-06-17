@@ -14,7 +14,6 @@
 
 package com.google.enterprise.connector.db.diffing;
 
-
 import com.google.common.base.Function;
 import com.google.enterprise.connector.spi.Document;
 import com.google.enterprise.connector.spi.RepositoryException;
@@ -26,104 +25,111 @@ import com.google.enterprise.connector.util.diffing.DocumentSnapshot;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.Date;
 import java.util.logging.Logger;
 
 /**
- * This class implements both the {@link DocumentHandle}
- * and {@link DocumentSnapshot} interfaces. It is backed with a {@link JsonDocument}.
+ * This class implements both the {@link DocumentHandle} and
+ * {@link DocumentSnapshot} interfaces. It is backed with a {@link JsonDocument}
+ * .
  */
 public class DBClass implements DocumentHandle, DocumentSnapshot {
-	private static final Logger LOG = Logger.getLogger(DBClass.class.getName());
-	private final JsonDocument document;
-	private final String documentId;
-	private final String jsonString;
+  private static final Logger LOG = Logger.getLogger(DBClass.class.getName());
+  private final JsonDocument document;
+  private final String documentId;
+  private final String jsonString;
 
-    public DBClass(JsonDocument jsonDoc) {
-		document = jsonDoc;
-		documentId = document.getDocumentId();
-		jsonString = document.toJson();
-	}
+  public DBClass(JsonDocument jsonDoc) {
+    document = jsonDoc;
+    documentId = document.getDocumentId();
+    jsonString = document.toJson();
+  }
 
-    public static Function<JsonDocument, DBClass> factoryFunction = new Function<JsonDocument, DBClass>() {
-		/* @Override */
-		public DBClass apply(JsonDocument jsonDoc) {
-			return new DBClass(jsonDoc);
-		}
-	};
-
-    public DBClass(String jsonString) {
-		// This is implemented by saving the supplied jsonString then making a
-		// JSONObject
-		this.jsonString = jsonString;
-		JSONObject jo;
-		try {
-			jo = new JSONObject(jsonString);
-		} catch (JSONException e) {
-
-            LOG.warning("Exception thrown while creating JSONObject from string"
-					+ jsonString + "\n" + e.toString());
-			throw new IllegalArgumentException(
-					"Exception thrown for illegal JsonString" + jsonString
-							+ "\n", e);
-
-        }
-		document = new JsonDocument(jo);
-		try {
-			documentId = Value.getSingleValueString(document, SpiConstants.PROPNAME_DOCID);
-		} catch (RepositoryException e) {
-			LOG.warning("Exception thrown while extracting docId for Document"
-					+ document + "\n" + e.toString());
-			// Thrown to indicate an inappropriate argument has been passed to
-			// Value.getSingleValueString() method.
-			throw new IllegalArgumentException();
-		}
-	}
-
+  public static Function<JsonDocument, DBClass> factoryFunction = new Function<JsonDocument, DBClass>() {
     /* @Override */
-	public Document getDocument() throws RepositoryException {
-		return document;
-	}
+    public DBClass apply(JsonDocument jsonDoc) {
+      return new DBClass(jsonDoc);
+    }
+  };
 
-    /* @Override */
-	public String getDocumentId() {
-		return documentId;
-	}
+  public DBClass(String jsonString) {
+    // This is implemented by saving the supplied jsonString then making a
+    // JSONObject
+    this.jsonString = jsonString;
+    JSONObject jo;
+    try {
+      jo = new JSONObject(jsonString);
+    } catch (JSONException e) {
 
-    /**
-	 * Returns a {@link DocumentHandle} for updating the referenced document on
-	 * the GSA or null if the document on the GSA does not need updating.
-	 * 
-	 * @throws RepositoryException
-	 */
-	/* @Override */
-	public DocumentHandle getUpdate(DocumentSnapshot onGsa)
-			throws RepositoryException {
-		// the diffing framework sends in a null to indicate that it hasn't seen
-		// this snapshot before. So we return the corresponding Handle (in our
-		// case,
-		// the same object)
-		if (onGsa == null) {
-			return this;
-		}
-		// if the parameter is non-null, then it should be an DBClass
-		// (it was created via an DBClassRepository).
-		if (!(onGsa instanceof DBClass)) {
-			throw new IllegalArgumentException(
-					"Illegal parameter passed to getUpdate of DocumentSnapshot."
-							+ "The paramater passed is not a instance of DBCLass");
-		}
-		DBClass p = DBClass.class.cast(onGsa);
-		// we just assume that if the serialized form is the same, then nothing
-		// has changed.
-		if (this.jsonString.equals(p.toString())) {
-			// null return tells the diffing framework to do nothing
-			return null;
-		}
-		// Something has changed, so return the corresponding handle
-		return this;
-	}
+      LOG.warning("Exception thrown while creating JSONObject from string"
+          + jsonString + "\n" + e.toString());
+      throw new IllegalArgumentException(
+          "Exception thrown for illegal JsonString" + jsonString + "\n", e);
 
-    public String toString() {
-		return jsonString;
-	}
+    }
+    document = new JsonDocument(jo);
+    try {
+      documentId = Value.getSingleValueString(document, SpiConstants.PROPNAME_DOCID);
+    } catch (RepositoryException e) {
+      LOG.warning("Exception thrown while extracting docId for Document"
+          + document + "\n" + e.toString());
+      // Thrown to indicate an inappropriate argument has been passed to
+      // Value.getSingleValueString() method.
+      throw new IllegalArgumentException();
+    }
+  }
+
+  /* @Override */
+  public Document getDocument() throws RepositoryException {
+    return document;
+  }
+
+  /* @Override */
+  public String getDocumentId() {
+    return documentId;
+  }
+
+  /**
+   * Returns a {@link DocumentHandle} for updating the referenced document on
+   * the GSA or null if the document on the GSA does not need updating.
+   *
+   * @throws RepositoryException
+   */
+  /* @Override */
+  public DocumentHandle getUpdate(DocumentSnapshot onGsa)
+      throws RepositoryException {
+    // the diffing framework sends in a null to indicate that it hasn't seen
+    // this snapshot before. So we return the corresponding Handle (in our
+    // case,
+    // the same object)
+    if (onGsa == null) {
+      this.document.setChanged();
+      return this;
+    }
+    // if the parameter is non-null, then it should be an DBClass
+    // (it was created via an DBClassRepository).
+    if (!(onGsa instanceof DBClass)) {
+      throw new IllegalArgumentException(
+          "Illegal parameter passed to getUpdate of DocumentSnapshot."
+              + "The paramater passed is not a instance of DBCLass");
+    }
+    DBClass p = DBClass.class.cast(onGsa);
+    // we just assume that if the serialized form is the same, then nothing
+    // has changed.
+    if (this.jsonString.equals(p.toString())) {
+      // null return tells the diffing framework to do nothing
+      return null;
+    }
+    // Something has changed, so return the corresponding handle
+    // and set the changed flag of the document
+    this.document.setChanged();
+    LOG.info("Change for Document with Id " + getDocumentId() + " at time "
+        + new Date());
+
+    return this;
+  }
+
+  public String toString() {
+    return jsonString;
+  }
 }
