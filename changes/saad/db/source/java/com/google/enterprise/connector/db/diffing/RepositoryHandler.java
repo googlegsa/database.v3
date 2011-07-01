@@ -37,7 +37,7 @@ public class RepositoryHandler {
   private static final Logger LOG = Logger.getLogger(RepositoryHandler.class.getName());
   private DBClient dbClient;
   private TraversalContextManager traversalContextManager;
-  private TraversalContext traversalContext;
+  private static TraversalContext traversalContext;
   private int cursorDB = 0;
 
   // EXC_NORMAL represents that DB Connector is running in normal mode
@@ -60,7 +60,7 @@ public class RepositoryHandler {
   }
 
   public void setTraversalContext(TraversalContext traversalContext) {
-    this.traversalContext = traversalContext;
+    RepositoryHandler.traversalContext = traversalContext;
   }
 
   // current execution mode
@@ -98,10 +98,11 @@ public class RepositoryHandler {
    */
   public LinkedList<JsonDocument> executeQueryAndAddDocs() throws DBException {
     LinkedList<JsonDocument> docList = new LinkedList<JsonDocument>();
-    List<Map<String, Object>> rows = dbClient.executePartialQuery(cursorDB, dbClient.getDBContext().getNO_OF_ROWS());
+    List<Map<String, Object>> rows = dbClient.executePartialQuery(cursorDB, dbClient.getDBContext().getNumberOfRows());
 
     if (traversalContext == null) {
       setTraversalContext(traversalContextManager.getTraversalContext());
+      JsonDocument.setTraversalContext(traversalContextManager.getTraversalContext());
     } else {
       LOG.info("TraversalContextManager not set");
     }
@@ -126,7 +127,7 @@ public class RepositoryHandler {
       case MODE_METADATA_URL:
 
         for (Map<String, Object> row : rows) {
-          jsonDoc = JsonDocumentUtil.generateMetadataURLFeed(dbClient.getDBContext().getDbName(), dbClient.getDBContext().getPrimaryKeys(), row, dbClient.getDBContext().getHostname(), dbClient.getDBContext(), "");
+          jsonDoc = JsonDocumentUtil.generateMetadataURLFeed(dbClient.getDBContext().getDbName(), dbClient.getDBContext().getPrimaryKeys().split(Util.PRIMARY_KEYS_SEPARATOR), row, dbClient.getDBContext().getHostname(), dbClient.getDBContext(), "");
           docList.add(jsonDoc);
         }
         break;
@@ -135,7 +136,7 @@ public class RepositoryHandler {
       case MODE_METADATA_BASE_URL:
         jsonDoc = null;
         for (Map<String, Object> row : rows) {
-          jsonDoc = JsonDocumentUtil.generateMetadataURLFeed(dbClient.getDBContext().getDbName(), dbClient.getDBContext().getPrimaryKeys(), row, dbClient.getDBContext().getHostname(), dbClient.getDBContext(), Util.WITH_BASE_URL);
+          jsonDoc = JsonDocumentUtil.generateMetadataURLFeed(dbClient.getDBContext().getDbName(), dbClient.getDBContext().getPrimaryKeys().split(Util.PRIMARY_KEYS_SEPARATOR), row, dbClient.getDBContext().getHostname(), dbClient.getDBContext(), Util.WITH_BASE_URL);
           docList.add(jsonDoc);
         }
 
@@ -145,7 +146,7 @@ public class RepositoryHandler {
       case MODE_BLOB_CLOB:
         jsonDoc = null;
         for (Map<String, Object> row : rows) {
-          jsonDoc = JsonDocumentUtil.largeObjectToDoc(dbClient.getDBContext().getDbName(), dbClient.getDBContext().getPrimaryKeys(), row, dbClient.getDBContext().getHostname(), dbClient.getDBContext(), traversalContext);
+          jsonDoc = JsonDocumentUtil.largeObjectToDoc(dbClient.getDBContext().getDbName(), dbClient.getDBContext().getPrimaryKeys().split(Util.PRIMARY_KEYS_SEPARATOR), row, dbClient.getDBContext().getHostname(), dbClient.getDBContext(), traversalContext);
           if (jsonDoc != null) {
             docList.add(jsonDoc);
           }
@@ -156,7 +157,7 @@ public class RepositoryHandler {
       // execute the connector in normal mode
       default:
         for (Map<String, Object> row : rows) {
-          jsonDoc = JsonDocumentUtil.rowToDoc(dbClient.getDBContext().getDbName(), dbClient.getDBContext().getPrimaryKeys(), row, dbClient.getDBContext().getHostname(), dbClient.getDBContext().getXslt(), dbClient.getDBContext());
+          jsonDoc = JsonDocumentUtil.rowToDoc(dbClient.getDBContext().getDbName(), dbClient.getDBContext().getPrimaryKeys().split(Util.PRIMARY_KEYS_SEPARATOR), row, dbClient.getDBContext().getHostname(), dbClient.getDBContext().getXslt(), dbClient.getDBContext());
           if (jsonDoc != null) {
             docList.add(jsonDoc);
           }
