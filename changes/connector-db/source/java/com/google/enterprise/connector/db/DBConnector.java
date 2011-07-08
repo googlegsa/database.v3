@@ -35,11 +35,11 @@ public class DBConnector implements Connector {
   private Map<String, String> dbTypeDriver = null;
 
   public DBConnector(String connectionUrl, String hostname,
-    String driverClassName, String login, String password, String dbName,
-    String sqlQuery, String googleConnectorWorkDir, String primaryKeysString,
-    String xslt, String authZQuery, String lastModifiedDate,
-    String documentURLField, String documentIdField, String baseURL,
-    String lobField, String fetchURLField, String extMetadataType) {
+      String driverClassName, String login, String password, String dbName,
+      String sqlQuery, String googleConnectorWorkDir, String primaryKeysString,
+      String xslt, String authZQuery, String lastModifiedDate,
+      String documentURLField, String documentIdField, String baseURL,
+      String lobField, String fetchURLField, String extMetadataType) {
 
     this.dbContext = new DBContext(connectionUrl, hostname, driverClassName,
         login, password, dbName, lastModifiedDate, documentURLField,
@@ -67,10 +67,4 @@ public class DBConnector implements Connector {
     }
   }
 
-  public void test() {
-    if (true) {
-      String ss = new String("test");
-
-    }
-  }
 }
