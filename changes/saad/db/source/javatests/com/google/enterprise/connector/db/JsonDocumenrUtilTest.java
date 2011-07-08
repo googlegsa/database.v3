@@ -136,10 +136,6 @@ public class JsonDocumenrUtilTest extends DBTestBase {
 		rowMap.put(primaryKeyColumn, 1);
 		// add version column in row
 		rowMap.put(versionColumn, versionValue);
-		// add document title for this document. Use alias "dbconn_title" for
-		// column used to store document title.
-		rowMap.put(dbContext.getDocumentTitle(), title);
-
 		// Test scenarios for CLOB data types
 		testCLOBDataScenarios(rowMap, primaryKeys);
 		// remove CLOB entry from row map which was added in
@@ -200,9 +196,6 @@ public class JsonDocumenrUtilTest extends DBTestBase {
 			// indexing external metadata
 			assertNull(clobDoc.findProperty("id"));
 
-			// test document title
-			assertEquals("Welcome Page", clobDoc.findProperty(SpiConstants.PROPNAME_TITLE).nextValue().toString());
-
 		} catch (DBException e) {
 			fail("Unexpected exception" + e.toString());
 		} catch (RepositoryException e) {
@@ -249,9 +242,6 @@ public class JsonDocumenrUtilTest extends DBTestBase {
 			// test scenario:- primary key column should be excluded while
 			// indexing external metadata
 			assertNull(blobDoc.findProperty("id"));
-
-			// test document title
-			assertEquals("Welcome Page", blobDoc.findProperty(SpiConstants.PROPNAME_TITLE).nextValue().toString());
 
 			// if one of the column holds the URL for fetching BLOB data. It
 			// will be used as display URL in feed.

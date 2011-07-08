@@ -161,12 +161,6 @@ public class Util {
     if (dbContext == null) {
       return;
     }
-    // set Document Title
-    Object docTitle = row.get(dbContext.getDocumentTitle());
-    if (docTitle != null) {
-      jsonObjectUtil.setProperty(SpiConstants.PROPNAME_TITLE, docTitle.toString());
-
-    }
     // set last modified date
     Object lastModified = row.get(dbContext.getLastModifiedDate());
     if (lastModified != null && (lastModified instanceof Timestamp)) {
@@ -230,12 +224,8 @@ public class Util {
   public static void skipOtherProperties(List<String> skipColumns,
       DBContext dbContext) {
     String lastModColumn = dbContext.getLastModifiedDate();
-    String docTitle = dbContext.getDocumentTitle();
     if (lastModColumn != null && lastModColumn.trim().length() > 0) {
       skipColumns.add(lastModColumn);
-    }
-    if (docTitle != null && docTitle.trim().length() > 0) {
-      skipColumns.add(docTitle);
     }
   }
 

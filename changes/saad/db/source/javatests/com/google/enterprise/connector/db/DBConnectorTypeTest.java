@@ -14,7 +14,6 @@
 
 package com.google.enterprise.connector.db;
 
-import com.google.enterprise.connector.db.DBConnectorType;
 import com.google.enterprise.connector.spi.ConfigureResponse;
 
 import java.util.Arrays;
@@ -34,21 +33,19 @@ import junit.framework.TestCase;
  */
 public class DBConnectorTypeTest extends TestCase {
 
-
 	private static final Logger LOG = Logger.getLogger(DBConnectorTypeTest.class.getName());
 
-    private DBConnectorType connectorType;
+	private DBConnectorType connectorType;
 	private Set<String> configKeys;
-	private String[] keys = new String[] { "login", "password",
-			"connectionUrl", "dbName", "hostname", "driverClassName",
-			"sqlQuery", "primaryKeysString", "xslt", "authZQuery",
-			"lastModifiedDate", "documentTitle", "externalMetadata",
-			"externalMetadata", "documentURLField", "documentIdField",
-			"baseURL", "lobField", "fetchURLField", "extMetadataType" };
+	private String[] keys = new String[] { "login", "password", "connectionUrl",
+			"dbName", "hostname", "driverClassName", "sqlQuery", "primaryKeysString",
+			"xslt", "authZQuery", "lastModifiedDate", "externalMetadata",
+			"externalMetadata", "documentURLField", "documentIdField", "baseURL",
+			"lobField", "fetchURLField", "extMetadataType" };
 
-    private Map<String, String> configMap;
+	private Map<String, String> configMap;
 
-    protected void setUp() throws Exception {
+	protected void setUp() throws Exception {
 		super.setUp();
 		configKeys = new HashSet<String>(Arrays.asList(keys));
 		connectorType = new DBConnectorType(configKeys);
@@ -56,11 +53,11 @@ public class DBConnectorTypeTest extends TestCase {
 		loadConfigMap();
 	}
 
-    /*
+	/*
 	 * this method loads key and values in configuration map.
 	 */
 
-    private void loadConfigMap() {
+	private void loadConfigMap() {
 		configMap.put("login", LanguageResource.getPropertyValue("login"));
 		configMap.put("driverClassName", LanguageResource.getPropertyValue("driverClassName"));
 		configMap.put("password", LanguageResource.getPropertyValue("password"));
@@ -72,7 +69,6 @@ public class DBConnectorTypeTest extends TestCase {
 		configMap.put("xslt", "");
 		configMap.put("authZQuery", "");
 		configMap.put("lastModifiedDate", "");
-		configMap.put("documentTitle", "");
 		configMap.put("externalMetadata", "");
 		configMap.put("documentURLField", "");
 		configMap.put("documentIdField", "");
@@ -83,154 +79,154 @@ public class DBConnectorTypeTest extends TestCase {
 		configMap.put("googleConnectorWorkDir", "D:/Google/projects/ChangeBranch/db/config");
 	}
 
-    protected void tearDown() throws Exception {
+	protected void tearDown() throws Exception {
 		super.tearDown();
 	}
 
-    /**
+	/**
 	 * test method for validateConfig method.
 	 */
 	public void testValidateConfig() {
 
-        LOG.info("Testing validateConfig()...");
+		LOG.info("Testing validateConfig()...");
 
-        MockDBConnectorFactory mdbConnectorFactory = new MockDBConnectorFactory(
+		MockDBConnectorFactory mdbConnectorFactory = new MockDBConnectorFactory(
 				TestUtils.TESTCONFIG_DIR + TestUtils.CONNECTOR_INSTANCE_XML);
 		ConfigureResponse configRes = this.connectorType.validateConfig(this.configMap, Locale.ENGLISH, mdbConnectorFactory);
 
-        LOG.info("Checking for Required field Database Name...");
+		LOG.info("Checking for Required field Database Name...");
 		String strPattern = ".*Required fields are missing.*";
 		Pattern pattern = Pattern.compile(strPattern);
 		Matcher match = pattern.matcher(configRes.getMessage());
 		assertTrue(match.find());
 
-        LOG.info("Checking when all required fields are provided...");
+		LOG.info("Checking when all required fields are provided...");
 		configMap.put("dbName", LanguageResource.getPropertyValue("dbName"));
 		configRes = this.connectorType.validateConfig(this.configMap, Locale.ENGLISH, mdbConnectorFactory);
-		assertNotNull(configRes);
+		assertNull(configRes);
 		LOG.info("[ validateConfig() ] Test Passed.");
 
-    }
+	}
 
 	/**
 	 * test for getConfigForm method.
 	 */
 	public void testGetConfigForm() {
 
-        final ConfigureResponse configureResponse = connectorType.getConfigForm(Locale.ENGLISH);
+		final ConfigureResponse configureResponse = connectorType.getConfigForm(Locale.ENGLISH);
 		final String configForm = configureResponse.getFormSnippet();
 		boolean check = checkForExpectedFields(configForm);
 		assertTrue(check);
 	}
 
-    /**
+	/**
 	 * test for getPopulatedConfigForm method
 	 */
 	public void testGetPopulatedConfigForm() {
 
-        final ConfigureResponse configureResponse = connectorType.getPopulatedConfigForm(configMap, Locale.ENGLISH);
+		final ConfigureResponse configureResponse = connectorType.getPopulatedConfigForm(configMap, Locale.ENGLISH);
 		final String configForm = configureResponse.getFormSnippet();
 		boolean check = checkForExpectedFields(configForm);
 		assertTrue(check);
 	}
 
-    /**
+	/**
 	 * This method tests expected patterns in html text of configuration form
 	 * 
 	 * @param configForm is html string of configuration form for database
-	 *            connector
+	 *          connector
 	 */
 	private boolean checkForExpectedFields(final String configForm) {
 
-        LOG.info("Checking for Sql Query field...");
+		LOG.info("Checking for Sql Query field...");
 		String strPattern = "<textarea .*name=\"sqlQuery\".*>";
 		Pattern pattern = Pattern.compile(strPattern);
 		Matcher match = pattern.matcher(configForm);
 		assertTrue(match.find());
 
-        LOG.info("Checking for Driver Class Name field...");
+		LOG.info("Checking for Driver Class Name field...");
 		strPattern = "<input.*size=\"40\" name=\"driverClassName\".*>";
 		pattern = Pattern.compile(strPattern);
 		match = pattern.matcher(configForm);
 		assertTrue(match.find());
 
-        LOG.info("Checking for Password field...");
+		LOG.info("Checking for Password field...");
 		strPattern = "<input.*size=\"40\" name=\"password\".*>";
 		pattern = Pattern.compile(strPattern);
 		match = pattern.matcher(configForm);
 		assertTrue(match.find());
 
-        LOG.info("Checking for Primary Keys String field...");
+		LOG.info("Checking for Primary Keys String field...");
 		strPattern = "<input.*size=\"40\" name=\"primaryKeysString\".*>";
 		pattern = Pattern.compile(strPattern);
 		match = pattern.matcher(configForm);
 		assertTrue(match.find());
 
-        LOG.info("Checking for login field...");
+		LOG.info("Checking for login field...");
 		strPattern = "<input.*size=\"40\" name=\"login\".*>";
 		pattern = Pattern.compile(strPattern);
 		match = pattern.matcher(configForm);
 		assertTrue(match.find());
 
-        LOG.info("Checking for Database Name field...");
+		LOG.info("Checking for Database Name field...");
 		strPattern = "<input.*size=\"40\" name=\"dbName\".*>";
 		pattern = Pattern.compile(strPattern);
 		match = pattern.matcher(configForm);
 		assertTrue(match.find());
 
-        LOG.info("Checking for xslt field...");
+		LOG.info("Checking for xslt field...");
 		strPattern = "<textarea .*name=\"xslt\".*>";
 		pattern = Pattern.compile(strPattern);
 		match = pattern.matcher(configForm);
 		assertTrue(match.find());
 
-        LOG.info("Checking for 'authZ Query' field...");
+		LOG.info("Checking for 'authZ Query' field...");
 		strPattern = "<textarea .*name=\"authZQuery\".*>";
 		pattern = Pattern.compile(strPattern);
 		match = pattern.matcher(configForm);
 		assertTrue(match.find());
 
-        LOG.info("Checking for Hostname field...");
+		LOG.info("Checking for Hostname field...");
 		strPattern = "<input.*size=\"40\" name=\"hostname\".*>";
 		pattern = Pattern.compile(strPattern);
 		match = pattern.matcher(configForm);
 		assertTrue(match.find());
 
-        LOG.info("Checking for Connection URL field...");
+		LOG.info("Checking for Connection URL field...");
 		strPattern = "<input.*size=\"40\" name=\"connectionUrl\".*>";
 		pattern = Pattern.compile(strPattern);
 		match = pattern.matcher(configForm);
 		assertTrue(match.find());
 
-        LOG.info("Checking for radio buttons...");
+		LOG.info("Checking for radio buttons...");
 		strPattern = "<input.*type='radio'.*name='extMetadataType'.*value='url'.*onClick='.*'/>";
 		pattern = Pattern.compile(strPattern);
 		match = pattern.matcher(configForm);
 		assertTrue(match.find());
 
-        strPattern = "<input type='radio'.*name='extMetadataType'.*value='docId'.*onClick='.*'/>";
+		strPattern = "<input type='radio'.*name='extMetadataType'.*value='docId'.*onClick='.*'/>";
 		pattern = Pattern.compile(strPattern);
 		match = pattern.matcher(configForm);
 		assertTrue(match.find());
 
-        strPattern = "<input type='radio'.*name='extMetadataType' value='lob'.*onClick='.*'/>";
+		strPattern = "<input type='radio'.*name='extMetadataType' value='lob'.*onClick='.*'/>";
 		pattern = Pattern.compile(strPattern);
 		match = pattern.matcher(configForm);
 		assertTrue(match.find());
 
-        LOG.info("Checking for Last Modified date Field...");
+		LOG.info("Checking for Last Modified date Field...");
 		strPattern = "<input.*size=\"40\".*name=\"lastModifiedDate\".*id=\"lastModifiedDate\".*/>";
 		pattern = Pattern.compile(strPattern);
 		match = pattern.matcher(configForm);
 		assertTrue(match.find());
 
-        LOG.info("Checking for Document Ttitle Field...");
+		LOG.info("Checking for Document Ttitle Field...");
 		strPattern = "<input.*size=\"40\" name=\"lastModifiedDate\".*id=\"lastModifiedDate\".*/>";
 		pattern = Pattern.compile(strPattern);
 		match = pattern.matcher(configForm);
 		assertTrue(match.find());
 
-        return true;
+		return true;
 
-    }
+	}
 }

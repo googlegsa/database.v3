@@ -18,7 +18,6 @@
     <property name="xslt" value="${xslt}"></property>
     <property name="authZQuery" value="${authZQuery}"></property>
     <property name="lastModifiedDate" value="${lastModifiedDate}"></property>
-    <property name="documentTitle" value="${documentTitle}"></property>
     <property name="documentURLField" value="${documentURLField}"></property>
     <property name="documentIdField" value="${documentIdField}"></property>
     <property name="baseURL" value="${baseURL}"></property>
