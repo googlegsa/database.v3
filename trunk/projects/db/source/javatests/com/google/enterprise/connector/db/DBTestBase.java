@@ -1,4 +1,4 @@
-//Copyright 2009 Google Inc.
+//Copyright 2011 Google Inc.
 //
 //Licensed under the Apache License, Version 2.0 (the "License");
 //you may not use this file except in compliance with the License.
@@ -15,9 +15,7 @@
 package com.google.enterprise.connector.db;
 
 import com.google.enterprise.connector.spi.RepositoryException;
-import com.google.enterprise.connector.spi.Session;
-
-import org.joda.time.DateTime;
+import com.google.enterprise.connector.traversal.ProductionTraversalContext;
 
 import com.ibatis.common.jdbc.ScriptRunner;
 import com.ibatis.common.resources.Resources;
@@ -32,126 +30,121 @@ import junit.framework.TestCase;
 
 /**
  * This is a base class for all test classes that requires interaction with
- * database. This provide methods to interact with database. *
- * 
- * @author Suresh_Ghuge
+ * database. This provide methods to interact with database.
  */
 public abstract class DBTestBase extends TestCase {
 
-	private Map<String, String> configMap = new HashMap<String, String>();
-	private GlobalState globalState;
+  private Map<String, String> configMap = new HashMap<String, String>();
 
-	public GlobalState getGlobalState() {
-		return globalState;
-	}
+  public static final String CREATE_TEST_DB_TABLE = "com/google/enterprise/connector/db/config/createTable.sql";
+  public static final String LOAD_TEST_DATA = "com/google/enterprise/connector/db/config/loadTestData.sql";
+  public static final String TRUNCATE_TEST_DB_TABLE = "com/google/enterprise/connector/db/config/truncateTestTable.sql";
+  public static final String DROP_TEST_DB_TABLE = "com/google/enterprise/connector/db/config/dropdb.sql";
 
-	public static final String CREATE_TEST_DB_TABLE = "com/google/enterprise/connector/db/config/createTable.sql";
-	public static final String LOAD_TEST_DATA = "com/google/enterprise/connector/db/config/loadTestData.sql";
-	public static final String TRUNCATE_TEST_DB_TABLE = "com/google/enterprise/connector/db/config/truncateTestTable.sql";
-	public static final String DROP_TEST_DB_TABLE = "com/google/enterprise/connector/db/config/dropdb.sql";
+  public static final String CREATE_USER_DOC_MAP_TABLE = "com/google/enterprise/connector/db/config/createUerDocMapTable.sql";
+  public static final String LOAD_USER_DOC_MAP_TEST_DATA = "com/google/enterprise/connector/db/config/loadUerDocMapTable.sql";
+  public static final String DROP_USER_DOC_MAP_TABLE = "com/google/enterprise/connector/db/config/dropUserDocMapTable.sql";
 
-	public static final String CREATE_USER_DOC_MAP_TABLE = "com/google/enterprise/connector/db/config/createUerDocMapTable.sql";
-	public static final String LOAD_USER_DOC_MAP_TEST_DATA = "com/google/enterprise/connector/db/config/loadUerDocMapTable.sql";
-	public static final String DROP_USER_DOC_MAP_TABLE = "com/google/enterprise/connector/db/config/dropUserDocMapTable.sql";
+  @Override
+  protected void setUp() throws Exception {
+    TestDirectoryManager testDirManager = new TestDirectoryManager(this);
+    configMap.put("login", LanguageResource.getPropertyValue("login"));
+    configMap.put("password", LanguageResource.getPropertyValue("password"));
+    configMap.put("connectionUrl", LanguageResource.getPropertyValue("connectionUrl"));
+    configMap.put("dbName", LanguageResource.getPropertyValue("dbName"));
+    configMap.put("hostname", LanguageResource.getPropertyValue("hostname"));
+    configMap.put("driverClassName", LanguageResource.getPropertyValue("driverClassName"));
+    configMap.put("sqlQuery", LanguageResource.getPropertyValue("sqlQuery"));
+    configMap.put("primaryKeysString", LanguageResource.getPropertyValue("primaryKeysString"));
+    configMap.put("googleConnectorWorkDir", testDirManager.getTmpDir());
+    configMap.put("xslt", "");
+    configMap.put("authZQuery", LanguageResource.getPropertyValue("authZQuery"));
+    configMap.put("lastModifiedDate", "");
+    configMap.put("documentTitle", "title");
+    configMap.put("externalMetadata", "");
+    configMap.put("documentURLField", "docURL");
+    configMap.put("documentIdField", "docId");
+    configMap.put("baseURL", "http://myhost/app/");
+    configMap.put("lobField", "lob");
+    configMap.put("fetchURLField", "fetchURL");
+    configMap.put("extMetadataType", "");
 
-	@Override
-	protected void setUp() throws Exception {
-		TestDirectoryManager testDirManager = new TestDirectoryManager(this);
-		configMap.put("login", LanguageResource.getPropertyValue("login"));
-		configMap.put("password", LanguageResource.getPropertyValue("password"));
-		configMap.put("connectionUrl", LanguageResource.getPropertyValue("connectionUrl"));
-		configMap.put("dbName", LanguageResource.getPropertyValue("dbName"));
-		configMap.put("hostname", LanguageResource.getPropertyValue("hostname"));
-		configMap.put("driverClassName", LanguageResource.getPropertyValue("driverClassName"));
-		configMap.put("sqlQuery", LanguageResource.getPropertyValue("sqlQuery"));
-		configMap.put("primaryKeysString", LanguageResource.getPropertyValue("primaryKeysString"));
-		configMap.put("googleConnectorWorkDir", testDirManager.getTmpDir());
-		configMap.put("xslt", "");
-		configMap.put("authZQuery", LanguageResource.getPropertyValue("authZQuery"));
-		configMap.put("lastModifiedDate", "");
-		configMap.put("documentTitle", "");
-		configMap.put("externalMetadata", "");
-		configMap.put("documentURLField", "");
-		configMap.put("documentIdField", "");
-		configMap.put("baseURL", "");
-		configMap.put("lobField", "");
-		configMap.put("fetchURLField", "");
-		configMap.put("extMetadataType", "");
-		globalState = new GlobalState(testDirManager.getTmpDir());
-	}
+  }
 
-	protected DBConnector getConnector() {
-		MockDBConnectorFactory mdbConnectorFactory = new MockDBConnectorFactory(
-				TestUtils.TESTCONFIG_DIR + TestUtils.CONNECTOR_INSTANCE_XML);
+  protected ProductionTraversalContext getProductionTraversalContext() {
+    ProductionTraversalContext context = new ProductionTraversalContext();
+    return context;
+  }
 
-		DBConnector connector = (DBConnector) mdbConnectorFactory.makeConnector(configMap);
-		return connector;
-	}
+  protected DBContext getDbContext() {
+    DBContext dbContext;
 
-	protected Session getSession() throws RepositoryException {
+    dbContext = new DBContext(configMap.get("connectionUrl"),
+        configMap.get("hostname"), configMap.get("driverClassName"),
+        configMap.get("login"), configMap.get("password"),
+        configMap.get("dbName"), configMap.get("sqlQuery"),
+        configMap.get("googleConnectorWorkDir"),
+        configMap.get("primaryKeysString"), configMap.get("xslt"),
+        configMap.get("authZQuery"), configMap.get("lastModifiedDate"),
+        configMap.get("documentTitle"), configMap.get("documentURLField"),
+        configMap.get("documentIdField"), configMap.get("baseURL"),
+        configMap.get("lobField"), configMap.get("fetchURLField"),
+        configMap.get("extMetadataType"));
+    dbContext.setNumberOfRows(2);
 
-		return getConnector().login();
-	}
+    return dbContext;
+  }
 
-	protected DBTraversalManager getDBTraversalManager()
-			throws RepositoryException {
-		return (DBTraversalManager) getSession().getTraversalManager();
-	}
+  protected DBClient getDbClient() throws RepositoryException {
 
-	@Override
-	protected void tearDown() throws Exception {
-		runDBScript(DROP_TEST_DB_TABLE);
-		super.tearDown();
-	}
+    DBClient dbClient;
+    try {
 
-	/*
-	 * This method will set up initial state of GlobalState class. Test
-	 * documents are added toGlobalState for testing
-	 */
-	protected void setUpInitialState() {
-		DateTime queryExecutionTime = new DateTime();
-		globalState.setQueryExecutionTime(queryExecutionTime);
-		try {
-			for (Map<String, Object> row : TestUtils.getDBRows()) {
-				DBDocument dbDoc = Util.rowToDoc("testdb_", TestUtils.getStandardPrimaryKeys(), row, "localhost", null, TestUtils.getDBContext());
-				globalState.addDocument(dbDoc);
-			}
-		} catch (DBException dbe) {
-			fail("DBException is occured while closing database connection"
-					+ dbe.toString());
-		}
-	}
+      dbClient = new DBClient(getDbContext());
+      return dbClient;
+    } catch (DBException e) {
+      // TODO Auto-generated catch block
+      e.printStackTrace();
+    }
 
-	/**
-	 * This method executes the database script.
-	 * 
-	 * @param scriptPath path of SQL script file
-	 */
-	protected void runDBScript(String scriptPath) {
-		Connection connection = null;
-		try {
-			connection = getDBTraversalManager().getDbClient().getSqlMapClient().getDataSource().getConnection();
-			ScriptRunner runner = new ScriptRunner(connection, false, true);
-			runner.runScript(Resources.getResourceAsReader(scriptPath));
-		} catch (SQLException se) {
-			fail("SQLException is occured while closing database connection"
-					+ se.toString());
-		} catch (RepositoryException re) {
-			fail("RepositoryException is occured while closing database connection"
-					+ re.toString());
-		} catch (IOException ioe) {
-			fail("IOException is occured while closing database connection"
-					+ ioe.toString());
-		} finally {
-			if (connection != null) {
-				try {
-					connection.close();
-				} catch (SQLException se) {
-					fail("SQLException is occured while closing database connection"
-							+ se.toString());
-				}
-			}
-		}
-	}
+    return null;
+  }
+
+  /* @Override */
+  protected void tearDown() throws Exception {
+    super.tearDown();
+  }
+
+  /**
+   * This method executes the database script.
+   *
+   * @param scriptPath path of SQL script file
+   */
+  protected void runDBScript(String scriptPath) {
+    Connection connection = null;
+    try {
+      connection = getDbClient().getSqlMapClient().getDataSource().getConnection();
+      ScriptRunner runner = new ScriptRunner(connection, false, true);
+      runner.runScript(Resources.getResourceAsReader(scriptPath));
+    } catch (SQLException se) {
+      fail("SQLException is occured while closing database connection"
+          + se.toString());
+    } catch (RepositoryException re) {
+      fail("RepositoryException is occured while closing database connection"
+          + re.toString());
+    } catch (IOException ioe) {
+      fail("IOException is occured while closing database connection"
+          + ioe.toString());
+    } finally {
+      if (connection != null) {
+        try {
+          connection.close();
+        } catch (SQLException se) {
+          fail("SQLException is occured while closing database connection"
+              + se.toString());
+        }
+      }
+    }
+  }
 
 }

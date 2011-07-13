@@ -1,4 +1,4 @@
-//Copyright 2009 Google Inc.
+//Copyright 2011 Google Inc.
 //
 //Licensed under the Apache License, Version 2.0 (the "License");
 //you may not use this file except in compliance with the License.
@@ -30,8 +30,6 @@ import junit.framework.TestCase;
 
 /**
  * This is a JUNit test case for DBConnectorType class.
- * 
- * @author Suresh_Ghuge
  */
 public class DBConnectorTypeTest extends TestCase {
 
@@ -39,16 +37,16 @@ public class DBConnectorTypeTest extends TestCase {
 
 	private DBConnectorType connectorType;
 	private Set<String> configKeys;
-	private String[] keys = new String[] { "login", "password",
-			"connectionUrl", "dbName", "hostname", "driverClassName",
-			"sqlQuery", "primaryKeysString", "xslt", "authZQuery",
-			"lastModifiedDate", "documentTitle", "externalMetadata",
-			"externalMetadata", "documentURLField", "documentIdField",
-			"baseURL", "lobField", "fetchURLField", "extMetadataType" };
+	private String[] keys = new String[] { "login", "password", "connectionUrl",
+			"dbName", "hostname", "driverClassName", "sqlQuery", "primaryKeysString",
+			"xslt", "authZQuery", "lastModifiedDate", "externalMetadata",
+			"externalMetadata", "documentURLField", "documentIdField", "baseURL",
+			"lobField", "fetchURLField", "extMetadataType" };
 
 	private Map<String, String> configMap;
 
 	protected void setUp() throws Exception {
+		super.setUp();
 		configKeys = new HashSet<String>(Arrays.asList(keys));
 		connectorType = new DBConnectorType(configKeys);
 		configMap = new HashMap<String, String>();
@@ -71,7 +69,6 @@ public class DBConnectorTypeTest extends TestCase {
 		configMap.put("xslt", "");
 		configMap.put("authZQuery", "");
 		configMap.put("lastModifiedDate", "");
-		configMap.put("documentTitle", "");
 		configMap.put("externalMetadata", "");
 		configMap.put("documentURLField", "");
 		configMap.put("documentIdField", "");
@@ -79,7 +76,7 @@ public class DBConnectorTypeTest extends TestCase {
 		configMap.put("lobField", "");
 		configMap.put("fetchURLField", "");
 		configMap.put("extMetadataType", "");
-		configMap.put("googleConnectorWorkDir", TestUtils.TESTCONFIG_DIR);
+		configMap.put("googleConnectorWorkDir", "D:/Google/projects/ChangeBranch/db/config");
 	}
 
 	protected void tearDown() throws Exception {
@@ -106,7 +103,7 @@ public class DBConnectorTypeTest extends TestCase {
 		LOG.info("Checking when all required fields are provided...");
 		configMap.put("dbName", LanguageResource.getPropertyValue("dbName"));
 		configRes = this.connectorType.validateConfig(this.configMap, Locale.ENGLISH, mdbConnectorFactory);
-		assertNotNull(configRes);
+		assertNull(configRes);
 		LOG.info("[ validateConfig() ] Test Passed.");
 
 	}
@@ -137,7 +134,7 @@ public class DBConnectorTypeTest extends TestCase {
 	 * This method tests expected patterns in html text of configuration form
 	 * 
 	 * @param configForm is html string of configuration form for database
-	 *            connector
+	 *          connector
 	 */
 	private boolean checkForExpectedFields(final String configForm) {
 

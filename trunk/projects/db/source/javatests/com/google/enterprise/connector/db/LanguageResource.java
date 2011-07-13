@@ -1,4 +1,4 @@
-//Copyright 2009 Google Inc.
+//Copyright 2011 Google Inc.
 //
 //Licensed under the Apache License, Version 2.0 (the "License");
 //you may not use this file except in compliance with the License.
@@ -14,14 +14,14 @@
 
 package com.google.enterprise.connector.db;
 
+
 import java.util.ResourceBundle;
 
 /**
  * This class provide the functionality for getting values from resource bundle.
- * 
- * @author Suresh_Ghuge
  */
 public class LanguageResource {
+
 
 	/**
 	 * @param key this is the name of the property you want to access
