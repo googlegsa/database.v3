@@ -1,4 +1,4 @@
-// Copyright 2009 Google Inc.
+// Copyright 2011 Google Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,26 +14,32 @@
 
 package com.google.enterprise.connector.db;
 
+import com.google.enterprise.connector.db.diffing.JsonDocument;
+import com.google.enterprise.connector.db.diffing.JsonDocumentUtil;
 import com.google.enterprise.connector.spi.Property;
 import com.google.enterprise.connector.spi.RepositoryException;
 import com.google.enterprise.connector.spi.SkippedDocumentException;
 import com.google.enterprise.connector.spi.SpiConstants;
+import com.google.enterprise.connector.spiimpl.BinaryValue;
 import com.google.enterprise.connector.traversal.FileSizeLimitInfo;
 import com.google.enterprise.connector.traversal.MimeTypeMap;
 import com.google.enterprise.connector.traversal.ProductionTraversalContext;
 
-import org.joda.time.DateTime;
-
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.logging.Logger;
 
-import junit.framework.TestCase;
-
-public class UtilTest extends TestCase {
-	private static final Logger LOG = Logger.getLogger(UtilTest.class.getName());
+public class JsonDocumenrUtilTest extends DBTestBase {
+	private static final Logger LOG = Logger.getLogger(JsonDocumenrUtilTest.class.getName());
+	public static final String ROW_CHECKSUM = "dbconnector:checksum";
 
 	/**
 	 * Test for converting DB row to DB Doc.
@@ -42,33 +48,18 @@ public class UtilTest extends TestCase {
 		Map<String, Object> rowMap = TestUtils.getStandardDBRow();
 		String[] primaryKeys = TestUtils.getStandardPrimaryKeys();
 		try {
-			DBDocument doc = Util.rowToDoc("testdb_", primaryKeys, rowMap, "localhost", null, null);
+			ProductionTraversalContext context = new ProductionTraversalContext();
+			JsonDocument doc = JsonDocumentUtil.rowToDoc("testdb_", primaryKeys, rowMap, "localhost", null, null);
 			for (String propName : doc.getPropertyNames()) {
 				Property prop = doc.findProperty(propName);
 				LOG.info(propName + ":    " + prop.nextValue().toString());
 			}
 			assertEquals("MSxsYXN0XzAx", doc.findProperty(SpiConstants.PROPNAME_DOCID).nextValue().toString());
-			assertEquals("eb476c046da8b3e83081e3195923aba1dd9c6045", doc.findProperty(DBDocument.ROW_CHECKSUM).nextValue().toString());
+			assertEquals("7ffd1d7efaf0d1ee260c646d827020651519e7b0", doc.findProperty(ROW_CHECKSUM).nextValue().toString());
 		} catch (DBException e) {
 			fail("Could not generate DB document from row.");
 		} catch (RepositoryException e) {
 			fail("Could not generate DB document from row.");
-		}
-	}
-
-	public final void testGetCheckpointString() throws DBException {
-		Map<String, Object> rowMap = TestUtils.getStandardDBRow();
-		DBDocument doc = Util.rowToDoc("testdb_", TestUtils.getStandardPrimaryKeys(), rowMap, "localhost", null, null);
-		try {
-			String checkpointStr = Util.getCheckpointString(null, null);
-			assertEquals("(NO_TIMESTAMP)NO_DOCID", checkpointStr);
-			DateTime dt = new DateTime();
-			checkpointStr = Util.getCheckpointString(dt, doc);
-			assertTrue(checkpointStr.contains(dt.toString()));
-			assertTrue(checkpointStr.contains("MSxsYXN0XzAx"));
-			LOG.info(checkpointStr);
-		} catch (RepositoryException e) {
-			fail("Unexpected exception" + e.toString());
 		}
 	}
 
@@ -79,11 +70,9 @@ public class UtilTest extends TestCase {
 		Map<String, Object> rowMap = new HashMap<String, Object>();
 		Map<String, Object> rowMapWithBaseURL = new HashMap<String, Object>();
 		DBContext dbContext = null;
-		try {
-			dbContext = TestUtils.getDBContext();
-		} catch (DBException dbe) {
-			fail("Unexpected exception" + dbe.toString());
-		}
+
+		dbContext = getDbContext();
+
 		String primaryKeyColumn = "id";
 		String[] primaryKeys = { primaryKeyColumn };
 		String documentURL = "http://myhost/app/welcome.html";
@@ -98,7 +87,8 @@ public class UtilTest extends TestCase {
 		// add version column in row
 		rowMap.put(versionColumn, versionValue);
 		try {
-			DBDocument doc = Util.generateMetadataURLFeed("testdb", primaryKeys, rowMap, "localhost", dbContext, "");
+			ProductionTraversalContext context = new ProductionTraversalContext();
+			JsonDocument doc = JsonDocumentUtil.generateMetadataURLFeed("testdb", primaryKeys, rowMap, "localhost", dbContext, "");
 			// test:- column "version" value as metadata
 			assertEquals(versionValue, doc.findProperty(versionColumn).nextValue().toString());
 			// test:- display URL will be same as the actual URL of the
@@ -113,7 +103,7 @@ public class UtilTest extends TestCase {
 			rowMapWithBaseURL.put(dbContext.getDocumentIdField(), docId);
 			rowMapWithBaseURL.put(versionColumn, versionValue);
 
-			DBDocument docWithBaseURL = Util.generateMetadataURLFeed("testdb", primaryKeys, rowMapWithBaseURL, "localhost", dbContext, Util.WITH_BASE_URL);
+			JsonDocument docWithBaseURL = JsonDocumentUtil.generateMetadataURLFeed("testdb", primaryKeys, rowMapWithBaseURL, "localhost", dbContext, Util.WITH_BASE_URL);
 
 			// test:- column "version" value as metadata
 			assertEquals(versionValue, docWithBaseURL.findProperty(versionColumn).nextValue().toString());
@@ -135,11 +125,7 @@ public class UtilTest extends TestCase {
 		Map<String, Object> rowMap = new HashMap<String, Object>();
 		Map<String, Object> rowMapWithBaseURL = new HashMap<String, Object>();
 		DBContext dbContext = null;
-		try {
-			dbContext = TestUtils.getDBContext();
-		} catch (DBException dbe) {
-			fail("Unexpected exception" + dbe.toString());
-		}
+		dbContext = getDbContext();
 		// define common test data
 		String primaryKeyColumn = "id";
 		String[] primaryKeys = { primaryKeyColumn };
@@ -150,10 +136,6 @@ public class UtilTest extends TestCase {
 		rowMap.put(primaryKeyColumn, 1);
 		// add version column in row
 		rowMap.put(versionColumn, versionValue);
-		// add document title for this document. Use alias "dbconn_title" for
-		// column used to store document title.
-		rowMap.put(dbContext.getDocumentTitle(), title);
-
 		// Test scenarios for CLOB data types
 		testCLOBDataScenarios(rowMap, primaryKeys);
 		// remove CLOB entry from row map which was added in
@@ -161,6 +143,8 @@ public class UtilTest extends TestCase {
 		rowMap.remove(dbContext.getLobField());
 		// Test scenarios for BLOB data types
 		testBLOBDataScenarios(rowMap, primaryKeys, dbContext);
+
+		// testPdfBlob(primaryKeys, dbContext);
 	}
 
 	/**
@@ -175,11 +159,7 @@ public class UtilTest extends TestCase {
 		LOG.info("Testing largeObjectToDoc() for CLOB data");
 
 		DBContext dbContext = null;
-		try {
-			dbContext = TestUtils.getDBContext();
-		} catch (DBException dbe) {
-			fail("Unexpected exception" + dbe.toString());
-		}
+		dbContext = getDbContext();
 
 		// In iBATIS CLOB data is represented as String or char array.
 		// Define CLOB data for this test case
@@ -194,16 +174,16 @@ public class UtilTest extends TestCase {
 			fileSizeLimitInfo.setMaxDocumentSize(5);
 			context.setFileSizeLimitInfo(fileSizeLimitInfo);
 
-			DBDocument clobDoc = Util.largeObjectToDoc("testdb_", primaryKeys, rowMap, "localhost", dbContext, context);
+			JsonDocument clobDoc = JsonDocumentUtil.largeObjectToDoc("testdb_", primaryKeys, rowMap, "localhost", dbContext, context);
 			/*
-			 * as the size of the document is more than supported. clobDoc
-			 * should have null value.
+			 * as the size of the document is more than supported. clobDoc should have
+			 * null value.
 			 */
 			assertNull(clobDoc);
 			// increase the maximum supported size of the document
 			fileSizeLimitInfo.setMaxDocumentSize(1024);
 			context.setFileSizeLimitInfo(fileSizeLimitInfo);
-			clobDoc = Util.largeObjectToDoc("testdb_", primaryKeys, rowMap, "localhost", dbContext, context);
+			clobDoc = JsonDocumentUtil.largeObjectToDoc("testdb_", primaryKeys, rowMap, "localhost", dbContext, context);
 			assertNotNull(clobDoc);
 
 			// test scenario:- this doc will have column name "version" as
@@ -215,9 +195,6 @@ public class UtilTest extends TestCase {
 			// test scenario:- primary key column should be excluded while
 			// indexing external metadata
 			assertNull(clobDoc.findProperty("id"));
-
-			// test document title
-			assertEquals("Welcome Page", clobDoc.findProperty(SpiConstants.PROPNAME_TITLE).nextValue().toString());
 
 		} catch (DBException e) {
 			fail("Unexpected exception" + e.toString());
@@ -255,7 +232,8 @@ public class UtilTest extends TestCase {
 		context.setFileSizeLimitInfo(fileSizeLimitInfo);
 
 		try {
-			DBDocument blobDoc = Util.largeObjectToDoc("testdb_", primaryKeys, rowMap, "localhost", dbContext, context);
+			JsonDocument blobDoc = JsonDocumentUtil.largeObjectToDoc("testdb_", primaryKeys, rowMap, "localhost", dbContext, context);
+
 			assertNotNull(blobDoc);
 			// test scenario:- this doc will have column name "version" as
 			// metadata key and value will be "2.3.4"
@@ -265,35 +243,88 @@ public class UtilTest extends TestCase {
 			// indexing external metadata
 			assertNull(blobDoc.findProperty("id"));
 
-			// test document title
-			assertEquals("Welcome Page", blobDoc.findProperty(SpiConstants.PROPNAME_TITLE).nextValue().toString());
-
 			// if one of the column holds the URL for fetching BLOB data. It
 			// will be used as display URL in feed.
 			assertEquals(fetchURL, blobDoc.findProperty(SpiConstants.PROPNAME_DISPLAYURL).nextValue().toString());
 
-			// set "text/plain" mime type in ignore list. Now we should get null
-			// value for DB document as this document is ignored by connector.
-			Set<String> ignoredMime = new HashSet<String>();
-			ignoredMime.add("text/plain");
+			// set "text/plain" mime type in unsupoorted list. Now we should get
+			// null
+			// value for DB document content as this document is in unsupported
+			// mimetype list.
+			Set<String> unsupportedMime = new HashSet<String>();
+			unsupportedMime.add("text/plain");
 			MimeTypeMap mimeTypeMap = new MimeTypeMap();
-			mimeTypeMap.setExcludedMimeTypes(ignoredMime);
+			mimeTypeMap.setUnsupportedMimeTypes(unsupportedMime);
 			context.setMimeTypeMap(mimeTypeMap);
-			blobDoc = Util.largeObjectToDoc("testdb_", primaryKeys, rowMap, "localhost", dbContext, context);
+			JsonDocument.setTraversalContext(context);
+			blobDoc = JsonDocumentUtil.largeObjectToDoc("testdb_", primaryKeys, rowMap, "localhost", dbContext, context);
+			blobDoc.setChanged();
 			Property docContent = null;
-			try {
-				docContent = blobDoc.findProperty(SpiConstants.PROPNAME_CONTENT);
-			} catch (SkippedDocumentException e) {
-				LOG.info("Connector has thrown SkippedDocumentException which is expected");
-			}
+
+			docContent = blobDoc.findProperty(SpiConstants.PROPNAME_CONTENT);
+
 			// document content should have null value.
 			assertNull(docContent);
+
+			// set "text/plain" mime type in ignore list. Now we should get null
+			// value for DB document as this document is ignored by connector.
+			mimeTypeMap.setExcludedMimeTypes(unsupportedMime);
+			context.setMimeTypeMap(mimeTypeMap);
+			blobDoc = JsonDocumentUtil.largeObjectToDoc("testdb_", primaryKeys, rowMap, "localhost", dbContext, context);
+			blobDoc.setChanged();
+			Property docContent1 = null;
+			docContent1 = blobDoc.findProperty(SpiConstants.PROPNAME_CONTENT);
+
 		} catch (DBException e) {
 			fail("Unexpected exception" + e.toString());
 		} catch (SkippedDocumentException e) {
-			fail("Unexpected exception" + e.toString());
+			LOG.info("Skipped Document Exception thrown for unsupported mimetype");
 		} catch (RepositoryException e) {
 			fail("Unexpected exception" + e.toString());
+		}
+	}
+
+	/**
+	 * Test Case for fetching a BLOB File from Database and dumping it on the file
+	 * system using JsonDocument Object.
+	 */
+	public void testPdfBlob(String[] primaryKeys, DBContext dbContext) {
+		try {
+			DBClient dbClient = getDbClient();
+			dbClient.getDBContext().setNumberOfRows(1);
+			List<Map<String, Object>> rows = dbClient.executePartialQuery(0, dbClient.getDBContext().getNumberOfRows());
+			JsonDocument jsonDocument = null;
+			for (Map<String, Object> row : rows) {
+				jsonDocument = JsonDocumentUtil.largeObjectToDoc("mysql", primaryKeys, row, "localhost", dbContext, new ProductionTraversalContext());
+			}
+			jsonDocument.setChanged();
+			InputStream is = ((BinaryValue) jsonDocument.findProperty(SpiConstants.PROPNAME_CONTENT).nextValue()).getInputStream();
+
+			byte[] blobcontent = new byte[14000];
+			is.read(blobcontent);
+			is.close();
+			// (byte[])Value.getSingleValue(jsonDocument,
+			// SpiConstants.PROPNAME_CONTENT);
+
+			File newFile = new File("newreport.pdf");
+			if (!newFile.exists()) {
+				newFile.createNewFile();
+			}
+			FileOutputStream fileOutputStream = new FileOutputStream(newFile);
+			fileOutputStream.write(blobcontent);
+		} catch (FileNotFoundException e2) {
+			fail("file newreport.pdf not found ");
+
+		} catch (IOException e) {
+			System.out.println("\n" + e);
+			fail("Exception occured");
+		} catch (DBException e3) {
+			System.out.println("\n" + e3);
+			fail("Database Exception  while testing for PDF Blob Content");
+
+		} catch (RepositoryException e4) {
+			System.out.println("\n" + e4);
+			fail("Repository Exception while testing for PDF Blob Comtent");
 		}
 	}
 }
