@@ -4,9 +4,9 @@ Following are the steps to build Google Search Appliance Connector for Databases
 
 2. Ensure that you have Connector Manager on your system. You can get it at
    http://code.google.com/p/google-enterprise-connector-manager/downloads/list.
-   Choose connector-manager-2.6.0.zip  (binary).
-   2b) Unpack the zip file. (unzip connector-manager-2.6.0zip).
-   2c) Change directory to connector-manager-2.6.0 (cd connector-manager-2.6.0).
+   Choose connector-manager-2.8.0.zip  (binary).
+   2b) Unpack the zip file. (unzip connector-manager-2.8.0zip).
+   2c) Change directory to connector-manager-2.8.0 (cd connector-manager-2.8.0).
    2d) Rename connector-manager.war to connector-manager.zip
    2e) Unpack the connector-manager.zip file(unzip connector-manager.zip).
    2f) Create Connector Manager Home directory in file system.
