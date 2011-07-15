@@ -17,8 +17,8 @@ which supports jdbc.
 
 Documentation Links
 
-* Developer Introduction to the Google Search Appliance Connector Framework
- http://code.google.com/apis/searchappliance/documentation/connectors/200/connector_dev/cdg_about.html
+* Documentation for the Google Search Appliance Connectors
+  http://code.google.com/apis/searchappliance/documentation/connectors/index .html
 
 * Google Search Appliance Connector for databases
  http://code.google.com/p/google-enterprise-connector-database/
