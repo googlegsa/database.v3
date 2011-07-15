@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE beans PUBLIC "-//SPRING//DTD BEAN//EN" "http://www.springframework.org/dtd/spring-beans.dtd">
+<beans>
+  <!--
+    Bean for encapsulation of all the configuration parameter needed for a
+    working Database Connector instance.
+  -->
+  <bean id="database-connector-defaults">
+    <property name="connectionUrl" value="${connectionUrl}"></property>
+    <property name="hostname" value="${hostname}"></property>
+    <property name="driverClassName" value="${driverClassName}"></property>
+    <property name="login" value="${login}"></property>
+    <property name="password" value="${password}"></property>
+    <property name="dbName" value="${dbName}"></property>
+    <property name="sqlQuery" value="${sqlQuery}"></property>
+    <property name="googleConnectorWorkDir" value="${googleConnectorWorkDir}"></property>
+    <property name="primaryKeys" value="${primaryKeysString}"></property>
+    <property name="xslt" value="${xslt}"></property>
+    <property name="authZQuery" value="${authZQuery}"></property>
+    <property name="lastModifiedDate" value="${lastModifiedDate}"></property>
+    <property name="documentURLField" value="${documentURLField}"></property>
+    <property name="documentIdField" value="${documentIdField}"></property>
+    <property name="baseURL" value="${baseURL}"></property>
+    <property name="lobField" value="${lobField}"></property>
+    <property name="fetchURLField" value="${fetchURLField}"></property>
+    <property name="extMetadataType" value="${extMetadataType}"></property>
+    <!--
+      Parameter for fetching number of rows in a single call to the
+      repository
+    -->
+    <property name="numberOfRows" value="200"></property>
+  </bean>
+
+  <!-- Bean for interacting with the database -->
+  <bean id="db-client" class="com.google.enterprise.connector.db.DBClient">
+    <constructor-arg index="0" ref="db-connector-config" />
+  </bean>
+
+  <!-- Bean which is a holder for the TraversalContext object -->
+  <bean id="traversal-context-manager"
+    class="com.google.enterprise.connector.util.diffing.TraversalContextManager"
+    singleton="true">
+  </bean>
+
+  <!--
+    Bean required for providing a collection over Database Documents
+  -->
+  <bean id="repository-handler"
+    class="com.google.enterprise.connector.db.diffing.RepositoryHandler"
+    factory-method="makeRepositoryHandlerFromConfig">
+    <constructor-arg index="0" ref="db-client" />
+    <constructor-arg index="1" ref="traversal-context-manager" />
+  </bean>
+
+  <!--
+    Bean Required By Monitor Manager thread to access the snapshot
+    Repository's
+  -->
+  <bean id="db-document-snapshot-repository-list"
+    class="com.google.enterprise.connector.db.diffing.DBDocumentSnapshotRepositoryList"
+    singleton="true">
+    <constructor-arg ref="repository-handler" />
+  </bean>
+
+  <bean id="activity-logger"
+    class="com.google.enterprise.connector.util.diffing.ChangeQueue$DefaultCrawlActivityLogger"
+    singleton="false">
+  </bean>
+
+  <!--
+    Bounded buffer of Change(Description of a change to be sent to the
+    GSA) objects
+  -->
+  <bean id="change-queue"
+    class=" com.google.enterprise.connector.util.diffing.ChangeQueue">
+    <constructor-arg index="0" value="100" />
+    <constructor-arg index="1" value="10000" />
+    <constructor-arg index="2" ref="activity-logger" />
+  </bean>
+
+  <!--  Bean for creating recovery queue directory-->
+  <bean id="queue-dir" class="java.io.File" singleton="false">
+    <constructor-arg index="0"
+      value="${googleConnectorWorkDir}/queue" />
+  </bean>
+
+  <!--Bean for creating Snapshots Directory -->
+  <bean id="snapshot-dir" class="java.io.File" singleton="false">
+    <constructor-arg index="0"
+      value="${googleConnectorWorkDir}/snapshots" />
+  </bean>
+
+  <!--  Bean for  DocumentHandleFactory  used by diffing Library-->
+  <bean id="internal-document-handle-factory"
+    class=" com.google.enterprise.connector.util.diffing.DeleteDocumentHandleFactory"
+    singleton="true">
+  </bean>
+
+  <!-- Bean for Top-level factory for Database Connector objects -->
+  <bean id="db-class-factory"
+    class="com.google.enterprise.connector.db.diffing.DBClassFactory"
+    singleton="true">
+  </bean>
+
+  <!--
+    Queue for CheckpointandChangeQueue objects used by diffing Library
+  -->
+  <bean id="checkpoint-and-change-queue"
+    class="com.google.enterprise.connector.util.diffing.CheckpointAndChangeQueue">
+    <constructor-arg ref="change-queue" />
+    <constructor-arg ref="queue-dir" />
+    <constructor-arg ref="internal-document-handle-factory" />
+    <constructor-arg ref="db-class-factory" />
+  </bean>
+
+  <!--Bean for implementation of ChecksumGenerator-->
+  <bean id="checksum-generator"
+    class="com.google.enterprise.connector.util.BasicChecksumGenerator">
+    <constructor-arg index="0" value="SHA1" />
+  </bean>
+
+  <!-- Bean for AuthorizationManager-->
+  <bean id="authz"
+    class="com.google.enterprise.connector.db.DBConnectorAuthorizationManager"
+    singleton="false">
+    <constructor-arg ref="db-client" />
+  </bean>
+
+  <!-- Bean for Monitor Manager of Diffing Library-->
+  <bean id="monitor-manager"
+    class="com.google.enterprise.connector.util.diffing.DocumentSnapshotRepositoryMonitorManagerImpl"
+    singleton="true">
+    <constructor-arg ref="db-document-snapshot-repository-list" />
+    <constructor-arg ref="db-class-factory" />
+    <constructor-arg ref="snapshot-dir" />
+    <constructor-arg ref="checksum-generator" />
+    <constructor-arg ref="change-queue" />
+    <constructor-arg ref="checkpoint-and-change-queue" />
+  </bean>
+
+  <!--
+    Bean for Diffing connector implementation of the SPI Connector
+    interface.
+  -->
+  <bean id="db-connector"
+    class="com.google.enterprise.connector.util.diffing.DiffingConnector"
+    singleton="false">
+    <constructor-arg ref="authz" />
+    <constructor-arg ref="monitor-manager" />
+    <constructor-arg ref="traversal-context-manager" />
+  </bean>
+
+  <bean id="propertyPlaceholderConfigurer"
+    class="com.google.enterprise.connector.instantiator.EncryptedPropertyPlaceholderConfigurer">
+    <property name="properties">
+      <props>
+        <prop key="login"></prop>
+        <prop key="password"></prop>
+        <prop key="connectionUrl"></prop>
+        <prop key="dbName"></prop>
+        <prop key="hostname"></prop>
+        <prop key="driverClassName"></prop>
+        <prop key="sqlQuery"></prop>
+        <prop key="primaryKeysString"></prop>
+        <prop key="xslt"></prop>
+        <prop key="lastModifiedDate"></prop>
+        <prop key="documentTitle"></prop>
+        <prop key="authZQuery"></prop>
+        <prop key="externalMetadata"></prop>
+        <prop key="documentURLField"></prop>
+        <prop key="documentIdField"></prop>
+        <prop key="baseURL"></prop>
+        <prop key="lobField"></prop>
+        <prop key="fetchURLField"></prop>
+        <prop key="extMetadataType"></prop>
+      </props>
+    </property>
+  </bean>
+
+</beans>
