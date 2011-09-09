@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE beans PUBLIC "-//SPRING//DTD BEAN//EN" "http://www.springframework.org/dtd/spring-beans.dtd">
+<beans>
+  <!--
+    Bean for encapsulation of all the configuration parameter needed for a
+    working Database Connector instance.
+  -->
+  <bean id="db-connector-config" class="com.google.enterprise.connector.db.DBContext"
+    parent="database-connector-defaults" singleton="false">
+
+    <!--
+      Parameter for fetching number of rows in a single call to the
+      repository
+    -->
+    <!--
+      <property name="numberOfRows" value="500"></property>
+    -->
+
+  </bean>
+</beans>
