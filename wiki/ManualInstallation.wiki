@@ -13,7 +13,7 @@ Google recommends that you use the Google connectors installer for installing th
 =Pre-requisites=
   * Apache Tomcat 6. You can download it from it from http://tomcat.apache.org/download-60.cgi
   * JRE1.5 or above. Refer to http://java.sun.com/javase/downloads/index_jdk5.jsp for downloads
-
+  * Connector Manager version 2.8.0 or higher.Refer to  http://code.google.com/p/google-enterprise-connector-manager/downloads/list 
 =Manual installation steps=
   # Shut down Tomcat if it is running.
   # Go to $CATALINA_HOME\bin directory.
