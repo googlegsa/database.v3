@@ -2,7 +2,7 @@
 Steps to install Google Enterprise Connector for Databases.
 
 = Introduction =
-This document walks you through the steps to manually install a Google Enterprise Connector for Databases. The instructions mentioned here are applicable to connector version 1.0.0_ALPHA and above
+This document walks you through the steps to manually install a Google Enterprise Connector for Databases. The instructions mentioned here are applicable to connector version 2.8.0 and above
 
 Google recommends that you use the Google connectors installer for installing the connector. You may want to do it manually if,
 
@@ -13,7 +13,7 @@ Google recommends that you use the Google connectors installer for installing th
 =Pre-requisites=
   * Apache Tomcat 6. You can download it from it from http://tomcat.apache.org/download-60.cgi
   * JRE1.5 or above. Refer to http://java.sun.com/javase/downloads/index_jdk5.jsp for downloads
-  * Connector Manager version 2.8.0 or higher.Refer to  http://code.google.com/p/google-enterprise-connector-manager/downloads/list 
+  * Connector Manager version 2.8.0 or higher.Refer to  http://code.google.com/p/google-enterprise-connector-manager/downloads/list for downloads
 =Manual installation steps=
   # Shut down Tomcat if it is running.
   # Go to $CATALINA_HOME\bin directory.
