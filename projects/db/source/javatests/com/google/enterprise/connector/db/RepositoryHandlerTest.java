@@ -4,6 +4,7 @@ import com.google.enterprise.connector.db.diffing.JsonDocument;
 import com.google.enterprise.connector.db.diffing.RepositoryHandler;
 import com.google.enterprise.connector.spi.RepositoryException;
 import com.google.enterprise.connector.traversal.ProductionTraversalContext;
+import com.google.enterprise.connector.util.diffing.SnapshotRepositoryRuntimeException;
 
 import java.util.LinkedList;
 
@@ -50,7 +51,7 @@ public class RepositoryHandlerTest extends DBTestBase {
       assertEquals(true, jsonDocumenList.iterator().hasNext());
     } catch (RepositoryException e) {
       fail("Repository Exception in testExecuteQueryAndAddDocs");
-    } catch (DBException e) {
+    } catch (SnapshotRepositoryRuntimeException e) {
       fail("Database Exception in testExecuteQueryAndAddDocs");
     }
 

@@ -4,6 +4,7 @@ import com.google.enterprise.connector.db.diffing.JsonDocument;
 import com.google.enterprise.connector.db.diffing.RepositoryHandler;
 import com.google.enterprise.connector.db.diffing.RepositoryHandlerIterator;
 import com.google.enterprise.connector.traversal.ProductionTraversalContext;
+import com.google.enterprise.connector.util.diffing.SnapshotRepositoryRuntimeException;
 
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -57,7 +58,7 @@ public class RepositoryHandlerIteratorTest extends DBTestBase {
       repositoryHandlerIterator.setRecordList(new LinkedList<JsonDocument>().iterator());
       assertEquals(false, repositoryHandlerIterator.hasNext());
 
-    } catch (DBException e) {
+    } catch (SnapshotRepositoryRuntimeException e) {
       fail("Database Exception in testhasnext3");
     }
 

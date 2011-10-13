@@ -20,6 +20,7 @@ import com.google.enterprise.connector.db.DBContext;
 import com.google.enterprise.connector.db.DBException;
 import com.google.enterprise.connector.db.Util;
 import com.google.enterprise.connector.spi.TraversalContext;
+import com.google.enterprise.connector.util.diffing.SnapshotRepositoryRuntimeException;
 import com.google.enterprise.connector.util.diffing.TraversalContextManager;
 
 import java.util.Date;
@@ -96,15 +97,23 @@ public class RepositoryHandler {
    * Function for fetching Database rows and providing a collection over
    * JsonDocument.
    */
-  public LinkedList<JsonDocument> executeQueryAndAddDocs() throws DBException {
+  public LinkedList<JsonDocument> executeQueryAndAddDocs()
+      throws SnapshotRepositoryRuntimeException {
     LinkedList<JsonDocument> docList = new LinkedList<JsonDocument>();
-    List<Map<String, Object>> rows = dbClient.executePartialQuery(cursorDB, dbClient.getDBContext().getNumberOfRows());
-
+    List<Map<String, Object>> rows = null;
+    try {
+      rows = dbClient.executePartialQuery(cursorDB, dbClient.getDBContext().getNumberOfRows());
+    } catch (SnapshotRepositoryRuntimeException e) {
+      LOG.info("Repository Unreachable."
+          + "Setting CursorDB value to zero to start traversal from begining after recovery. ");
+      setCursorDB(0);
+      LOG.warning("Unable to connect to the database\n" + e.toString());
+      throw new SnapshotRepositoryRuntimeException(
+          "Unable to connect to the database\n ", e);
+    }
     if (traversalContext == null) {
       setTraversalContext(traversalContextManager.getTraversalContext());
       JsonDocument.setTraversalContext(traversalContextManager.getTraversalContext());
-    } else {
-      LOG.info("TraversalContextManager not set");
     }
     if (rows.size() == 0) {
       LOG.info("Crawl cycle of database " + dbClient.getDBContext().getDbName()
@@ -114,6 +123,7 @@ public class RepositoryHandler {
     } else {
       setCursorDB(getCursorDB() + rows.size());
     }
+
     JsonDocument jsonDoc = null;
     if (rows != null && rows.size() > 0) {
 
@@ -127,7 +137,12 @@ public class RepositoryHandler {
       case MODE_METADATA_URL:
 
         for (Map<String, Object> row : rows) {
-          jsonDoc = JsonDocumentUtil.generateMetadataURLFeed(dbClient.getDBContext().getDbName(), dbClient.getDBContext().getPrimaryKeys().split(Util.PRIMARY_KEYS_SEPARATOR), row, dbClient.getDBContext().getHostname(), dbClient.getDBContext(), "");
+          try {
+            jsonDoc = JsonDocumentUtil.generateMetadataURLFeed(dbClient.getDBContext().getDbName(), dbClient.getDBContext().getPrimaryKeys().split(Util.PRIMARY_KEYS_SEPARATOR), row, dbClient.getDBContext().getHostname(), dbClient.getDBContext(), "");
+          } catch (DBException e) {
+            LOG.warning("Cannot convert datbase record to JsonDocument for record"
+                + row + "\n" + e);
+          }
           docList.add(jsonDoc);
         }
         break;
@@ -136,7 +151,12 @@ public class RepositoryHandler {
       case MODE_METADATA_BASE_URL:
         jsonDoc = null;
         for (Map<String, Object> row : rows) {
-          jsonDoc = JsonDocumentUtil.generateMetadataURLFeed(dbClient.getDBContext().getDbName(), dbClient.getDBContext().getPrimaryKeys().split(Util.PRIMARY_KEYS_SEPARATOR), row, dbClient.getDBContext().getHostname(), dbClient.getDBContext(), Util.WITH_BASE_URL);
+          try {
+            jsonDoc = JsonDocumentUtil.generateMetadataURLFeed(dbClient.getDBContext().getDbName(), dbClient.getDBContext().getPrimaryKeys().split(Util.PRIMARY_KEYS_SEPARATOR), row, dbClient.getDBContext().getHostname(), dbClient.getDBContext(), Util.WITH_BASE_URL);
+          } catch (DBException e) {
+            LOG.warning("Cannot convert datbase record to JsonDocument for record"
+                + row + "\n" + e);
+          }
           docList.add(jsonDoc);
         }
 
@@ -146,10 +166,16 @@ public class RepositoryHandler {
       case MODE_BLOB_CLOB:
         jsonDoc = null;
         for (Map<String, Object> row : rows) {
-          jsonDoc = JsonDocumentUtil.largeObjectToDoc(dbClient.getDBContext().getDbName(), dbClient.getDBContext().getPrimaryKeys().split(Util.PRIMARY_KEYS_SEPARATOR), row, dbClient.getDBContext().getHostname(), dbClient.getDBContext(), traversalContext);
-          if (jsonDoc != null) {
-            docList.add(jsonDoc);
+          try {
+            jsonDoc = JsonDocumentUtil.largeObjectToDoc(dbClient.getDBContext().getDbName(), dbClient.getDBContext().getPrimaryKeys().split(Util.PRIMARY_KEYS_SEPARATOR), row, dbClient.getDBContext().getHostname(), dbClient.getDBContext(), traversalContext);
+            if (jsonDoc != null) {
+              docList.add(jsonDoc);
+            }
+          } catch (DBException e) {
+            LOG.warning("Cannot convert datbase record to JsonDocument for record"
+                + row + "\n" + e);
           }
+
         }
 
         break;
@@ -157,10 +183,16 @@ public class RepositoryHandler {
       // execute the connector in normal mode
       default:
         for (Map<String, Object> row : rows) {
-          jsonDoc = JsonDocumentUtil.rowToDoc(dbClient.getDBContext().getDbName(), dbClient.getDBContext().getPrimaryKeys().split(Util.PRIMARY_KEYS_SEPARATOR), row, dbClient.getDBContext().getHostname(), dbClient.getDBContext().getXslt(), dbClient.getDBContext());
-          if (jsonDoc != null) {
-            docList.add(jsonDoc);
+          try {
+            jsonDoc = JsonDocumentUtil.rowToDoc(dbClient.getDBContext().getDbName(), dbClient.getDBContext().getPrimaryKeys().split(Util.PRIMARY_KEYS_SEPARATOR), row, dbClient.getDBContext().getHostname(), dbClient.getDBContext().getXslt(), dbClient.getDBContext());
+            if (jsonDoc != null) {
+              docList.add(jsonDoc);
+            }
+          } catch (DBException e) {
+            LOG.warning("Cannot convert datbase record to JsonDocument for record"
+                + row + "\n" + e);
           }
+
         }
         break;
       }
