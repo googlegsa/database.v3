@@ -14,6 +14,8 @@
 
 package com.google.enterprise.connector.db;
 
+import com.google.enterprise.connector.util.diffing.SnapshotRepositoryRuntimeException;
+
 import com.ibatis.sqlmap.client.SqlMapClient;
 import com.ibatis.sqlmap.client.SqlMapClientBuilder;
 
@@ -125,11 +127,11 @@ public class DBClient {
    * @throws DBException
    */
   public List<Map<String, Object>> executePartialQuery(int skipRows, int maxRows)
-      throws DBException {
+      throws SnapshotRepositoryRuntimeException {
     // TODO(meghna): Think about a better way to scroll through the result
     // set.
     List<Map<String, Object>> rows;
-    LOG.info("Executing partial query with skipRows = " + skipRows + "and "
+    LOG.info("Executing partial query with skipRows = " + skipRows + " and "
         + "maxRows = " + maxRows);
     try {
       rows = sqlMapClient.queryForList("IbatisDBClient.getAll", skipRows, maxRows);
@@ -149,7 +151,8 @@ public class DBClient {
         rows = new ArrayList<Map<String, Object>>();
       } catch (SQLException e1) {
         LOG.warning("Unable to connect to the database\n" + e1.toString());
-        throw new DBException(e);
+        throw new SnapshotRepositoryRuntimeException(
+            "Unable to connect to the database\n ", e1);
       } finally {
         if (conn != null) {
           try {

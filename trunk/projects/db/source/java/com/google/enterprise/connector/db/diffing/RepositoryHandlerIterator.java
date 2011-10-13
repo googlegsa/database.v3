@@ -13,7 +13,7 @@
 // limitations under the License.
 package com.google.enterprise.connector.db.diffing;
 
-import com.google.enterprise.connector.db.DBException;
+import com.google.enterprise.connector.util.diffing.SnapshotRepositoryRuntimeException;
 
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -54,7 +54,7 @@ public class RepositoryHandlerIterator implements Iterator<JsonDocument> {
    * true if records are found else returns false
    */
   /* @Override */
-  public boolean hasNext() {
+  public boolean hasNext() throws SnapshotRepositoryRuntimeException {
 
     if (recordList.hasNext()) {
       return true;
@@ -65,14 +65,15 @@ public class RepositoryHandlerIterator implements Iterator<JsonDocument> {
           return false;
         }
         return true;
-      } catch (DBException e) {
-
+      } catch (SnapshotRepositoryRuntimeException e) {
         LOG.warning("Exception in hasnext of RepositoryHandlerIterator" + "\n"
             + e.toString());
+        throw new SnapshotRepositoryRuntimeException(
+            "unable to connect to repository", e);
       }
 
     }
-    return false;
+
   }
 
   /**
