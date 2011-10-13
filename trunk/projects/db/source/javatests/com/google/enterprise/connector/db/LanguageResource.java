@@ -14,7 +14,6 @@
 
 package com.google.enterprise.connector.db;
 
-
 import java.util.ResourceBundle;
 
 /**
@@ -22,15 +21,14 @@ import java.util.ResourceBundle;
  */
 public class LanguageResource {
 
-
-	/**
-	 * @param key this is the name of the property you want to access
-	 * @return value of the requested property.
-	 */
-	public static String getPropertyValue(String key) {
-		String value = "";
-		ResourceBundle bundle = ResourceBundle.getBundle("com.google.enterprise.connector.db.config.DatabaseConfiguration");
-		value = bundle.getString(key);
-		return value;
-	}
+  /**
+   * @param key this is the name of the property you want to access
+   * @return value of the requested property.
+   */
+  public static String getPropertyValue(String key) {
+    String value = "";
+    ResourceBundle bundle = ResourceBundle.getBundle("com.google.enterprise.connector.db.config.DatabaseConfiguration");
+    value = bundle.getString(key);
+    return value;
+  }
 }

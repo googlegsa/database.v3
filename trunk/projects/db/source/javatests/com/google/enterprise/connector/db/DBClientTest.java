@@ -13,58 +13,49 @@
 // limitations under the License.
 package com.google.enterprise.connector.db;
 
-
-
-import com.google.enterprise.connector.db.DBClient;
 import com.google.enterprise.connector.spi.RepositoryException;
 
 import java.sql.Connection;
 import java.sql.SQLException;
 
-
-
-
 public class DBClientTest extends DBTestBase {
 
+  /* @Override */
+  protected void setUp() throws Exception {
+    super.setUp();
+    runDBScript(CREATE_TEST_DB_TABLE);
+    runDBScript(LOAD_TEST_DATA);
+  }
 
-	/* @Override */
-	protected void setUp() throws Exception {
-		super.setUp();
-		runDBScript(CREATE_TEST_DB_TABLE);
-		runDBScript(LOAD_TEST_DATA);
-	}
+  public void testDBClient() {
 
-    public void testDBClient() {
-
-        try {
-			DBClient dbClient = getDbClient();
-			assertNotNull(dbClient);
-		} catch (RepositoryException e) {
-			fail("Repository Exception in testDBClient");
-
-        }
+    try {
+      DBClient dbClient = getDbClient();
+      assertNotNull(dbClient);
+    } catch (RepositoryException e) {
+      fail("Repository Exception in testDBClient");
 
     }
 
-	/* @Override */
-	protected void tearDown() throws Exception {
-		super.tearDown();
-	}
+  }
 
+  /* @Override */
+  protected void tearDown() throws Exception {
+    super.tearDown();
+  }
 
-    public void testConnectivity() {
+  public void testConnectivity() {
 
-        Connection connection;
-		try {
-			connection = getDbClient().getSqlMapClient().getDataSource().getConnection();
-			assertNotNull(connection);
-		} catch (SQLException e) {
-			fail("SQL Exception in testConnectivity");
-		} catch (RepositoryException e) {
-			fail("Repository Exception in testConnectivity");
-		}
-
+    Connection connection;
+    try {
+      connection = getDbClient().getSqlMapClient().getDataSource().getConnection();
+      assertNotNull(connection);
+    } catch (SQLException e) {
+      fail("SQL Exception in testConnectivity");
+    } catch (RepositoryException e) {
+      fail("Repository Exception in testConnectivity");
     }
 
+  }
 
 }

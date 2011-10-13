@@ -26,14 +26,15 @@ import java.util.logging.Logger;
  * cannot be crawled in segments) hence the Monitor Manager creates only one
  * thread to crawl the database.
  */
-public class DBDocumentSnapshotRepositoryList extends ArrayList<DBClassRepository> {
-    private static final Logger LOG = Logger.getLogger(DBDocumentSnapshotRepositoryList.class.getName());
+public class DBDocumentSnapshotRepositoryList extends
+    ArrayList<DBClassRepository> {
+  private static final Logger LOG = Logger.getLogger(DBDocumentSnapshotRepositoryList.class.getName());
 
-	public DBDocumentSnapshotRepositoryList(RepositoryHandler repositoryHandler) {
-        JsonDocumentFetcher f = new DBJsonDocumentFetcher(repositoryHandler);
-        DBClassRepository repository = new DBClassRepository(f);
-        LOG.info("Repository Length Is:" + repository);
-        add(repository);
-    }
+  public DBDocumentSnapshotRepositoryList(RepositoryHandler repositoryHandler) {
+    JsonDocumentFetcher f = new DBJsonDocumentFetcher(repositoryHandler);
+    DBClassRepository repository = new DBClassRepository(f);
+    LOG.info("Repository Length Is:" + repository);
+    add(repository);
+  }
 
 }

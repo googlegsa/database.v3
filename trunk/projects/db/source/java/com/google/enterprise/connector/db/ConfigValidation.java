@@ -19,9 +19,9 @@ import java.util.List;
  * Interface implemented by different validation classes in @link ValidateUtil.
  */
 public interface ConfigValidation {
-	boolean validate();
+  boolean validate();
 
-    String getMessage();
+  String getMessage();
 
-    List<String> getProblemFields();
+  List<String> getProblemFields();
 }

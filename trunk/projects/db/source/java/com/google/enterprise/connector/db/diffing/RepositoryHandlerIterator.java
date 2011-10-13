@@ -18,6 +18,7 @@ import com.google.enterprise.connector.db.DBException;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.logging.Logger;
+
 ;
 
 /**
@@ -25,78 +26,77 @@ import java.util.logging.Logger;
  */
 public class RepositoryHandlerIterator implements Iterator<JsonDocument> {
 
-    private static final Logger LOG = Logger.getLogger(RepositoryHandlerIterator.class.getName());
-    private Iterator<JsonDocument> recordList;
-    private RepositoryHandler repositoryHandler;
+  private static final Logger LOG = Logger.getLogger(RepositoryHandlerIterator.class.getName());
+  private Iterator<JsonDocument> recordList;
+  private RepositoryHandler repositoryHandler;
 
-    public Iterator<JsonDocument> getRecordList() {
-        return recordList;
-    }
+  public Iterator<JsonDocument> getRecordList() {
+    return recordList;
+  }
 
-    public void setRecordList(Iterator<JsonDocument> recordList) {
-        this.recordList = recordList;
-    }
+  public void setRecordList(Iterator<JsonDocument> recordList) {
+    this.recordList = recordList;
+  }
 
-	/**
-	 * @param recordList collection for holding JsonDocuments.
-	 * @param repositoryHandler RepositoryHandler object for fetching DB rows in
-	 *            JsonDocument form.
-	 */
-	public RepositoryHandlerIterator(RepositoryHandler repositoryHandler) {
-		this.repositoryHandler = repositoryHandler;
-		this.recordList = new LinkedList<JsonDocument>().iterator();
-	}
+  /**
+   * @param recordList collection for holding JsonDocuments.
+   * @param repositoryHandler RepositoryHandler object for fetching DB rows in
+   *          JsonDocument form.
+   */
+  public RepositoryHandlerIterator(RepositoryHandler repositoryHandler) {
+    this.repositoryHandler = repositoryHandler;
+    this.recordList = new LinkedList<JsonDocument>().iterator();
+  }
 
+  /**
+   * Returns true if the recordList has more elements. Else calls the
+   * RepositoryHandler to ping the repositoryHandler for more records. Returns
+   * true if records are found else returns false
+   */
+  /* @Override */
+  public boolean hasNext() {
 
-    /**
-     * Returns true if the recordList has more elements. Else calls the
-     * RepositoryHandler to ping the repositoryHandler for more records. Returns
-     * true if records are found else returns false
-     */
-	/* @Override */
-    public boolean hasNext() {
-
-        if (recordList.hasNext()) {
-            return true;
-        } else {
-            try {
-                recordList = repositoryHandler.executeQueryAndAddDocs().iterator();
-                if (!recordList.hasNext()) {
-                    return false;
-                }
-                return true;
-            } catch (DBException e) {
-
-				LOG.warning("Exception in hasnext of RepositoryHandlerIterator"
-						+ "\n" + e.toString());
-            }
-
+    if (recordList.hasNext()) {
+      return true;
+    } else {
+      try {
+        recordList = repositoryHandler.executeQueryAndAddDocs().iterator();
+        if (!recordList.hasNext()) {
+          return false;
         }
-        return false;
-    }
+        return true;
+      } catch (DBException e) {
 
-    /**
-     * Returns the next JsonDocument element in the recordList
-     */
-	/* @Override */
-    public JsonDocument next() {
-        // TODO Auto-generated method stub
-
-        return (JsonDocument) recordList.next();
-    }
-
-	/**
-	 * Implementation required for the inherited abstract method
-	 * Iterator<JsonDocument>.remove(). As this is a read-only iterator, the
-	 * remove operation does not require implementation.
-	 */
-	/* @Override */
-	public void remove() {
-		// TODO Auto-generated method stub
-
-		throw new UnsupportedOperationException(
-				"Remove Operation not Supportrd for RepositoryHandlerIterator");
+        LOG.warning("Exception in hasnext of RepositoryHandlerIterator" + "\n"
+            + e.toString());
+      }
 
     }
+    return false;
+  }
+
+  /**
+   * Returns the next JsonDocument element in the recordList
+   */
+  /* @Override */
+  public JsonDocument next() {
+    // TODO Auto-generated method stub
+
+    return (JsonDocument) recordList.next();
+  }
+
+  /**
+   * Implementation required for the inherited abstract method
+   * Iterator<JsonDocument>.remove(). As this is a read-only iterator, the
+   * remove operation does not require implementation.
+   */
+  /* @Override */
+  public void remove() {
+    // TODO Auto-generated method stub
+
+    throw new UnsupportedOperationException(
+        "Remove Operation not Supportrd for RepositoryHandlerIterator");
+
+  }
 
 }

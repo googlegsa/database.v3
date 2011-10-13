@@ -33,54 +33,54 @@ import java.util.logging.Logger;
  */
 public class DBConnectorAuthorizationManager implements AuthorizationManager {
 
-	private static final Logger LOG = Logger.getLogger(DBConnectorAuthorizationManager.class.getName());
+  private static final Logger LOG = Logger.getLogger(DBConnectorAuthorizationManager.class.getName());
 
-    private final DBClient dbClient;
+  private final DBClient dbClient;
 
-    public DBConnectorAuthorizationManager(DBClient dbClient) {
-		this.dbClient = dbClient;
-	}
+  public DBConnectorAuthorizationManager(DBClient dbClient) {
+    this.dbClient = dbClient;
+  }
 
-    public Collection<AuthorizationResponse> authorizeDocids(
-			Collection<String> docIds, AuthenticationIdentity identity)
-			throws RepositoryException {
+  public Collection<AuthorizationResponse> authorizeDocids(
+      Collection<String> docIds, AuthenticationIdentity identity)
+      throws RepositoryException {
 
-        LOG.info("Documents to be authorized: " + docIds);
+    LOG.info("Documents to be authorized: " + docIds);
 
-        String userName = identity.getUsername();
-		Map<String, String> docIdMap = DocIdUtil.getDocIdMap(docIds);
-		String docIdString = DocIdUtil.getDocIdString(docIdMap.keySet());
-		List<AuthorizationResponse> encodedDocuments = new ArrayList<AuthorizationResponse>();
-		List<String> authorizedDocIdList = dbClient.executeAuthZQuery(userName, docIdString);
-		StringBuilder logMessage = new StringBuilder();
-		logMessage.append("User: " + userName + " is authorized for :");
-		/*
-		 * Mark Authorization Response status PERMIT for authorized documents.
-		 */
-		for (String docId : authorizedDocIdList) {
-			String encodedDocId = docIdMap.get(docId);
+    String userName = identity.getUsername();
+    Map<String, String> docIdMap = DocIdUtil.getDocIdMap(docIds);
+    String docIdString = DocIdUtil.getDocIdString(docIdMap.keySet());
+    List<AuthorizationResponse> encodedDocuments = new ArrayList<AuthorizationResponse>();
+    List<String> authorizedDocIdList = dbClient.executeAuthZQuery(userName, docIdString);
+    StringBuilder logMessage = new StringBuilder();
+    logMessage.append("User: " + userName + " is authorized for :");
+    /*
+     * Mark Authorization Response status PERMIT for authorized documents.
+     */
+    for (String docId : authorizedDocIdList) {
+      String encodedDocId = docIdMap.get(docId);
 
-            if (encodedDocId != null) {
-				encodedDocuments.add(new AuthorizationResponse(Status.PERMIT,
-						encodedDocId));
-				logMessage.append(encodedDocId + ", ");
-				docIdMap.remove(docId);
-			}
-		}
-		logMessage.append(" and not authorized for document ID : ");
-		/*
-		 * Mark Authorization Response status DENY for non-authorized documents.
-		 */
-		Set<String> docIdKeys = docIdMap.keySet();
-		for (String docId : docIdKeys) {
-			String encodedDocId = docIdMap.get(docId);
-			if (encodedDocId != null) {
-				encodedDocuments.add(new AuthorizationResponse(Status.DENY,
-						encodedDocId));
-				logMessage.append(encodedDocId + ", ");
-			}
-		}
-		LOG.info(logMessage.toString());
-		return encodedDocuments;
-	}
+      if (encodedDocId != null) {
+        encodedDocuments.add(new AuthorizationResponse(Status.PERMIT,
+            encodedDocId));
+        logMessage.append(encodedDocId + ", ");
+        docIdMap.remove(docId);
+      }
+    }
+    logMessage.append(" and not authorized for document ID : ");
+    /*
+     * Mark Authorization Response status DENY for non-authorized documents.
+     */
+    Set<String> docIdKeys = docIdMap.keySet();
+    for (String docId : docIdKeys) {
+      String encodedDocId = docIdMap.get(docId);
+      if (encodedDocId != null) {
+        encodedDocuments.add(new AuthorizationResponse(Status.DENY,
+            encodedDocId));
+        logMessage.append(encodedDocId + ", ");
+      }
+    }
+    LOG.info(logMessage.toString());
+    return encodedDocuments;
+  }
 }

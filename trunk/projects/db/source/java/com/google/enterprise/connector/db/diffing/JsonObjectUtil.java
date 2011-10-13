@@ -34,82 +34,80 @@ import java.util.logging.Logger;
  */
 public class JsonObjectUtil {
 
-    private static final Logger LOG = Logger.getLogger(JsonObjectUtil.class.getName());
-	private final Map<String, List<Value>> properties = new HashMap<String, List<Value>>();
+  private static final Logger LOG = Logger.getLogger(JsonObjectUtil.class.getName());
+  private final Map<String, List<Value>> properties = new HashMap<String, List<Value>>();
 
-    public Map<String, List<Value>> getProperties() {
-		return properties;
-	}
+  public Map<String, List<Value>> getProperties() {
+    return properties;
+  }
 
-    private JSONObject jsonObject;
+  private JSONObject jsonObject;
 
-    public JsonObjectUtil() {
-        jsonObject = new JSONObject();
+  public JsonObjectUtil() {
+    jsonObject = new JSONObject();
+  }
+
+  /**
+   * Set a property for JSONObject. If propertyValue is null this does nothing.
+   *
+   * @param propertyName
+   * @param propertyValue
+   */
+  public void setProperty(String propertyName, String propertyValue) {
+    if (propertyValue != null) {
+      try {
+
+        properties.put(propertyName, Collections.singletonList(Value.getStringValue(propertyValue)));
+        jsonObject.put(propertyName, new SimpleProperty(
+            Collections.singletonList(Value.getStringValue(propertyValue))).nextValue().toString());
+      } catch (JSONException e) {
+        LOG.warning("Exception for " + propertyName + " with value "
+            + propertyValue + "\n" + e.toString());
+      }
     }
+  }
 
-    /**
-     * Set a property for JSONObject. If propertyValue is null this does
-     * nothing.
-     *
-     * @param propertyName
-     * @param propertyValue
-     */
-    public void setProperty(String propertyName, String propertyValue) {
-        if (propertyValue != null) {
-            try {
+  /**
+   * This method adds the last modified date property to the JSON Object
+   *
+   * @param propertyName
+   * @param propertyValue
+   */
+  public void setLastModifiedDate(String propertyName, Timestamp propertyValue) {
+    Timestamp time = propertyValue;
+    Calendar cal = Calendar.getInstance();
+    cal.setTimeInMillis(time.getTime());
 
-				properties.put(propertyName, Collections.singletonList(Value.getStringValue(propertyValue)));
-                jsonObject.put(propertyName, new SimpleProperty(
-						Collections.singletonList(Value.getStringValue(propertyValue))).nextValue().toString());
-            } catch (JSONException e) {
-                LOG.warning("Exception for " + propertyName + " with value "
-                        + propertyValue + "\n" + e.toString());
-            }
-        }
+    if (propertyValue == null) {
+      return;
     }
+    try {
+      properties.put(propertyName, Collections.singletonList(Value.getDateValue(cal)));
+      jsonObject.put(propertyName, new SimpleProperty(
+          Collections.singletonList(Value.getDateValue(cal))).nextValue().toString());
+    } catch (JSONException e) {
 
-    /**
-     * This method adds the last modified date property to the JSON Object
-     *
-     * @param propertyName
-     * @param propertyValue
-     */
-    public void setLastModifiedDate(String propertyName, Timestamp propertyValue) {
-        Timestamp time = propertyValue;
-        Calendar cal = Calendar.getInstance();
-        cal.setTimeInMillis(time.getTime());
-
-        if (propertyValue == null) {
-            return;
-        }
-        try {
-			properties.put(propertyName, Collections.singletonList(Value.getDateValue(cal)));
-            jsonObject.put(propertyName, new SimpleProperty(
-					Collections.singletonList(Value.getDateValue(cal))).nextValue().toString());
-        } catch (JSONException e) {
-
-            LOG.warning("Exception for " + propertyName + " with value "
-                    + propertyValue + "\n" + e.toString());
-        }
+      LOG.warning("Exception for " + propertyName + " with value "
+          + propertyValue + "\n" + e.toString());
     }
+  }
 
-    /**
-     * In case of BLOB data iBATIS returns binary array for BLOB data-type. This
-     * method sets the "binary array" as a content of JSON Object.
-     *
-     * @param propertyName
-     * @param propertyValue
-     */
-    public void setBinaryContent(String propertyName, Object propertyValue) {
-        if (propertyValue == null) {
-			return;
-            }
-            properties.put(propertyName, Collections.singletonList(Value.getBinaryValue((byte[]) propertyValue)));
+  /**
+   * In case of BLOB data iBATIS returns binary array for BLOB data-type. This
+   * method sets the "binary array" as a content of JSON Object.
+   *
+   * @param propertyName
+   * @param propertyValue
+   */
+  public void setBinaryContent(String propertyName, Object propertyValue) {
+    if (propertyValue == null) {
+      return;
     }
+    properties.put(propertyName, Collections.singletonList(Value.getBinaryValue((byte[]) propertyValue)));
+  }
 
-    public JSONObject getJsonObject() {
-        return jsonObject;
-    }
-
+  public JSONObject getJsonObject() {
+    return jsonObject;
+  }
 
 }
