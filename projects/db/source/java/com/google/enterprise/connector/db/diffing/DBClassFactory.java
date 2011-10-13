@@ -20,16 +20,16 @@ import com.google.enterprise.connector.util.diffing.DocumentSnapshotFactory;
  * Top-level factory for Database Connector objects
  */
 public class DBClassFactory implements DocumentHandleFactory,
-		DocumentSnapshotFactory {
-	public static DBClassFactory INSTANCE = new DBClassFactory();
+    DocumentSnapshotFactory {
+  public static DBClassFactory INSTANCE = new DBClassFactory();
 
-    public static DBClassFactory getInstance() {
-		return INSTANCE;
-	}
+  public static DBClassFactory getInstance() {
+    return INSTANCE;
+  }
 
-    /* @Override */
-	public DBClass fromString(String stringForm) {
-		return new DBClass(stringForm);
-	}
+  /* @Override */
+  public DBClass fromString(String stringForm) {
+    return new DBClass(stringForm);
+  }
 
 }

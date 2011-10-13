@@ -17,23 +17,20 @@ package com.google.enterprise.connector.db.diffing;
 import java.util.Iterator;
 import java.util.logging.Logger;
 
-
 /* Uses an RepositoryHandlerIterator to implement JsonDocumentFetcher */
-public class DBJsonDocumentFetcher implements JsonDocumentFetcher{
-    private static Logger LOG = Logger.getLogger(DBJsonDocumentFetcher.class.getName());
-    private RepositoryHandlerIterator repositoryHandlerIterator;
+public class DBJsonDocumentFetcher implements JsonDocumentFetcher {
+  private static Logger LOG = Logger.getLogger(DBJsonDocumentFetcher.class.getName());
+  private RepositoryHandlerIterator repositoryHandlerIterator;
 
-	public DBJsonDocumentFetcher(RepositoryHandler repositoryHandler) {
-        this.repositoryHandlerIterator = new RepositoryHandlerIterator(
-                repositoryHandler);
-    }
+  public DBJsonDocumentFetcher(RepositoryHandler repositoryHandler) {
+    this.repositoryHandlerIterator = new RepositoryHandlerIterator(
+        repositoryHandler);
+  }
 
-    /* @Override */
-    public Iterator<JsonDocument> iterator() {
+  /* @Override */
+  public Iterator<JsonDocument> iterator() {
 
-        return repositoryHandlerIterator;
-    }
-
-
+    return repositoryHandlerIterator;
+  }
 
 }
