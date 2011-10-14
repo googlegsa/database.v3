@@ -19,21 +19,18 @@ This document describes steps to be followed when upgrading Database Connector f
      <!--
      Range to be crawled when a parameterized crawl query is entered. 
      Replace the minValue and MaxValue with actual range values respectively
-    -->
+      -->
     
     <property name="minValue" value="0"></property>
     <property name="maxValue" value="0"></property>
     
 
-  <!--
+    <!--
     Flag to determine whether the SQl Crawl is parameterized
     -->
-  
-  <property name="parameterizedQueryFlag" value="true"></property>
-      }}} 
-    
-
-    * *edit $CONNECTOR_NAME.properties file to modify the sqlQuery and replace the range to be crawled with #minvalue# and #maxvalue#:
+    <property name="parameterizedQueryFlag" value="true"></property>
+   }}} 
+    * *edit $CONNECTOR_NAME.properties file to modify the sqlQuery and replace the range to be crawled with #minvalue# and #maxvalue#.
      {{{ 
        For Example:Modify the below SQL query
 
@@ -41,17 +38,16 @@ This document describes steps to be followed when upgrading Database Connector f
                             TO
      sqlQuery=select * from table where emp_id between #minvalue#  and #maxvalue#
      }}}
-
-
     * *edit IbatisSqlMap.xml file to modify the replace it with the new sqlQuery value as in the above properties file:
-     For Example:Modify the element as below
- {{{     
- <select id="getAll" resultClass="java.util.HashMap"> 
-select * from employee where emp_id between 1 and 100
- </select> 
+     {{{     
+	     For Example:Modify the element as below
+        <select id="getAll" resultClass="java.util.HashMap"> 
+           select * from employee where emp_id between 1 and 100
+         </select> 
                             TO
- <select id="getAll" resultClass="java.util.HashMap"> 
-select * from employee where emp_id between #minvalue# and #maxvalue#
- </select> 
- }}}
- # Restart Tomcat
+        <select id="getAll" resultClass="java.util.HashMap"> 
+           select * from employee where emp_id between #minvalue# and #maxvalue#
+        </select> 
+     }}}
+
+  3 Restart Tomcat
