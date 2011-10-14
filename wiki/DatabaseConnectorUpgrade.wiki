@@ -38,7 +38,7 @@ This document describes steps to be followed when upgrading Database Connector f
                             TO
      sqlQuery=select * from table where emp_id between #minvalue#  and #maxvalue#
      }}}
-    * *edit IbatisSqlMap.xml file to modify the replace it with the new sqlQuery value as in the above properties file:
+    * *edit IbatisSqlMap.xml file to modify the replace it with the new sqlQuery value:
      {{{     
 	     For Example:Modify the element as below
         <select id="getAll" resultClass="java.util.HashMap"> 
