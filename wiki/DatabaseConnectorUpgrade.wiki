@@ -46,7 +46,9 @@ This document describes steps to be followed when upgrading Database Connector f
          </select> 
                             TO
         <select id="getAll" resultClass="java.util.HashMap"> 
-           select * from employee where emp_id between #minvalue# and #maxvalue#
+           
+select * from employee where emp_id between #minvalue# and #maxvalue#
+
         </select> 
      }}}
 
