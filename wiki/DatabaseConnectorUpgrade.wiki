@@ -1,0 +1,57 @@
+Steps to upgrade Database Connector for performance issue.
+
+= Introduction =
+
+This document describes steps to be followed when upgrading Database Connector for performance fix patch. The instructions mentioned here are applicable to connector version 2.8.0.
+
+=Pre-requisites=
+  * Apache Tomcat 6. You can download it from it from http://tomcat.apache.org/download-60.cgi
+  * JRE1.5 or above. Refer to http://java.sun.com/javase/downloads/index_jdk5.jsp for downloads
+  * Connector Manager version 2.8.0 or higher.Refer to  http://code.google.com/p/google-enterprise-connector-manager/downloads/list for downloads.
+  * Database Connector version 2.8.0 is deployed and a connector instance for Database Connector is configured
+ 
+=Upgrade Steps=
+  # Shut down Tomcat if it is running.
+  # Go to $CATALINA_HOME/webapps/connector-manager/WEB-INF/connectors/DBConnector/$CONNECTOR_NAME directory.
+    * *edit Add the following lines in connectorInstance.xml file:
+   {{{
+      Add the following lines at the end of the file just before "</bean></beans>":
+     <!--
+     Range to be crawled when a parameterized crawl query is entered. 
+     Replace the minValue and MaxValue with actual range values respectively
+    -->
+    
+    <property name="minValue" value="0"></property>
+    <property name="maxValue" value="0"></property>
+    
+
+  <!--
+    Flag to determine whether the SQl Crawl is parameterized
+    -->
+  
+  <property name="parameterizedQueryFlag" value="true"></property>
+      }}} 
+    
+
+    * *edit $CONNECTOR_NAME.properties file to modify the sqlQuery and replace the range to be crawled with #minvalue# and #maxvalue#:
+     {{{ 
+       For Example:Modify the below SQL query
+
+     sqlQuery=select * from employee where emp_id between 1 and 100
+                            TO
+     sqlQuery=select * from table where emp_id between #minvalue#  and #maxvalue#
+     }}}
+
+
+    * *edit IbatisSqlMap.xml file to modify the replace it with the new sqlQuery value as in the above properties file:
+     For Example:Modify the element as below
+ {{{     
+ <select id="getAll" resultClass="java.util.HashMap"> 
+select * from employee where emp_id between 1 and 100
+ </select> 
+                            TO
+ <select id="getAll" resultClass="java.util.HashMap"> 
+select * from employee where emp_id between #minvalue# and #maxvalue#
+ </select> 
+ }}}
+ # Restart Tomcat
