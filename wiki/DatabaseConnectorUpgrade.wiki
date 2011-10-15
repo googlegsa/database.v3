@@ -8,7 +8,8 @@ This document describes steps to be followed when upgrading Database Connector f
   * Apache Tomcat 6. You can download it from it from http://tomcat.apache.org/download-60.cgi
   * JRE1.5 or above. Refer to http://java.sun.com/javase/downloads/index_jdk5.jsp for downloads
   * Connector Manager version 2.8.0 or higher.Refer to  http://code.google.com/p/google-enterprise-connector-manager/downloads/list for downloads.
-  * Database Connector version 2.8.0 is deployed and a connector instance for Database Connector is configured
+  * Database Connector version 2.8.0 is deployed and a connector instance for Database Connector is configured.
+  * A total ordering on the database table is Required for using the ordering to select the next batch of documents using minvalue and maxvalue range 
  
 =Upgrade Steps=
   # Shut down Tomcat if it is running.
