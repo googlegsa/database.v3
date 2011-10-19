@@ -42,6 +42,28 @@ public class RepositoryHandlerTest extends DBTestBase {
 
   }
 
+  public void testExecuteQueryAndAddDocsForParameterizedQuery() {
+    // Testing the connector for parameterized crawl query
+    String sqlQuery = "SELECT * FROM TestEmpTable where id between #minvalue# and #maxvalue#";
+    DBContext dbContext = getDbContext();
+    dbContext.setSqlQuery(sqlQuery);
+    dbContext.setParameterizedQueryFlag(true);
+    dbContext.setMinValue(1);
+    dbContext.setMaxValue(2);
+    DBClient dbClient;
+    try {
+      dbClient = new DBClient(dbContext);
+      RepositoryHandler repositoryHandler = RepositoryHandler.makeRepositoryHandlerFromConfig(dbClient, null);
+      repositoryHandler.setTraversalContext(new ProductionTraversalContext());
+      LinkedList<JsonDocument> jsonDocumenList = repositoryHandler.executeQueryAndAddDocs();
+      JsonDocument jsonDocument = (JsonDocument) jsonDocumenList.iterator().next();
+      assertEquals("MQ", jsonDocument.getDocumentId());
+    } catch (DBException e) {
+      // TODO Auto-generated catch block
+      e.printStackTrace();
+    }
+  }
+
   public void testExecuteQueryAndAddDocs() {
     try {
       DBClient dbClient = getDbClient();
