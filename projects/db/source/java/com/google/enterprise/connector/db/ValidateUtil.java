@@ -114,6 +114,9 @@ public class ValidateUtil {
     private static final String USERNAME_PLACEHOLDER = "#username#";
     private static final String DOCI_IDS_PLACEHOLDER = "$docIds$";
 
+    private static final String MIN_VALUE_PLACEHOLDER = "#minvalue#";
+    private static final String MAX_VALUE_PLACEHOLDER = "#maxvalue#";
+
     Statement stmt = null;
     Connection conn = null;
     ResultSet resultSet = null;
@@ -183,12 +186,24 @@ public class ValidateUtil {
        * not be DML statement.
        */
       if (conn != null) {
+
         try {
           conn.setAutoCommit(false);
           conn.setReadOnly(true);
           stmt = conn.createStatement();
           stmt.setMaxRows(1);
-          result = stmt.execute(config.get(SQL_QUERY));
+
+          String sqlQuery = config.get(SQL_QUERY);
+          if (sqlQuery.contains(MIN_VALUE_PLACEHOLDER)
+              && sqlQuery.contains(MAX_VALUE_PLACEHOLDER)) {
+
+            sqlQuery = sqlQuery.replace(MIN_VALUE_PLACEHOLDER, "''");
+            sqlQuery = sqlQuery.replace(MAX_VALUE_PLACEHOLDER, "''");
+            result = stmt.execute(sqlQuery);
+          } else {
+
+            result = stmt.execute(sqlQuery);
+          }
           if (!result) {
             message = res.getString(TEST_SQL_QUERY);
             problemFields.add(SQL_QUERY);
@@ -199,6 +214,7 @@ public class ValidateUtil {
           message = res.getString(TEST_SQL_QUERY);
           problemFields.add(SQL_QUERY);
         }
+
       }
 
       return result;

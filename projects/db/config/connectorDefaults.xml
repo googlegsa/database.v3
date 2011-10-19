@@ -28,7 +28,17 @@
       Parameter for fetching number of rows in a single call to the
       repository
     -->
-    <property name="numberOfRows" value="200"></property>
+    <property name="numberOfRows" value="500"></property>
+    <!--
+     Parameters when a parameterized crawl query is entered
+    -->
+    <property name="minValue" value="0"></property>
+    <property name="maxValue" value="0"></property>
+    <!--
+    Flag to determine whether the SQl Crawl is parameterized
+    -->
+    <property name="parameterizedQueryFlag" value="false"></property>
+
   </bean>
 
   <!-- Bean for interacting with the database -->
@@ -73,7 +83,7 @@
   -->
   <bean id="change-queue"
     class=" com.google.enterprise.connector.util.diffing.ChangeQueue">
-    <constructor-arg index="0" value="100" />
+    <constructor-arg index="0" value="1000" />
     <constructor-arg index="1" value="10000" />
     <constructor-arg index="2" ref="activity-logger" />
   </bean>

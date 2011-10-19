@@ -40,6 +40,8 @@ public class RepositoryHandler {
   private TraversalContextManager traversalContextManager;
   private static TraversalContext traversalContext;
   private int cursorDB = 0;
+  private Integer minValue = null;
+  private Integer maxValue = null;
 
   // EXC_NORMAL represents that DB Connector is running in normal mode
   private static final int MODE_NORMAL = 1;
@@ -101,27 +103,64 @@ public class RepositoryHandler {
       throws SnapshotRepositoryRuntimeException {
     LinkedList<JsonDocument> docList = new LinkedList<JsonDocument>();
     List<Map<String, Object>> rows = null;
-    try {
-      rows = dbClient.executePartialQuery(cursorDB, dbClient.getDBContext().getNumberOfRows());
-    } catch (SnapshotRepositoryRuntimeException e) {
-      LOG.info("Repository Unreachable."
-          + "Setting CursorDB value to zero to start traversal from begining after recovery. ");
-      setCursorDB(0);
-      LOG.warning("Unable to connect to the database\n" + e.toString());
-      throw new SnapshotRepositoryRuntimeException(
-          "Unable to connect to the database\n ", e);
+
+    if (!dbClient.getDBContext().isParameterizedQueryFlag()) {
+
+      try {
+        rows = dbClient.executePartialQuery(cursorDB, dbClient.getDBContext().getNumberOfRows());
+      } catch (SnapshotRepositoryRuntimeException e) {
+        LOG.info("Repository Unreachable."
+            + "Setting CursorDB value to zero to start traversal from begining after recovery. ");
+        setCursorDB(0);
+        LOG.warning("Unable to connect to the database\n" + e.toString());
+        throw new SnapshotRepositoryRuntimeException(
+            "Unable to connect to the database\n ", e);
+      }
+
+      if (rows.size() == 0) {
+        LOG.info("Crawl cycle of database "
+            + dbClient.getDBContext().getDbName() + " is completed at: "
+            + new Date() + "\nTotal " + getCursorDB()
+            + " records are crawled during this crawl cycle");
+        setCursorDB(0);
+      } else {
+        setCursorDB(getCursorDB() + rows.size());
+      }
+
+    } else {
+      if (minValue == null) {
+        setMinValue(dbClient.getDBContext().getMinValue());
+        setMaxValue(minValue + dbClient.getDBContext().getNumberOfRows());
+      }
+
+      if (minValue > dbClient.getDBContext().getMaxValue()) {
+        LOG.info("Database Crawl Cycle Completed."
+            + "Resetting  minvalue and maxvalue to start traversal from begining.. ");
+        setMinValue(dbClient.getDBContext().getMinValue());
+        setMaxValue(minValue + dbClient.getDBContext().getNumberOfRows());
+        return docList;
+      }
+
+      try {
+        rows = dbClient.executeParameterizePartialQuery(minValue, maxValue);
+        setMinValue(maxValue + 1);
+        setMaxValue(minValue + dbClient.getDBContext().getNumberOfRows());
+
+      } catch (SnapshotRepositoryRuntimeException e) {
+        LOG.info("Repository Unreachable."
+            + "Resetting  minvalue and maxvalue to start traversal from begining after recovery. ");
+        setMinValue(dbClient.getDBContext().getMinValue());
+        setMaxValue(minValue + dbClient.getDBContext().getNumberOfRows());
+        LOG.warning("Unable to connect to the database\n" + e.toString());
+        throw new SnapshotRepositoryRuntimeException(
+            "Unable to connect to the database\n ", e);
+      }
     }
+
     if (traversalContext == null) {
+      LOG.info("Setting Traversal Context");
       setTraversalContext(traversalContextManager.getTraversalContext());
       JsonDocument.setTraversalContext(traversalContextManager.getTraversalContext());
-    }
-    if (rows.size() == 0) {
-      LOG.info("Crawl cycle of database " + dbClient.getDBContext().getDbName()
-          + " is completed at: " + new Date() + "\nTotal " + getCursorDB()
-          + " records are crawled during this crawl cycle");
-      setCursorDB(0);
-    } else {
-      setCursorDB(getCursorDB() + rows.size());
     }
 
     JsonDocument jsonDoc = null;
@@ -200,6 +239,28 @@ public class RepositoryHandler {
     LOG.info(docList.size() + " document(s) to be fed to GSA" + " at time: "
         + new Date());
     return docList;
+  }
+
+  public Integer getMinValue() {
+    return minValue;
+  }
+
+  public void setMinValue(Integer minValue) {
+    this.minValue = minValue;
+  }
+
+  public Integer getMaxValue() {
+    return maxValue;
+  }
+
+  public void setMaxValue(Integer maxValue) {
+    if (this.maxValue != null) {
+      if (maxValue > dbClient.getDBContext().getMaxValue()) {
+        maxValue = dbClient.getDBContext().getMaxValue();
+      }
+    }
+
+    this.maxValue = maxValue;
   }
 
   /**

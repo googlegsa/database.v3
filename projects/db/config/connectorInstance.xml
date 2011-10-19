@@ -16,5 +16,21 @@
       <property name="numberOfRows" value="500"></property>
     -->
 
+    <!--
+     Range to be crawled when a parameterized crawl query is entered.
+     Replace the minValue and MaxValue with actual range values respectively
+      -->
+
+    <!--
+    <property name="minValue" value="0"></property>
+    <property name="maxValue" value="0"></property>
+    -->
+
+  <!--
+    Flag to determine whether the SQl Crawl is parameterized
+    -->
+  <!--
+  <property name="parameterizedQueryFlag" value="true"></property>
+  -->
   </bean>
 </beans>

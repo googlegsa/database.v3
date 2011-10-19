@@ -15,6 +15,7 @@ package com.google.enterprise.connector.db.diffing;
 
 import com.google.common.base.Function;
 import com.google.common.collect.Iterators;
+import com.google.enterprise.connector.db.DocIdUtil;
 import com.google.enterprise.connector.util.diffing.SnapshotRepository;
 import com.google.enterprise.connector.util.diffing.SnapshotRepositoryRuntimeException;
 
@@ -61,7 +62,8 @@ public class DBClassRepository implements SnapshotRepository<DBClass> {
     public DBClass apply(JsonDocument jdoc) {
       DBClass p = DBClass.factoryFunction.apply(jdoc);
       if (LOG.isLoggable(Level.FINER)) {
-        LOG.finer("DBClassRepository returns person " + p.getDocumentId());
+        LOG.finer("DBClassRepository returns document with docID "
+            + DocIdUtil.decodeBase64String(p.getDocumentId().toString()));
       }
       return p;
     }
