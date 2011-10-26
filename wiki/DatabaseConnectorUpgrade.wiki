@@ -38,7 +38,9 @@ This document describes steps to be followed when upgrading Database Connector f
 
 sqlQuery=select emp_name from employee where emp_id between 1 and 100
 
-then set minvalue=1 and maxvalue=100.
+then set 
+    <property name="minValue" value="1"></property>
+    <property name="maxValue" value="100"></property>
 }}}
    If  values for properties "minvalue" and "maxvalue"  are different than previous crawl query range then connector would send delete feeds for previously crawled records first and then start traversing the new range.
     
