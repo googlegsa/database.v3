@@ -13,6 +13,7 @@ This document describes steps to be followed when upgrading Database Connector f
  
 =Upgrade Steps=
   # Shut down Tomcat if it is running.
+  # Go to $CATALINA_HOME/webapps/connector-manager/WEB-INF/lib and replace the old connector-db jar with new connector-db jar. 
   # Go to $CATALINA_HOME/webapps/connector-manager/WEB-INF/connectors/DBConnector/$CONNECTOR_NAME directory.
     * *edit Add the following lines in connectorInstance.xml file:
    {{{
@@ -31,7 +32,17 @@ This document describes steps to be followed when upgrading Database Connector f
     -->
     <property name="parameterizedQueryFlag" value="true"></property>
    }}} 
-    * *edit $CONNECTOR_NAME.properties file to modify the sqlQuery and replace the range to be crawled with #minvalue# and #maxvalue#.
+   Note:Make sure that the values for properties "minvalue" and "maxvalue" have their values set equal to the range in previous crawl Query. 
+{{{
+   For Example:If the SQL crawl query was:
+
+sqlQuery=select emp_name from employee where emp_id between 1 and 100
+
+then set minvalue=1 and maxvalue=100.
+}}}
+   If  values for properties "minvalue" and "maxvalue"  are different than previous crawl query range then connector would send delete feeds for previously crawled records first and then start traversing the new range.
+    
+ *eedit $CONNECTOR_NAME.properties file to modify the sqlQuery and replace the range to be crawled with #minvalue# and #maxvalue#.
      {{{ 
        For Example:Modify the below SQL query
 
@@ -39,7 +50,7 @@ This document describes steps to be followed when upgrading Database Connector f
                             TO
      sqlQuery=select * from table where emp_id between #minvalue#  and #maxvalue#
      }}}
-    * *edit IbatisSqlMap.xml file to modify the replace it with the new sqlQuery value:
+     *eedit IbatisSqlMap.xml file to modify the replace it with the new sqlQuery value:
      {{{     
 	     For Example:Modify the element as below
         <select id="getAll" resultClass="java.util.HashMap"> 
@@ -51,4 +62,4 @@ This document describes steps to be followed when upgrading Database Connector f
         </select> 
      }}}
 
-  3 Restart Tomcat
+  3. Restart Tomcat
