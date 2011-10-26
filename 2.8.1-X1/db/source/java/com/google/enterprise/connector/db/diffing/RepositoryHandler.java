@@ -135,7 +135,8 @@ public class RepositoryHandler {
 
       if (minValue > dbClient.getDBContext().getMaxValue()) {
         LOG.info("Database Crawl Cycle Completed."
-            + "Resetting  minvalue and maxvalue to start traversal from begining.. ");
+            + "All the records crawled in specified minValue and maxValue Range"
+            + "Resetting  minvalue and maxvalue to start traversal from begining..");
         setMinValue(dbClient.getDBContext().getMinValue());
         setMaxValue(minValue + dbClient.getDBContext().getNumberOfRows());
         return docList;
@@ -154,6 +155,21 @@ public class RepositoryHandler {
         LOG.warning("Unable to connect to the database\n" + e.toString());
         throw new SnapshotRepositoryRuntimeException(
             "Unable to connect to the database\n ", e);
+      }
+
+      // check added to verify if no records are returned in the specified
+      // minValue and maxValue range . i.e connector configured for higher
+      // maxValue than actual number of Database records, Reset minValue and
+      // maxValue assuming crawl cycle completed for ordered database.This check
+      // makes the range to be more flexible
+
+      if (rows.size() == 0) {
+        LOG.info("No records returned for range minValue= " + minValue + " "
+            + "and maxValue=" + maxValue);
+        LOG.info("Assuming crawl cycle completed for ordered Database "
+            + "Resetting  minvalue and maxvalue to start traversal from begining after recovery");
+        setMinValue(dbClient.getDBContext().getMinValue());
+        setMaxValue(minValue + dbClient.getDBContext().getNumberOfRows());
       }
     }
 
