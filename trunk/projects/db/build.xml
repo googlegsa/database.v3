@@ -7,8 +7,12 @@
   <property file="${user.home}/google-enterprise-connector-db.properties" />
   <property file="google-enterprise-connector-db.properties" />
   <property file="version.properties" />
+
   <property name="COMPILE_DEBUG_FLAG" value="true" />
   <property name="COMPILE_DEBUG_LEVEL" value="source,lines,vars" />
+  <property name="COMPILE_TARGET" value="1.5" />
+  <property name="COMPILE_BOOTCLASSPATH" value="${build.bootclasspath}" />
+
   <property name="build.dir" value="build" />
   <property name="build-prod.dir" value="${build.dir}/prod" />
   <property name="build-prod-config.dir" value="${build-prod.dir}/config" />
@@ -40,10 +44,11 @@
   <property name="tests.logging.properties" location="${classes-tests.dir}/tests.logging.properties" />
   <property name="connector-manager-projects.dir" location="${connector.manager.home}" />
   <property name="connector-manager.dir" location="${connector-manager-projects.dir}" />
+  <property name="connector-manager-thirdparty-jar.dir" 
+            location="${connector-manager.dir}/third-party" />
   <property name="connector-thirdparty-jar.dir" location="./third_party" />
   <property name="connector-thirdparty-tests-jar.dir" location="${connector-thirdparty-jar.dir}/tests" />
   <property name="spi.jar.dir" value="${connector-manager.dir}/dist/jarfile" />
-  <property name="cm-third-paty.jar" value="${connector-manager.dir}/third-party/prod/" />
   <property file="${config.dir}/build_code_coverage.properties" />
   <path id="cobertura.classpath">
     <fileset dir="${connector-manager.dir}/third-party/cobertura">
@@ -78,10 +83,16 @@
   <target name="compile_prod" depends="init">
     <!-- compile java source files -->
     <javac srcdir="${src-prod.dir}" destdir="${classes-prod.dir}"
-      debug="${COMPILE_DEBUG_FLAG}" debuglevel="${COMPILE_DEBUG_LEVEL}"
-      target="1.5" source="1.5">
+           includeantruntime="false"
+           debug="${COMPILE_DEBUG_FLAG}" debuglevel="${COMPILE_DEBUG_LEVEL}"
+           target="${COMPILE_TARGET}" source="${COMPILE_TARGET}">
+      <compilerarg line="-Xlint -Xlint:-serial"/>
+      <bootclasspath path="${COMPILE_BOOTCLASSPATH}"/>
       <classpath>
-        <fileset dir="${spi.jar.dir}" includes="**/*.jar" />
+        <fileset dir="${spi.jar.dir}" includes="**/connector-spi.jar" />
+        <fileset dir="${connector-manager-thirdparty-jar.dir}">
+          <include name="prod/*.jar" />
+        </fileset>
         <fileset dir="${thirdparty-prod-jar.dir}" includes="**/*.jar" />
       </classpath>
     </javac>
@@ -90,13 +101,18 @@
   <target name="compile_tests" depends="init,jar_prod">
     <!-- compile java source files for tests -->
     <javac srcdir="${src-tests.dir}" destdir="${classes-tests.dir}"
-      debug="${COMPILE_DEBUG_FLAG}" debuglevel="${COMPILE_DEBUG_LEVEL}"
-      target="1.5" source="1.5">
+           includeantruntime="false"
+           debug="${COMPILE_DEBUG_FLAG}" debuglevel="${COMPILE_DEBUG_LEVEL}"
+           target="${COMPILE_TARGET}" source="${COMPILE_TARGET}">
+      <!-- CM JAR Class-Path references are not available. -->
+      <compilerarg line="-Xlint -Xlint:-serial -Xlint:-path"/>
+      <bootclasspath path="${COMPILE_BOOTCLASSPATH}"/>
       <classpath>
-        <fileset dir="${cm-third-paty.jar}">
-          <include name="**/spring.jar" />
-        </fileset>
         <fileset dir="${spi.jar.dir}" includes="**/*.jar" />
+        <fileset dir="${connector-manager-thirdparty-jar.dir}">
+          <include name="prod/*.jar" />
+          <include name="tests/junit.jar" />
+        </fileset>
         <fileset dir="${thirdparty-prod-jar.dir}" includes="**/*.jar" />
         <pathelement location="${jar-prod.file}" />
       </classpath>
@@ -114,7 +130,8 @@
       <fileset dir="${connector-thirdparty-tests-jar.dir}"
         includes="**/*.properties" />
     </copy>
-    <junit printsummary="yes" haltonfailure="yes">
+    <junit printsummary="yes" haltonfailure="no"
+           failureproperty="${ant.project.name}.failure">
       <assertions>
         <enable />
       </assertions>
@@ -130,7 +147,10 @@
         <fileset dir="${spi.jar.dir}" includes="**/*.jar" />
         <fileset dir="${thirdparty-prod-jar.dir}" includes="**/*.jar" />
         <pathelement location="${jar-prod.file}" />
-        <fileset dir="${cm-third-paty.jar}" includes="**/*.jar" />
+        <fileset dir="${connector-manager-thirdparty-jar.dir}">
+          <include name="prod/*.jar" />
+          <include name="tests/junit.jar" />
+        </fileset>
       </classpath>
       <formatter type="xml" />
       <batchtest fork="yes" todir="${reports.xml.dir}">
@@ -143,6 +163,7 @@
       </fileset>
       <report format="frames" todir="${reports.html.dir}" />
     </junitreport>
+    <fail if="${ant.project.name}.failure" message="Test failure"/>
   </target>
 
   <target name="jar_prod" description="db-connector-jar" depends="compile_prod">
@@ -163,6 +184,8 @@
         <attribute name="Specification-Title" value="Connector Manager SPI" />
         <attribute name="Specification-Version" value="${version.spi}" />
         <attribute name="Specification-Vendor" value="Google Inc." />
+        <attribute name="Main-Class"
+                   value="com.google.enterprise.connector.db.DBMain" />
       </manifest>
     </jar>
   </target>
@@ -232,23 +255,8 @@
     <mkdir dir="${coverage.html.dir}" />
   </target>
 
-
-  <target name="compile_code_coverage" depends="init_code_coverage">
-    <javac srcdir="${src.dir}" destdir="${classes.dir}" debug="true">
-      <classpath>
-        <fileset dir="${cm-third-paty.jar}" includes="**/*.jar" />
-        <fileset dir="${spi.jar.dir}" includes="**/*.jar" />
-        <fileset dir="${thirdparty-prod-jar.dir}" includes="**/*.jar" />
-      </classpath>
-    </javac>
-    <javac srcdir="${test.dir}" destdir="${classes.dir}" debug="true">
-      <classpath>
-        <fileset dir="${cm-third-paty.jar}" includes="**/*.jar" />
-        <fileset dir="${spi.jar.dir}" includes="**/*.jar" />
-        <fileset dir="${thirdparty-prod-jar.dir}" includes="**/*.jar" />
-      </classpath>
-    </javac>
-  </target>
+  <target name="compile_code_coverage" 
+          depends="init_code_coverage,compile_prod,compile_tests"/>
 
   <target name="instrument" depends="compile_code_coverage">
     <cobertura-instrument todir="${instrumented.dir}">

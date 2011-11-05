@@ -103,6 +103,7 @@ public class DBClient {
    * </pre>
    * @throws DBException
    */
+  @SuppressWarnings("unchecked")
   public List<Map<String, Object>> executeQuery() throws DBException {
     List<Map<String, Object>> rows;
     try {
@@ -126,6 +127,7 @@ public class DBClient {
    * </pre>
    * @throws DBException
    */
+  @SuppressWarnings("unchecked")
   public List<Map<String, Object>> executePartialQuery(int skipRows, int maxRows)
       throws SnapshotRepositoryRuntimeException {
     // TODO(meghna): Think about a better way to scroll through the result
@@ -152,10 +154,10 @@ public class DBClient {
    * @param Maxvalue
    * @return list of documents
    */
+  @SuppressWarnings("unchecked")
   public List<Map<String, Object>> executeParameterizePartialQuery(
       Integer minValue, Integer maxValue)
       throws SnapshotRepositoryRuntimeException {
-
     List<Map<String, Object>> rows;
     /*
      * Create a hashmap as to provide input parameters minvalue and maxvalue to
@@ -180,7 +182,6 @@ public class DBClient {
 
   public List<Map<String, Object>> checkDBConnection(Exception e)
       throws SnapshotRepositoryRuntimeException {
-
     List<Map<String, Object>> rows;
     /*
      * Below code is added to handle scenarios when table is deleted or
@@ -347,8 +348,8 @@ public class DBClient {
    * @param docIds List of documents to be authorized
    * @return list of authorized documents
    */
+  @SuppressWarnings("unchecked")
   public List<String> executeAuthZQuery(String userName, String docIds) {
-
     List<String> authorizedDocs = new ArrayList<String>();
     /*
      * Create a hashmap as to provide input parameters user-name and list of
@@ -368,5 +369,4 @@ public class DBClient {
     }
     return authorizedDocs;
   }
-
 }
