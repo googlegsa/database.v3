@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 package com.google.enterprise.connector.db.diffing;
 
 import com.google.enterprise.connector.util.diffing.SnapshotRepositoryRuntimeException;
@@ -18,8 +19,6 @@ import com.google.enterprise.connector.util.diffing.SnapshotRepositoryRuntimeExc
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.logging.Logger;
-
-;
 
 /**
  * Custom Iterator class over collection of @link JsonDocument objects.
@@ -55,7 +54,6 @@ public class RepositoryHandlerIterator implements Iterator<JsonDocument> {
    */
   /* @Override */
   public boolean hasNext() throws SnapshotRepositoryRuntimeException {
-
     if (recordList.hasNext()) {
       return true;
     } else {
@@ -71,9 +69,7 @@ public class RepositoryHandlerIterator implements Iterator<JsonDocument> {
         throw new SnapshotRepositoryRuntimeException(
             "unable to connect to repository", e);
       }
-
     }
-
   }
 
   /**
@@ -83,7 +79,7 @@ public class RepositoryHandlerIterator implements Iterator<JsonDocument> {
   public JsonDocument next() {
     // TODO Auto-generated method stub
 
-    return (JsonDocument) recordList.next();
+    return recordList.next();
   }
 
   /**
@@ -97,7 +93,6 @@ public class RepositoryHandlerIterator implements Iterator<JsonDocument> {
 
     throw new UnsupportedOperationException(
         "Remove Operation not Supportrd for RepositoryHandlerIterator");
-
   }
 
 }

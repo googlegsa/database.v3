@@ -18,7 +18,9 @@ import com.google.enterprise.connector.spi.ConfigureResponse;
 import com.google.enterprise.connector.spi.ConnectorFactory;
 import com.google.enterprise.connector.spi.ConnectorType;
 import com.google.enterprise.connector.spi.RepositoryException;
+import com.google.enterprise.connector.spi.XmlUtils;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
@@ -218,7 +220,6 @@ public class DBConnectorType implements ConnectorType {
       appendAttribute(buf, ID, key);
       appendAttribute(buf, VALUE, NO_EXT_METADATA);
       buf.append(CLOSE_ELEMENT_SLASH);
-
     } else {
       buf.append(INPUT);
       if (key.equalsIgnoreCase(PASSWORD)) {
@@ -388,11 +389,13 @@ public class DBConnectorType implements ConnectorType {
 
   private void appendAttribute(StringBuilder buf, String attrName,
       String attrValue) {
-    buf.append(" ");
-    // TODO(meghna): Change this when the xmlAppendAttrValuePair takes
-    // StringBuilder or Appendable as an argument.
-    StringBuffer strBuf = new StringBuffer();
-    com.google.enterprise.connector.spi.XmlUtils.xmlAppendAttrValuePair(attrName, attrValue, strBuf);
+    StringBuilder strBuf = new StringBuilder();
+    try {
+      XmlUtils.xmlAppendAttr(attrName, attrValue, strBuf);
+    } catch (IOException e) {
+      // Can't happen with StringBuilder.
+      throw new AssertionError(e);
+    }
     buf.append(strBuf.toString());
   }
 
@@ -534,7 +537,6 @@ public class DBConnectorType implements ConnectorType {
      * Set fields non-editable only if they are empty
      */
     if (value == null || value.trim().equals("")) {
-
       if (DOCUMENT_URL_FIELD.equals(key)) {
         /*
          * Set "Document URL Field" non-editable
@@ -553,7 +555,6 @@ public class DBConnectorType implements ConnectorType {
           appendAttribute(buf, DISABLED, TRUE);
           isDocIdDisabled = true;
         }
-
       } else if (BASE_URL.equals(key) && isDocIdDisabled) {
         /*
          * Set "Base URL" field non-editable if "Document Id Field" field is
@@ -575,7 +576,6 @@ public class DBConnectorType implements ConnectorType {
           appendAttribute(buf, DISABLED, TRUE);
           isLOBFieldDisable = true;
         }
-
       } else if (FETCH_URL_FIELD.equals(key) && isLOBFieldDisable) {
         /*
          * Set "Fetch URL" field not editable if "BLOB/CLOB Field" field is
@@ -585,6 +585,5 @@ public class DBConnectorType implements ConnectorType {
         isLOBFieldDisable = false;
       }
     }
-
   }
 }

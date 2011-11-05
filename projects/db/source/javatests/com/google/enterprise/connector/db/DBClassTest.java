@@ -1,3 +1,17 @@
+// Copyright 2011 Google Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package com.google.enterprise.connector.db;
 
 import com.google.enterprise.connector.db.diffing.DBClass;
@@ -16,24 +30,20 @@ public class DBClassTest extends TestCase {
   JsonDocument jsonDocument;
 
   protected void setUp() throws Exception {
-
     JsonObjectUtil jsonObjectUtil = new JsonObjectUtil();
     jsonObjectUtil.setProperty(SpiConstants.PROPNAME_DOCID, "1");
     jsonObjectUtil.setProperty(SpiConstants.PROPNAME_ISPUBLIC, "false");
     jsonObjectUtil.setProperty(SpiConstants.PROPNAME_MIMETYPE, "text/plain");
     jsonDocument = new JsonDocument(jsonObjectUtil.getJsonObject());
-
   }
 
   public void testFactoryFunction() {
     DBClass dbClass;
     dbClass = DBClass.factoryFunction.apply(jsonDocument);
     assertNotNull(dbClass);
-
   }
 
   public void testGetDocument() {
-
     DBClass dbClass;
     dbClass = new DBClass(jsonDocument);
     try {
@@ -42,7 +52,6 @@ public class DBClassTest extends TestCase {
     } catch (RepositoryException e) {
       fail("Repository Exception in testGetDocument");
     }
-
   }
 
   public void testGetDocumentId() {
@@ -94,7 +103,6 @@ public class DBClassTest extends TestCase {
     String expected = "{\"google:ispublic\":\"false\",\"google:docid\":\"1\",\"google:mimetype\":\"text/plain\"}";
     dbClass = new DBClass(jsonDocument);
     assertEquals(expected, dbClass.toString());
-
   }
 
 }
