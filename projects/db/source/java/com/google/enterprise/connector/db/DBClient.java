@@ -67,13 +67,32 @@ public class DBClient {
     InputStream resources;
     try {
       resources = new ByteArrayInputStream(sqlMapConfig.getBytes("UTF-8"));
+      this.sqlMapClient = SqlMapClientBuilder.buildSqlMapClient(resources);
     } catch (UnsupportedEncodingException e) {
       throw new DBException("Could not instantiate DBClient.", e);
+    } catch (RuntimeException e) {
+      throw new RuntimeException("XML is not well formed", e);
     }
-    this.sqlMapClient = SqlMapClientBuilder.buildSqlMapClient(resources);
-
     LOG.info("DBClient for database " + getDatabaseInfo() + " is instantiated");
+  }
 
+  /**
+   * Constructor used for testing purpose. DBCLient initialized with sqlMap
+   * having crawl query without CDATA section.
+   */
+  public DBClient(DBContext dbContext, String sqlMap) throws DBException {
+    this.dbContext = dbContext;
+    generateSqlMapConfig();
+    this.sqlMap = sqlMap;
+    InputStream resources;
+    try {
+      resources = new ByteArrayInputStream(sqlMapConfig.getBytes("UTF-8"));
+      this.sqlMapClient = SqlMapClientBuilder.buildSqlMapClient(resources);
+    } catch (UnsupportedEncodingException e) {
+      throw new DBException("Could not instantiate DBClient.", e);
+    } catch (RuntimeException e) {
+      throw new RuntimeException("XML is not well formed", e);
+    }
   }
 
   /**
@@ -262,13 +281,18 @@ public class DBClient {
      * TODO(meghna): Look into making DTD retrieving local with
      * "jar:file:<path_to_jar>/dtd.jar!<path_to_dtd>/sql-map-config-2.dtd"
      */
+
+    /*
+     * Use CDATA section for escaping XML reserved symbols as documented on
+     * iBatis data mapper developer Guide
+     */
     sqlMap = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n"
         + "<!DOCTYPE sqlMap "
         + "PUBLIC \"-//ibatis.apache.org//DTD SQL Map 2.0//EN\" "
         + "\"http://ibatis.apache.org/dtd/sql-map-2.dtd\">\n"
         + "<sqlMap namespace=\"IbatisDBClient\">\n"
         + " <select id=\"getAll\" resultClass=\"java.util.HashMap\"> \n"
-        + dbContext.getSqlQuery() + "\n </select> \n";
+        + "<![CDATA[ " + dbContext.getSqlQuery() + " ]]>" + "\n </select> \n";
 
     /*
      * check if authZ query is provided. If authZ query is there , add 'select'
