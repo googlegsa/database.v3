@@ -56,12 +56,10 @@ public class RepositoryHandlerTest extends DBTestBase {
 
   public void testExecuteQueryAndAddDocsForParameterizedQuery() {
     // Testing the connector for parameterized crawl query
-    String sqlQuery = "SELECT * FROM TestEmpTable where id between #minvalue# and #maxvalue#";
+    String sqlQuery = "SELECT * FROM TestEmpTable where id > #value#";
     DBContext dbContext = getDbContext();
     dbContext.setSqlQuery(sqlQuery);
     dbContext.setParameterizedQueryFlag(true);
-    dbContext.setMinValue(1);
-    dbContext.setMaxValue(2);
     DBClient dbClient;
     try {
       dbClient = new DBClient(dbContext);

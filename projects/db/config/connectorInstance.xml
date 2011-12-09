@@ -17,13 +17,12 @@
     -->
 
     <!--
-     Range to be crawled when a parameterized crawl query is entered.
-     Replace the minValue and MaxValue with actual range values respectively
-      -->
-
+     Replace the minValue with minimum key value when configuring the connector with with parameterized query.
+     Default value -1 is for minimum value comparison with the result set key
+     values for the first time to compute the next highest order key.
+     -->
     <!--
-    <property name="minValue" value="0"></property>
-    <property name="maxValue" value="0"></property>
+    <property name="minValue" value="-1"></property>
     -->
 
   <!--

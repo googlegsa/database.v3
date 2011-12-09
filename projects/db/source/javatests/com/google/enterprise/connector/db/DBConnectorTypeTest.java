@@ -109,6 +109,37 @@ public class DBConnectorTypeTest extends TestCase {
   }
 
   /**
+   * scenario when more than one primary key is provided and connector is
+   * configured for using the parameterized crawl query
+   */
+  public void testParameterizedQueryAndMutiplePrimaryKeys() {
+    MockDBConnectorFactory mdbConnectorFactory = new MockDBConnectorFactory(
+        TestUtils.TESTCONFIG_DIR + TestUtils.CONNECTOR_INSTANCE_XML);
+    Map<String, String> newConfigMap = this.configMap;
+    newConfigMap.put("dbName", LanguageResource.getPropertyValue("dbName"));
+    newConfigMap.put("sqlQuery", "select * from TestEmpTable where id > #value#");
+    configMap.put("primaryKeysString", "id,fname");
+    ConfigureResponse configRes = this.connectorType.validateConfig(newConfigMap, Locale.ENGLISH, mdbConnectorFactory);
+    assertEquals(configRes.getMessage(), "Single Primary key should be used when configuring a parameterized crawl query");
+
+  }
+
+  /**
+   * scenario when single primary key is provided and connector is configured
+   * for using the parameterized crawl query
+   */
+  public void testParameterizedQueryAndSingleePrimaryKeys() {
+    MockDBConnectorFactory mdbConnectorFactory = new MockDBConnectorFactory(
+        TestUtils.TESTCONFIG_DIR + TestUtils.CONNECTOR_INSTANCE_XML);
+    Map<String, String> newConfigMap = this.configMap;
+    newConfigMap.put("dbName", LanguageResource.getPropertyValue("dbName"));
+    newConfigMap.put("sqlQuery", "select * from TestEmpTable where id > #value#");
+    ConfigureResponse configRes = this.connectorType.validateConfig(newConfigMap, Locale.ENGLISH, mdbConnectorFactory);
+    assertNull(configRes);
+
+  }
+
+  /**
    * test for getConfigForm method.
    */
   public void testGetConfigForm() {

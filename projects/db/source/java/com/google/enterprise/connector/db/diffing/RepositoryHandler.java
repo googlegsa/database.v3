@@ -27,6 +27,7 @@ import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.logging.Logger;
 
 /**
@@ -40,9 +41,8 @@ public class RepositoryHandler {
   private TraversalContextManager traversalContextManager;
   private static TraversalContext traversalContext;
   private int cursorDB = 0;
-  private Integer minValue = null;
-  private Integer maxValue = null;
-
+  private Integer keyValue = null;
+  private String primaryKeyColumn = null;
   // EXC_NORMAL represents that DB Connector is running in normal mode
   private static final int MODE_NORMAL = 1;
 
@@ -96,6 +96,44 @@ public class RepositoryHandler {
   }
 
   /**
+   * If user enters primary key column name in different case in database
+   * connector configuration form, we need to map primary key column name
+   * entered by user with actual column name in query. Below block of code map
+   * the primary key column name entered by user with actual column name in
+   * result set(map).
+   */
+  private void setPrimaryKeyColumn(Set<String> keySet) {
+    String keys[] = dbClient.getDBContext().getPrimaryKeys().split(Util.PRIMARY_KEYS_SEPARATOR);
+    String primaryKey = keys[0];
+    for (String key : keySet) {
+      if (primaryKey.equalsIgnoreCase(key)) {
+        primaryKey = key;
+        break;
+      }
+    }
+    primaryKeyColumn = primaryKey;
+  }
+
+  /**
+   *Updates the keyValue with the highest order key.
+   */
+  public void updateKeyValue(List<Map<String, Object>> rows) {
+    if (primaryKeyColumn == null) {
+      Map<String, Object> singleRow = rows.iterator().next();
+      Set<String> keySet = singleRow.keySet();
+      setPrimaryKeyColumn(keySet);
+    }
+    for (Map<String, Object> row : rows) {
+      String newKeyValueString = row.get(primaryKeyColumn).toString();
+      Integer newKeyValue = Integer.parseInt(newKeyValueString);
+      if (keyValue < newKeyValue) {
+        keyValue = newKeyValue;
+      }
+
+    }
+  }
+
+  /**
    * Function for fetching Database rows and providing a collection over
    * JsonDocument.
    */
@@ -126,68 +164,42 @@ public class RepositoryHandler {
       } else {
         setCursorDB(getCursorDB() + rows.size());
       }
-
     } else {
-      if (minValue == null) {
-        setMinValue(dbClient.getDBContext().getMinValue());
-        setMaxValue(minValue + dbClient.getDBContext().getNumberOfRows());
-      }
-
-      if (minValue > dbClient.getDBContext().getMaxValue()) {
-        LOG.info("Database Crawl Cycle Completed."
-            + "All the records crawled in specified minValue and maxValue Range"
-            + "Resetting  minvalue and maxvalue to start traversal from begining..");
-        setMinValue(dbClient.getDBContext().getMinValue());
-        setMaxValue(minValue + dbClient.getDBContext().getNumberOfRows());
-        return docList;
-      }
-
       try {
-        rows = dbClient.executeParameterizePartialQuery(minValue, maxValue);
-        setMinValue(maxValue + 1);
-        setMaxValue(minValue + dbClient.getDBContext().getNumberOfRows());
-
+        // Replace the keyValue with minValue to retrieve first set of
+        // maxRows number of Records
+        if (keyValue == null) {
+          keyValue = dbClient.getDBContext().getMinValue();
+        }
+        rows = dbClient.executeParameterizePartialQuery(keyValue);
       } catch (SnapshotRepositoryRuntimeException e) {
         LOG.info("Repository Unreachable."
-            + "Resetting  minvalue and maxvalue to start traversal from begining after recovery. ");
-        setMinValue(dbClient.getDBContext().getMinValue());
-        setMaxValue(minValue + dbClient.getDBContext().getNumberOfRows());
+            + "Resetting  keyValue to minValue for starting traversal from begining after recovery. ");
+        keyValue = dbClient.getDBContext().getMinValue();
         LOG.warning("Unable to connect to the database\n" + e.toString());
         throw new SnapshotRepositoryRuntimeException(
             "Unable to connect to the database\n ", e);
       }
-
-      // check added to verify if no records are returned in the specified
-      // minValue and maxValue range . i.e connector configured for higher
-      // maxValue than actual number of Database records, Reset minValue and
-      // maxValue assuming crawl cycle completed for ordered database.This check
-      // makes the range to be more flexible
-
       if (rows.size() == 0) {
-        LOG.info("No records returned for range minValue= " + minValue + " "
-            + "and maxValue=" + maxValue);
-        LOG.info("Assuming crawl cycle completed for ordered Database "
-            + "Resetting  minvalue and maxvalue to start traversal from begining after recovery");
-        setMinValue(dbClient.getDBContext().getMinValue());
-        setMaxValue(minValue + dbClient.getDBContext().getNumberOfRows());
+        LOG.info("No records returned for keyValue= " + keyValue);
+        LOG.info("Crawl cycle completed for ordered Database "
+            + "Resetting  keyValue  to minValue for starting traversal from begining ");
+        keyValue = dbClient.getDBContext().getMinValue();
+      } else {
+        updateKeyValue(rows);
       }
     }
-
     if (traversalContext == null) {
       LOG.info("Setting Traversal Context");
       setTraversalContext(traversalContextManager.getTraversalContext());
       JsonDocument.setTraversalContext(traversalContextManager.getTraversalContext());
     }
-
     JsonDocument jsonDoc = null;
     if (rows != null && rows.size() > 0) {
-
       currentExcMode = getExecutionScenario(dbClient.getDBContext());
       String logMessage = getExcLogMessage(currentExcMode);
       LOG.info(logMessage);
-
       switch (currentExcMode) {
-
       // execute the connector for metadata-url feed
       case MODE_METADATA_URL:
 
@@ -201,7 +213,6 @@ public class RepositoryHandler {
           docList.add(jsonDoc);
         }
         break;
-
       // execute the connector for BLOB data
       case MODE_METADATA_BASE_URL:
         jsonDoc = null;
@@ -214,9 +225,7 @@ public class RepositoryHandler {
           }
           docList.add(jsonDoc);
         }
-
         break;
-
       // execute the connector for CLOB data
       case MODE_BLOB_CLOB:
         jsonDoc = null;
@@ -230,11 +239,8 @@ public class RepositoryHandler {
             LOG.warning("Cannot convert datbase record to JsonDocument for record"
                 + row + "\n" + e);
           }
-
         }
-
         break;
-
       // execute the connector in normal mode
       default:
         for (Map<String, Object> row : rows) {
@@ -247,7 +253,6 @@ public class RepositoryHandler {
             LOG.warning("Cannot convert datbase record to JsonDocument for record"
                 + row + "\n" + e);
           }
-
         }
         break;
       }
@@ -255,28 +260,6 @@ public class RepositoryHandler {
     LOG.info(docList.size() + " document(s) to be fed to GSA" + " at time: "
         + new Date());
     return docList;
-  }
-
-  public Integer getMinValue() {
-    return minValue;
-  }
-
-  public void setMinValue(Integer minValue) {
-    this.minValue = minValue;
-  }
-
-  public Integer getMaxValue() {
-    return maxValue;
-  }
-
-  public void setMaxValue(Integer maxValue) {
-    if (this.maxValue != null) {
-      if (maxValue > dbClient.getDBContext().getMaxValue()) {
-        maxValue = dbClient.getDBContext().getMaxValue();
-      }
-    }
-
-    this.maxValue = maxValue;
   }
 
   /**

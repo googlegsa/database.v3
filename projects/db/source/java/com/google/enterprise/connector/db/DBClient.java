@@ -166,32 +166,30 @@ public class DBClient {
   }
 
   /**
-   * This method executes the partial parameterized query for given minValue and
-   * maxValue and returns the list of records for the specified range.
+   * This method executes the partial parameterized query for given keyValue and
+   * returns the list of records having their key value greater than keyValue
+   * parameter.
    *
-   * @param Minvalue
-   * @param Maxvalue
+   * @param keyValue
    * @return list of documents
    */
   @SuppressWarnings("unchecked")
   public List<Map<String, Object>> executeParameterizePartialQuery(
-      Integer minValue, Integer maxValue)
-      throws SnapshotRepositoryRuntimeException {
+      Integer keyValue) throws SnapshotRepositoryRuntimeException {
     List<Map<String, Object>> rows;
+    int skipRows = 0;
+    int maxRows = dbContext.getNumberOfRows();
     /*
      * Create a hashmap as to provide input parameters minvalue and maxvalue to
      * the query.
      */
     Map<String, Object> paramMap = new HashMap<String, Object>();
-    paramMap.put("minvalue", minValue);
-    paramMap.put("maxvalue", maxValue);
-
-    LOG.info("Executing partial parametrized query with minValue = " + minValue
-        + " and maxValue = " + maxValue);
+    paramMap.put("value", keyValue);
+    LOG.info("Executing partial parametrized query with keyValue = " + keyValue);
     try {
-      rows = sqlMapClient.queryForList("IbatisDBClient.getAll", paramMap);
-      LOG.info("Sucessfully executed partial parametrized querywith minValue = "
-          + minValue + "and " + "maxValue = " + maxValue);
+      rows = sqlMapClient.queryForList("IbatisDBClient.getAll", paramMap, skipRows, maxRows);
+      LOG.info("Sucessfully executed partial parametrized query with keyValue = "
+          + keyValue);
     } catch (Exception e) {
       rows = checkDBConnection(e);
     }
