@@ -41,8 +41,7 @@ public class DBContext {
   private String lastModifiedDate;
   private String extMetadataType;
   private int numberOfRows = 500;
-  private Integer minValue = null;
-  private Integer maxValue = null;
+  private Integer minValue = -1;
   private boolean publicFeed = true;
   private boolean parameterizedQueryFlag = false;
 
@@ -180,19 +179,6 @@ public class DBContext {
       this.minValue = minValue;
     } catch (NumberFormatException e) {
       LOG.warning("Number Format Exception while setting minvalue of number of rows to be fetched"
-          + "\n" + e.toString());
-    }
-  }
-
-  public Integer getMaxValue() {
-    return maxValue;
-  }
-
-  public void setMaxValue(Integer maxValue) {
-    try {
-      this.maxValue = maxValue;
-    } catch (NumberFormatException e) {
-      LOG.warning("Number Format Exception while setting maxvalue of number of rows to be fetched"
           + "\n" + e.toString());
     }
   }

@@ -45,6 +45,7 @@ public class ValidateUtil {
   private static final String FQDN_HOSTNAME = "FQDN_HOSTNAME";
   private static final String MISSING_ATTRIBUTES = "MISSING_ATTRIBUTES";
   private static final String REQ_FIELDS = "REQ_FIELDS";
+  private static final String TEST_PRIMARY_KEYS_AND_KEY_VALUE_PLACEHOLDER = "TEST_PRIMARY_KEYS_AND_KEY_VALUE_PLACEHOLDER";
   // Red asterisk for required fields.
   public static final String RED_ASTERISK = "<font color=\"RED\">*</font>";
 
@@ -114,8 +115,7 @@ public class ValidateUtil {
     private static final String USERNAME_PLACEHOLDER = "#username#";
     private static final String DOCI_IDS_PLACEHOLDER = "$docIds$";
 
-    private static final String MIN_VALUE_PLACEHOLDER = "#minvalue#";
-    private static final String MAX_VALUE_PLACEHOLDER = "#maxvalue#";
+    private static final String KEY_VALUE_PLACEHOLDER = "#value#";
 
     Statement stmt = null;
     Connection conn = null;
@@ -194,14 +194,10 @@ public class ValidateUtil {
           stmt.setMaxRows(1);
 
           String sqlQuery = config.get(SQL_QUERY);
-          if (sqlQuery.contains(MIN_VALUE_PLACEHOLDER)
-              && sqlQuery.contains(MAX_VALUE_PLACEHOLDER)) {
-
-            sqlQuery = sqlQuery.replace(MIN_VALUE_PLACEHOLDER, "''");
-            sqlQuery = sqlQuery.replace(MAX_VALUE_PLACEHOLDER, "''");
+          if (sqlQuery.contains(KEY_VALUE_PLACEHOLDER)) {
+            sqlQuery = sqlQuery.replace(KEY_VALUE_PLACEHOLDER, "''");
             result = stmt.execute(sqlQuery);
           } else {
-
             result = stmt.execute(sqlQuery);
           }
           if (!result) {
@@ -214,7 +210,6 @@ public class ValidateUtil {
           message = res.getString(TEST_SQL_QUERY);
           problemFields.add(SQL_QUERY);
         }
-
       }
 
       return result;
@@ -669,6 +664,54 @@ public class ValidateUtil {
   }
 
   /**
+   * Validation class to check whether Single primary key is used when using
+   * parameterized crawl query .
+   */
+  private static class QueryParameterAndPrimaryKeyCheck implements
+      ConfigValidation {
+    Map<String, String> config;
+    ResourceBundle res;
+    private String message = "";
+    private boolean success = false;
+    private List<String> problemFields = new ArrayList<String>();
+    private static final String KEY_VALUE_PLACEHOLDER = "#value#";
+    public static final String PRIMARY_KEYS_SEPARATOR = ",";
+    String[] primaryKeys;
+    String sqlCrawlQuery;
+
+    public QueryParameterAndPrimaryKeyCheck(Map<String, String> config,
+        ResourceBundle res) {
+      this.config = config;
+      this.res = res;
+    }
+
+    public String getMessage() {
+      return message;
+    }
+
+    public List<String> getProblemFields() {
+      return problemFields;
+    }
+
+    public boolean validate() {
+      primaryKeys = config.get(PRIMARY_KEYS_STRING).split(PRIMARY_KEYS_SEPARATOR);
+      sqlCrawlQuery = config.get(SQL_QUERY);
+      // This check is required when configuring connector using parameterized
+      // crawl query to assure that single primary key is used .
+      if (primaryKeys.length > 1
+          && sqlCrawlQuery.contains(KEY_VALUE_PLACEHOLDER)) {
+        success = false;
+        message = res.getString(TEST_PRIMARY_KEYS_AND_KEY_VALUE_PLACEHOLDER);
+        problemFields.add(PRIMARY_KEYS_STRING);
+        problemFields.add(SQL_QUERY);
+      } else {
+        success = true;
+      }
+      return success;
+    }
+  }
+
+  /**
    * Validation Class to check whether HostName is valid.
    */
   private static class HostNameFQDNCheck implements ConfigValidation {
@@ -723,16 +766,18 @@ public class ValidateUtil {
           if (success) {
             configValidation = new XSLTCheck(config, resource);
             success = configValidation.validate();
-
             if (success) {
-              return configValidation;
+              configValidation = new QueryParameterAndPrimaryKeyCheck(config,
+                  resource);
+              success = configValidation.validate();
+              if (success) {
+                return configValidation;
+              }
             }
           }
         }
       }
     }
-
     return configValidation;
   }
-
 }
