@@ -10,6 +10,43 @@ issues and workarounds.
 
 Web Site: http://code.google.com/p/google-enterprise-connector-database/
 
+Release 2.8.2, December 9, 2011
+=====================================
+
+Introduction
+------------
+This is a maintenance release that improves quality, reliability, and performance without adding any new functionality. Users of previous releases should check the "Version Compatibility" section
+below for instructions on how to use existing data with this new release.
+
+Version Compatibility
+---------------------
+Connectors created with  versions earlier than 2.8.0 will not work with this version. Connector Manager version older than 2.8.x will not work correctly with this version of the connector.
+
+Platform Support
+------------------
+The connector can be installed and run on both 32-bit & 64-bit Windows and Linux environments.
+
+Issues fixed from last release:
+-------------------------------
+Issue 5434245: DB Connector performance drops after crawling 1Million records
+Issue 5213855: Connector fails when SQL contains certain characters (<, >).
+Issue 5440752: Database connector sends delete feeds when the Database is not reachable or shutdown
+
+Supported databases
+------------------------
+This version of the GSA connector for databases is certified against following databases:
+
+1. MySQL 5.2.3
+2. Oracle Database 11g Enterprise Edition.
+3. MS SQL server 2005
+4. IBM DB2/NT SQL09050
+
+Known Limitations
+------------------
+Issue 14: Connector configuration gets saved for an invalid AuthZ query.
+Issue 15: Connector instance getting saved even when invalid Database name is given.
+
+
 Release 2.8.0, July 12, 2011
 =====================================
 
