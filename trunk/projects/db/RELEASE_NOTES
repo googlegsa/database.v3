@@ -10,7 +10,7 @@ issues and workarounds.
 
 Web Site: http://code.google.com/p/google-enterprise-connector-database/
 
-Release 2.8.2, December 9, 2011
+Release 2.8.4, January 12, 2012
 =====================================
 
 Introduction
@@ -20,7 +20,7 @@ below for instructions on how to use existing data with this new release.
 
 Version Compatibility
 ---------------------
-Connectors created with  versions earlier than 2.8.0 will not work with this version. Connector Manager version older than 2.8.x will not work correctly with this version of the connector.
+Connector instances created with versions earlier than 2.8.0 will not work with this version. Connector Manager version earlier than 2.8.0 will not work correctly with this version of the connector.
 
 Platform Support
 ------------------
@@ -57,7 +57,7 @@ below for instructions on how to use existing data with this new release.
 
 Version Compatibility
 ---------------------
-Connectors created with earlier versions will not work with this version. Connector Manager version older than 2.8.x will not work correctly with this version of the connector.
+Connector instances created with earlier versions will not work with this version. Connector Manager version earlier than 2.8.0 will not work correctly with this version of the connector.
 
 Summary of Changes / Features
 -----------------------------
@@ -104,7 +104,7 @@ New features
 
 Version Compatibility
 ---------------------
-Connectors created with earlier versions will not work with this version. Connector Manager version older than 2.4.x will not work correctly with this version of the connector.
+Connector instances created with earlier versions will not work with this version. Connector Manager version earlier than 2.4.x will not work correctly with this version of the connector.
 
 Platform Support
 ------------------
