@@ -59,6 +59,8 @@
   <!--
     =========================== TASKS ===============================
   -->
+  <include file="${connector-manager.dir}/../svnbuild.xml" as="svn"/>
+
   <target name="build" depends="init,compile_prod,run_tests,jar_prod">
   </target>
 
@@ -166,7 +168,8 @@
     <fail if="${ant.project.name}.failure" message="Test failure"/>
   </target>
 
-  <target name="jar_prod" description="db-connector-jar" depends="compile_prod">
+  <target name="jar_prod" depends="compile_prod,svn.svn-branch-version"
+          description="db-connector-jar">
     <copy todir="${build-prod-config.dir}">
       <fileset dir="${config.dir}" />
     </copy>
@@ -179,7 +182,8 @@
       <fileset dir="${build-prod.dir}" includes="*.properties" />
       <manifest>
         <attribute name="Implementation-Title" value="Database Connector" />
-        <attribute name="Implementation-Version" value="${version} ${TODAY}" />
+        <attribute name="Implementation-Version"
+                   value="${version} (build ${svn.branch.version} ${TODAY})"/>
         <attribute name="Implementation-Vendor" value="Google Inc." />
         <attribute name="Specification-Title" value="Connector Manager SPI" />
         <attribute name="Specification-Version" value="${version.spi}" />
@@ -205,20 +209,17 @@
 
   <target name="download_db_connector" depends="jar_prod">
     <property name="connector-db-src.zip"
-      value="${downloads.dir}/connector-db-${version}-src.zip" />
+      value="${downloads.dir}/connector-db-${svn.branch}-src.zip" />
     <zip destfile="${connector-db-src.zip}">
       <zipfileset dir="."
         prefix="connector-db-${version}/projects/database-connector"
         includes="${readme.file}, ${copying.file}, ${release_notes.file}, Build_ReadMe.txt, build.xml,version.properties ,config/**/*, third_party/**/*, License/**/*, source/**/*" />
     </zip>
-
-
-    <checksum file="${connector-db-src.zip}" />
+    <checksum algorithm="SHA-1" file="${connector-db-src.zip}" />
 
     <copy file="${jar-prod.file}" tofile="${db-connector-jar-zip.file}" />
     <copy file="${copying.file}" tofile="${db-connector-copying-zip.file}" />
     <copy file="${logging-properties.file}" todir="${config-zip.dir}" />
-
     <copy todir="${lib-zip.dir}">
       <fileset dir="${thirdparty-prod-jar.dir}" excludes="**/guava-r05.jar"
         includes="**/*.jar" />
@@ -226,12 +227,12 @@
     <copy todir="${license-zip.dir}">
       <fileset dir="${license-prod.dir}" />
     </copy>
-
-    <zip destfile="${downloads.dir}/connector-db-${version}.zip">
+    <zip destfile="${downloads.dir}/connector-db-${svn.branch}.zip">
       <zipfileset dir="${zip.dir}" />
       <zipfileset dir="." includes="RELEASE_NOTES" />
     </zip>
-
+    <checksum algorithm="SHA-1"
+              file="${downloads.dir}/connector-db-${svn.branch}.zip" />
   </target>
 
   <target name="clean" description="Deletes all build files.">
