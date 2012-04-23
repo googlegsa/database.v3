@@ -19,6 +19,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.enterprise.connector.db.MimeTypeFinder;
 import com.google.enterprise.connector.spi.Document;
 import com.google.enterprise.connector.spi.Property;
+import com.google.enterprise.connector.spi.RepositoryDocumentException;
 import com.google.enterprise.connector.spi.RepositoryException;
 import com.google.enterprise.connector.spi.SimpleProperty;
 import com.google.enterprise.connector.spi.SkippedDocumentException;
@@ -170,7 +171,7 @@ public class JsonDocument implements Document {
 
   }
 
-  public Property findProperty(String name) throws SkippedDocumentException {
+  public Property findProperty(String name) throws RepositoryDocumentException {
     List<Value> property = properties.get(name);
     if (this.changed) {
       if (name.equals(SpiConstants.PROPNAME_CONTENT)) {
@@ -182,8 +183,7 @@ public class JsonDocument implements Document {
     return (property == null) ? null : new SimpleProperty(property);
   }
 
-  private int filterMimeType() throws SkippedDocumentException {
-
+  private int filterMimeType() throws RepositoryDocumentException {
     List<Value> mimeTypeProperty = properties.get(SpiConstants.PROPNAME_MIMETYPE);
 
     // Null mimeTypeProperty indicates MimeType detection needs to be done
@@ -202,18 +202,15 @@ public class JsonDocument implements Document {
         if (traversalContext != null) {
           mimeTypeSupportLevel = traversalContext.mimeTypeSupportLevel(mimeType);
         }
-
       } catch (IOException e) {
         // TODO Auto-generated catch block
         e.printStackTrace();
       }
 
       if (mimeTypeSupportLevel == 0) {
-
         LOG.warning("Skipping the contents with docId : " + docId
             + " as content mime type " + mimeType + " is not supported");
         return 0;
-
       } else if (mimeTypeSupportLevel < 0) {
         String msg = new StringBuilder("Skipping the document with docId : ").append(docId).append(" as the mime type ").append(mimeType).append(" is in the 'ignored' mimetypes list").toString();
         LOG.warning(msg);
