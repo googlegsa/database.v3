@@ -196,7 +196,7 @@ public class JsonDocument implements Document {
       int mimeTypeSupportLevel = 1;
 
       try {
-        mimeType = MimeTypeFinder.getInstance().find(is, traversalContext);
+        mimeType = MimeTypeFinder.getInstance().getMimeType(is);
         is.close();
         this.properties.put(SpiConstants.PROPNAME_MIMETYPE, Collections.singletonList(Value.getStringValue(mimeType)));
         if (traversalContext != null) {
