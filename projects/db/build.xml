@@ -42,8 +42,8 @@
   <property name="downloads.dir" value="downloads" />
   <property name="tests_out.dir" value="tests_outdir" />
   <property name="tests.logging.properties" location="${classes-tests.dir}/tests.logging.properties" />
-  <property name="connector-manager-projects.dir" location="${connector.manager.home}" />
-  <property name="connector-manager.dir" location="${connector-manager-projects.dir}" />
+  <property name="connector-manager-projects.dir" location="${build.connector.manager.home}/projects" />
+  <property name="connector-manager.dir" location="${connector-manager-projects.dir}/connector-manager" />
   <property name="connector-manager-thirdparty-jar.dir" 
             location="${connector-manager.dir}/third-party" />
   <property name="connector-thirdparty-jar.dir" location="./third_party" />
@@ -51,7 +51,7 @@
   <property name="spi.jar.dir" value="${connector-manager.dir}/dist/jarfile" />
   <property file="${config.dir}/build_code_coverage.properties" />
   <path id="cobertura.classpath">
-    <fileset dir="${connector-manager.dir}/third-party/cobertura">
+    <fileset dir="${connector-manager-thirdparty-jar.dir}/cobertura">
       <include name="**/*.jar" />
     </fileset>
   </path>
@@ -59,7 +59,7 @@
   <!--
     =========================== TASKS ===============================
   -->
-  <include file="${connector-manager.dir}/../svnbuild.xml" as="svn"/>
+  <include file="${connector-manager-projects.dir}/svnbuild.xml" as="svn"/>
 
   <target name="build" depends="init,compile_prod,run_tests,jar_prod">
   </target>
