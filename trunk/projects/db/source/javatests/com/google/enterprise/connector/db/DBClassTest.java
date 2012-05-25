@@ -4,7 +4,7 @@
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-// http://www.apache.org/licenses/LICENSE-2.0
+//     http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -66,31 +66,27 @@ public class DBClassTest extends TestCase {
     DocumentSnapshot documentSnapshot = new DBClass(jsonDocument);
     try {
       DocumentHandle actual = documentSnapshot.getUpdate(null);
-      // the diffing framework sends in a null to indicate that it hasn't
-      // seen
-      // this snapshot before. So we return the corresponding Handle (in
-      // our
-      // case,
-      // the same object)
+      // The diffing framework sends in a null to indicate that it has not
+      // seen this snapshot before. So we return the corresponding Handle
+      // (in our case, the same object).
       assertEquals(documentHandle.getDocument(), actual.getDocument());
 
-      // we just assume that if the serialized form is the same, then
-      // nothing
-      // has changed.
+      // We just assume that if the serialized form is the same, then
+      // nothing has changed.
       assertNull(documentSnapshot.getUpdate(documentSnapshot));
 
-      // Something has changed, so return the corresponding handle
+      // Something has changed, so return the corresponding handle.
       JsonObjectUtil jsonObjectUtil = new JsonObjectUtil();
       jsonObjectUtil.setProperty(SpiConstants.PROPNAME_DOCID, "2");
       jsonObjectUtil.setProperty(SpiConstants.PROPNAME_ISPUBLIC, "false");
       jsonObjectUtil.setProperty(SpiConstants.PROPNAME_MIMETYPE, "text/plain");
       JsonDocument jDoc = new JsonDocument(jsonObjectUtil.getJsonObject());
       DocumentSnapshot newdocumentSnapshot = new DBClass(jDoc);
-      // Verify whether the changed property of the document has not been set
+      // Verify whether the changed property of the document has not been set.
       assertTrue(!jDoc.getChanged());
       DocumentHandle onGSA = documentSnapshot.getUpdate(newdocumentSnapshot);
       assertNotSame(documentHandle.getDocument(), onGSA);
-      // Verify whether the changed property of the document has been set
+      // Verify whether the changed property of the document has been set.
       JsonDocument jsonDoc = (JsonDocument) onGSA.getDocument();
       assertTrue(jsonDoc.getChanged());
     } catch (RepositoryException e) {
@@ -100,9 +96,9 @@ public class DBClassTest extends TestCase {
 
   public void testToString() {
     DBClass dbClass;
-    String expected = "{\"google:ispublic\":\"false\",\"google:docid\":\"1\",\"google:mimetype\":\"text/plain\"}";
+    String expected = "{\"google:ispublic\":\"false\",\"google:docid\":\"1\","
+        + "\"google:mimetype\":\"text/plain\"}";
     dbClass = new DBClass(jsonDocument);
     assertEquals(expected, dbClass.toString());
   }
-
 }

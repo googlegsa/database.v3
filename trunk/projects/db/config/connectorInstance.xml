@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE beans PUBLIC "-//SPRING//DTD BEAN//EN" "http://www.springframework.org/dtd/spring-beans.dtd">
+<!DOCTYPE beans PUBLIC "-//SPRING//DTD BEAN//EN"
+          "http://www.springframework.org/dtd/spring-beans.dtd">
 <beans>
   <!--
     Bean for encapsulation of all the configuration parameter needed for a
@@ -9,27 +10,27 @@
     parent="database-connector-defaults" singleton="false">
 
     <!--
-      Parameter for fetching number of rows in a single call to the
-      repository
+      Parameter for fetching number of rows in a single call to the repository.
     -->
     <!--
-      <property name="numberOfRows" value="500"></property>
+    <property name="numberOfRows" value="500"></property>
     -->
 
     <!--
-     Replace the minValue with minimum key value when configuring the connector with with parameterized query.
-     Default value -1 is for minimum value comparison with the result set key
-     values for the first time to compute the next highest order key.
-     -->
+      Replace the minValue with minimum key value when configuring the connector
+      with with parameterized query.  Default value -1 is for minimum value
+      comparison with the result set key values for the first time to compute
+      the next highest order key.
+    -->
     <!--
     <property name="minValue" value="-1"></property>
     -->
 
-  <!--
-    Flag to determine whether the SQl Crawl is parameterized
+    <!--
+      Flag to determine whether the SQL query is parameterized.
     -->
-  <!--
-  <property name="parameterizedQueryFlag" value="true"></property>
-  -->
+    <!--
+    <property name="parameterizedQueryFlag" value="true"></property>
+    -->
   </bean>
 </beans>

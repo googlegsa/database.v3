@@ -4,7 +4,7 @@
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-// http://www.apache.org/licenses/LICENSE-2.0
+//     http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -34,10 +34,13 @@ public class RepositoryHandlerIteratorTest extends DBTestBase {
     runDBScript(LOAD_TEST_DATA);
     DBClient dbClient = getDbClient();
 
-    repositoryHandler = RepositoryHandler.makeRepositoryHandlerFromConfig(dbClient, null);
+    repositoryHandler =
+        RepositoryHandler.makeRepositoryHandlerFromConfig(dbClient, null);
     repositoryHandler.setTraversalContext(new ProductionTraversalContext());
-    repositoryHandlerIterator = new RepositoryHandlerIterator(repositoryHandler);
-    repositoryHandlerIterator.setRecordList(repositoryHandler.executeQueryAndAddDocs().iterator());
+    repositoryHandlerIterator =
+        new RepositoryHandlerIterator(repositoryHandler);
+    repositoryHandlerIterator.setRecordList(
+        repositoryHandler.executeQueryAndAddDocs().iterator());
   }
 
   public void testNext() {
@@ -51,7 +54,7 @@ public class RepositoryHandlerIteratorTest extends DBTestBase {
   }
 
   // Scenario when the recordList does not contain more records but the
-  // database result set does
+  // database result set does.
   public void testhasnext2() {
     Iterator<JsonDocument> recordList;
     recordList = new LinkedList<JsonDocument>().iterator();
@@ -60,14 +63,15 @@ public class RepositoryHandlerIteratorTest extends DBTestBase {
   }
 
   // Scenario when the recordList as well as database resulset does not
-  // contain any more records
+  // contain any more records.
   public void testhasnext3() {
     Iterator<JsonDocument> recordList;
     try {
-      // retrieve all the rows from the database
+      // Retrieve all the rows from the database.
       recordList = repositoryHandler.executeQueryAndAddDocs().iterator();
-      // make the recordList contain no records
-      repositoryHandlerIterator.setRecordList(new LinkedList<JsonDocument>().iterator());
+      // Make the recordList contain no records.
+      repositoryHandlerIterator.setRecordList(
+          new LinkedList<JsonDocument>().iterator());
       assertEquals(false, repositoryHandlerIterator.hasNext());
 
     } catch (SnapshotRepositoryRuntimeException e) {

@@ -1,29 +1,30 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE beans PUBLIC "-//SPRING//DTD BEAN//EN"
-   "http://www.springframework.org/dtd/spring-beans.dtd">
+    "http://www.springframework.org/dtd/spring-beans.dtd">
 <beans>
-    <bean id="DBConnector" class="com.google.enterprise.connector.db.DBConnectorType">
-        <constructor-arg>
-            <set>
-                <value>login</value>
-                <value>password</value>
-                <value>connectionUrl</value>
-                <value>dbName</value>
-                <value>hostname</value>
-                <value>driverClassName</value>
-                <value>sqlQuery</value>
-                <value>primaryKeysString</value>
-                <value>xslt</value>
-                <value>lastModifiedDate</value>
-                <value>authZQuery</value>
-                <value>externalMetadata</value>
-                <value>documentURLField</value>
-                <value>documentIdField</value>
-                <value>baseURL</value>
-                <value>lobField</value>
-                <value>fetchURLField</value>
-                <value>extMetadataType</value>
-            </set>
-        </constructor-arg>
-    </bean>
+  <bean id="DBConnector"
+        class="com.google.enterprise.connector.db.DBConnectorType">
+    <constructor-arg>
+      <set>
+        <value>login</value>
+        <value>password</value>
+        <value>connectionUrl</value>
+        <value>dbName</value>
+        <value>hostname</value>
+        <value>driverClassName</value>
+        <value>sqlQuery</value>
+        <value>primaryKeysString</value>
+        <value>xslt</value>
+        <value>lastModifiedDate</value>
+        <value>authZQuery</value>
+        <value>externalMetadata</value>
+        <value>documentURLField</value>
+        <value>documentIdField</value>
+        <value>baseURL</value>
+        <value>lobField</value>
+        <value>fetchURLField</value>
+        <value>extMetadataType</value>
+      </set>
+    </constructor-arg>
+  </bean>
 </beans>

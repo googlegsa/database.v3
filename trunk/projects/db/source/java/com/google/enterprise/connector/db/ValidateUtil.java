@@ -4,7 +4,7 @@
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
+//     http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -33,10 +33,11 @@ import java.util.TreeMap;
 import java.util.logging.Logger;
 
 /**
- * Implementation of Validation Classes for {@link ConnectorType} .
+ * Implementation of Validation Classes for {@link ConnectorType}.
  */
 public class ValidateUtil {
-  private static final Logger LOG = Logger.getLogger(DBConnectorType.class.getName());
+  private static final Logger LOG =
+      Logger.getLogger(DBConnectorType.class.getName());
   private static final String TEST_CONNECTIVITY = "TEST_CONNECTIVITY";
   private static final String TEST_DRIVER_CLASS = "TEST_DRIVER_CLASS";
   private static final String TEST_SQL_QUERY = "TEST_SQL_QUERY";
@@ -45,7 +46,8 @@ public class ValidateUtil {
   private static final String FQDN_HOSTNAME = "FQDN_HOSTNAME";
   private static final String MISSING_ATTRIBUTES = "MISSING_ATTRIBUTES";
   private static final String REQ_FIELDS = "REQ_FIELDS";
-  private static final String TEST_PRIMARY_KEYS_AND_KEY_VALUE_PLACEHOLDER = "TEST_PRIMARY_KEYS_AND_KEY_VALUE_PLACEHOLDER";
+  private static final String TEST_PRIMARY_KEYS_AND_KEY_VALUE_PLACEHOLDER =
+      "TEST_PRIMARY_KEYS_AND_KEY_VALUE_PLACEHOLDER";
   // Red asterisk for required fields.
   public static final String RED_ASTERISK = "<font color=\"RED\">*</font>";
 
@@ -114,7 +116,6 @@ public class ValidateUtil {
 
     private static final String USERNAME_PLACEHOLDER = "#username#";
     private static final String DOCI_IDS_PLACEHOLDER = "$docIds$";
-
     private static final String KEY_VALUE_PLACEHOLDER = "#value#";
 
     Statement stmt = null;
@@ -150,16 +151,11 @@ public class ValidateUtil {
         }
       }
       result = sds != null;
-
       return result;
     }
 
     private boolean testDBConnectivity() {
-
-      /*
-       * below if block is for testing connection with the database with given
-       * values of input parameters.
-       */
+      // Test connection with the database with the given input parameters.
       if (sds != null) {
         try {
           conn = sds.getConnection();
@@ -173,20 +169,14 @@ public class ValidateUtil {
           problemFields.add(CONNECTION_URL);
         }
       }
-
       result = conn != null;
-
       return result;
     }
 
     private boolean validateSQLCrawlQuery() {
-
-      /*
-       * Block to test SQL query. SQL query should be of type SELECT, it should
-       * not be DML statement.
-       */
+      // Test SQL query. SQL query should be of type SELECT, it should
+      // not be DML statement.
       if (conn != null) {
-
         try {
           conn.setAutoCommit(false);
           conn.setReadOnly(true);
@@ -205,38 +195,33 @@ public class ValidateUtil {
             problemFields.add(SQL_QUERY);
           }
         } catch (SQLException e) {
-          LOG.warning("Caught SQLException while testing SQL crawl query : "
-              + "\n" + e.toString());
+          LOG.warning("Caught SQLException while testing SQL crawl query:\n"
+              + e.toString());
           message = res.getString(TEST_SQL_QUERY);
           problemFields.add(SQL_QUERY);
         }
       }
-
       return result;
     }
 
     /**
      * @return true if all primary key
      */
-
     private boolean validatePrimaryKeyColumns() {
       boolean flag = false;
-
       try {
         resultSet = stmt.getResultSet();
         if (resultSet != null) {
-
           ResultSetMetaData rsMeta = resultSet.getMetaData();
           int columnCount = rsMeta.getColumnCount();
 
-          // copy column names
+          // Copy column names.
           for (int i = 1; i <= columnCount; i++) {
             String colName = rsMeta.getColumnLabel(i);
             columnNames.add(colName);
           }
 
           String[] primaryKeys = config.get(PRIMARY_KEYS_STRING).split(",");
-
           for (String key : primaryKeys) {
             flag = false;
             for (int i = 1; i <= columnCount; i++) {
@@ -257,51 +242,45 @@ public class ValidateUtil {
           }
         }
       } catch (SQLException e) {
-        LOG.warning("Caught SQLException while testing primary keys: " + "\n"
+        LOG.warning("Caught SQLException while testing primary keys:\n"
             + e.toString());
       }
       return flag;
     }
 
     /**
-     * This method search for expected placeholders(#username# and $docIds$) in
-     * authZ query and validates authZ query syntax.
+     * Searches for expected placeholders(#username# and $docIds$) in
+     * AuthZ query and validates AuthZ query syntax.
      *
-     * @param authZQuery authZ query provided by connector admin.
-     * @return true if authZ query has expected placeholders and valid syntax.
+     * @param authZQuery AuthZ query provided by connector admin.
+     * @return true if AuthZ query has expected placeholders and valid syntax.
      */
     private boolean validateAuthZQuery(String authZQuery) {
       Connection conn = null;
       Statement stmt = null;
       boolean flag = false;
-      /*
-       * search for expected placeholders in authZquery.
-       */
+
+      // Search for expected placeholders in authZquery.
       if (authZQuery.contains(USERNAME_PLACEHOLDER)
           && authZQuery.contains(DOCI_IDS_PLACEHOLDER)) {
-        /*
-         * replace placeholders with empty values.
-         */
+        // Replace placeholders with empty values.
         authZQuery = authZQuery.replace(USERNAME_PLACEHOLDER, "''");
         authZQuery = authZQuery.replace(DOCI_IDS_PLACEHOLDER, "''");
         try {
           conn = sds.getConnection();
           stmt = conn.createStatement();
-          /*
-           * Try to execute authZ query. It will throw an exception if it is not
-           * a valid SQL query.
-           */
+          // Try to execute authZ query. It will throw an exception if it is not
+          // a valid SQL query.
           stmt.execute(authZQuery);
           flag = true;
         } catch (Exception e) {
-          LOG.warning("Caught SQLException while testing AuthZ query : " + "\n"
+          LOG.warning("Caught SQLException while testing AuthZ query:\n"
               + e.toString());
           message = res.getString(INVALID_AUTH_QUERY);
           problemFields.add(AUTHZ_QUERY);
         }
-        /*
-         * close database connection and statement
-         */
+
+        // Close database connection and statement.
         try {
           if (conn != null) {
             conn.close();
@@ -309,7 +288,6 @@ public class ValidateUtil {
           if (stmt != null) {
             stmt.close();
           }
-
         } catch (SQLException e) {
           LOG.warning("Caught SQLException " + e.toString());
         }
@@ -323,18 +301,16 @@ public class ValidateUtil {
     }
 
     /**
-     * This method validate the names
+     * Validate the metadata property names.
      *
      * @return true if external metadata related columns are there SQL crawl
      *         query.
      */
     private boolean validateExternalMetadataFields() {
-
       boolean result = true;
 
-      // validate Document URL field
+      // Validate Document URL field.
       String documentURLField = config.get(DOCUMENT_URL_FIELD);
-
       if (documentURLField != null && documentURLField.trim().length() > 0) {
         if (!columnNames.contains(documentURLField.trim())) {
           result = false;
@@ -343,19 +319,20 @@ public class ValidateUtil {
         }
       }
 
-      // validate DocID and Base URL fields
+      // Validate DocID and Base URL fields.
       String documentIdField = config.get(DOCUMENT_ID_FIELD);
       String baseURL = config.get(BASE_URL);
 
-      // check if Base URL field exists without DocId Field
+      // Check if Base URL field exists without DocId Field.
       if ((baseURL != null && baseURL.trim().length() > 0)
           && (documentIdField == null || documentIdField.trim().length() == 0)) {
         result = false;
-        message = res.getString(MISSING_ATTRIBUTES) + " : "
+        message = res.getString(MISSING_ATTRIBUTES) + ": "
             + res.getString(DOCUMENT_ID_FIELD);
         problemFields.add(DOCUMENT_ID_FIELD);
       }
-      // Validate documnet ID column name
+
+      // Validate document ID column name.
       if (documentIdField != null && documentIdField.trim().length() > 0) {
 
         if (!columnNames.contains(documentIdField)) {
@@ -365,27 +342,27 @@ public class ValidateUtil {
         }
         if (baseURL == null || baseURL.trim().length() == 0) {
           result = false;
-          message = res.getString(MISSING_ATTRIBUTES) + " : "
+          message = res.getString(MISSING_ATTRIBUTES) + ": "
               + res.getString(BASE_URL);
           problemFields.add(BASE_URL);
         }
 
       }
 
-      // validate BLOB/CLOB and Fetch URL field
+      // Validate BLOB/CLOB and Fetch URL field.
       String blobClobField = config.get(CLOB_BLOB_FIELD);
       String fetchURL = config.get(FETCH_URL_FIELD);
 
-      // check if Fetch URL field exists without BLOB/CLOB Field
+      // Check if Fetch URL field exists without BLOB/CLOB Field.
       if ((fetchURL != null && fetchURL.trim().length() > 0)
           && (blobClobField == null || blobClobField.trim().length() == 0)) {
         result = false;
-        message = res.getString(MISSING_ATTRIBUTES) + " : "
+        message = res.getString(MISSING_ATTRIBUTES) + ": "
             + res.getString(CLOB_BLOB_FIELD);
         problemFields.add(CLOB_BLOB_FIELD);
       }
 
-      // check for valid BLOB/CLOB column name
+      // Check for valid BLOB/CLOB column name.
       if (blobClobField != null && blobClobField.trim().length() > 0) {
         if (!columnNames.contains(blobClobField)) {
           result = false;
@@ -405,7 +382,7 @@ public class ValidateUtil {
     }
 
     /**
-     * This method validates the name of last modified date column
+     * Validates the name of last modified date column.
      *
      * @return true if result set contains the last modified date column entered
      *         by connector admin, false otherwise.
@@ -422,48 +399,48 @@ public class ValidateUtil {
     }
 
     /**
-     * This method centralizes the calls to different configuration parameter
+     * Centralizes the calls to different configuration parameter
      * validation methods.
      *
      * @return true if every validation method return true else return false.
      */
     public boolean validate() {
-
       password = config.get(PASSWORD);
       login = config.get(LOGIN);
       connectionUrl = config.get(CONNECTION_URL);
       driverClassName = config.get(DRIVER_CLASS_NAME);
 
-      // Test JDBC driver class
+      // Test JDBC driver class.
       success = testDriverClass();
       if (!success) {
         return success;
       }
-      // test Database connectivity
+
+      // Test Database connectivity.
       success = testDBConnectivity();
       if (!success) {
         return success;
       }
 
-      // validate SQL crawl Query
+      // Validate SQL crawl Query.
       success = validateSQLCrawlQuery();
       if (!success) {
         return success;
       }
 
-      // validate primary key column names
+      // Validate primary key column names.
       success = validatePrimaryKeyColumns();
       if (!success) {
         return success;
       }
 
-      // validate external metadata fields
+      // Validate external metadata fields.
       success = validateExternalMetadataFields();
       if (!success) {
         return success;
       }
 
-      // validate last modified date column name
+      // Validate last modified date column name.
       String lastModDateColumn = config.get(LAST_MODIFIED_DATE_FIELD);
       if (lastModDateColumn != null && lastModDateColumn.trim().length() > 0) {
         success = validateLastModifiedField();
@@ -473,16 +450,12 @@ public class ValidateUtil {
       }
 
       String authZQuery = config.get(AUTHZ_QUERY);
-      /*
-       * validate authZ query if connector admin has provided one.
-       */
+      // Validate authZ query if connector admin has provided one.
       if (authZQuery != null && authZQuery.trim().length() > 0) {
         success = validateAuthZQuery(authZQuery);
       }
 
-      /*
-       * close database connection, result set and statement
-       */
+      // Close database connection, result set and statement.
       try {
         if (conn != null) {
           conn.close();
@@ -544,7 +517,7 @@ public class ValidateUtil {
         success = true;
       } else {
         StringBuilder buf = new StringBuilder();
-        buf.append(res.getString(MISSING_ATTRIBUTES) + " : ");
+        buf.append(res.getString(MISSING_ATTRIBUTES) + ": ");
         boolean first = true;
         for (String attribute : missingAttributes) {
           if (!first) {
@@ -596,7 +569,7 @@ public class ValidateUtil {
         success = true;
       } else {
         StringBuilder buf = new StringBuilder();
-        buf.append(res.getString(REQ_FIELDS) + " : ");
+        buf.append(res.getString(REQ_FIELDS) + ": ");
         boolean first = true;
         for (String attribute : missingFields) {
           if (!first) {
@@ -613,10 +586,10 @@ public class ValidateUtil {
   }
 
   /**
-   * Checks if the Document Title field is entered in the configuration form and
-   * also provided in the XSLT, if present in both the places then shows an
-   * error message . Checks if record Title elements are selected in the XSLT ,
-   * if present then the Title value needs to be indexed appropriately ,else an
+   * Checks if the Document Title field is entered in the configuration form
+   * and also provided in the XSLT. If present in both the places then shows an
+   * error message. Checks if record Title elements are selected in the XSLT.
+   * If present then the Title value needs to be indexed appropriately, else an
    * error message is shown.
    */
   private static class XSLTCheck implements ConfigValidation {
@@ -643,7 +616,6 @@ public class ValidateUtil {
     public boolean validate() {
       xslt = new StringBuilder(config.get(XSLT));
       if (xslt != null) {
-
         String XSLT_RECORD_TITLE_ELEMENT2;
         int index2;
         XSLT_RECORD_TITLE_ELEMENT2 = "<td><xsl:value-of select=\"title\"/>";
@@ -656,7 +628,6 @@ public class ValidateUtil {
         } else {
           success = true;
         }
-
       }
       return success;
     }

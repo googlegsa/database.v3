@@ -4,7 +4,7 @@
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
+//     http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -165,8 +165,8 @@ public class DBContext {
     try {
       this.numberOfRows = numberOfRows;
     } catch (NumberFormatException e) {
-      LOG.warning("Number Format Exception while setting number of rows to be fetched"
-          + "\n" + e.toString());
+      LOG.warning("Number Format Exception while setting number of rows to be "
+          + "fetched\n" + e.toString());
     }
   }
 
@@ -178,8 +178,8 @@ public class DBContext {
     try {
       this.minValue = minValue;
     } catch (NumberFormatException e) {
-      LOG.warning("Number Format Exception while setting minvalue of number of rows to be fetched"
-          + "\n" + e.toString());
+      LOG.warning("Number Format Exception while setting minvalue of number of "
+          + "rows to be fetched\n" + e.toString());
     }
   }
 
