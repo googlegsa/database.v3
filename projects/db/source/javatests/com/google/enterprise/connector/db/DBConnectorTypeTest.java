@@ -1,16 +1,16 @@
-//Copyright 2011 Google Inc.
+// Copyright 2011 Google Inc.
 //
-//Licensed under the Apache License, Version 2.0 (the "License");
-//you may not use this file except in compliance with the License.
-//You may obtain a copy of the License at
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
 //
-//http://www.apache.org/licenses/LICENSE-2.0
+//     http://www.apache.org/licenses/LICENSE-2.0
 //
-//Unless required by applicable law or agreed to in writing, software
-//distributed under the License is distributed on an "AS IS" BASIS,
-//WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//See the License for the specific language governing permissions and
-//limitations under the License.
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 package com.google.enterprise.connector.db;
 
@@ -29,11 +29,11 @@ import java.util.regex.Pattern;
 import junit.framework.TestCase;
 
 /**
- * This is a JUNit test case for DBConnectorType class.
+ * Tests for {@link DBConnectorType} class.
  */
 public class DBConnectorTypeTest extends TestCase {
-
-  private static final Logger LOG = Logger.getLogger(DBConnectorTypeTest.class.getName());
+  private static final Logger LOG =
+      Logger.getLogger(DBConnectorTypeTest.class.getName());
 
   private DBConnectorType connectorType;
   private Set<String> configKeys;
@@ -53,16 +53,16 @@ public class DBConnectorTypeTest extends TestCase {
     loadConfigMap();
   }
 
-  /*
-   * this method loads key and values in configuration map.
-   */
-
+  /** Loads key and values in configuration map. */
   private void loadConfigMap() {
     configMap.put("login", LanguageResource.getPropertyValue("login"));
-    configMap.put("driverClassName", LanguageResource.getPropertyValue("driverClassName"));
+    configMap.put("driverClassName",
+                  LanguageResource.getPropertyValue("driverClassName"));
     configMap.put("password", LanguageResource.getPropertyValue("password"));
-    configMap.put("primaryKeysString", LanguageResource.getPropertyValue("primaryKeysString"));
-    configMap.put("connectionUrl", LanguageResource.getPropertyValue("connectionUrl"));
+    configMap.put("primaryKeysString",
+                  LanguageResource.getPropertyValue("primaryKeysString"));
+    configMap.put("connectionUrl",
+                  LanguageResource.getPropertyValue("connectionUrl"));
     configMap.put("sqlQuery", LanguageResource.getPropertyValue("sqlQuery"));
     configMap.put("dbName", "");
     configMap.put("hostname", LanguageResource.getPropertyValue("hostname"));
@@ -76,7 +76,8 @@ public class DBConnectorTypeTest extends TestCase {
     configMap.put("lobField", "");
     configMap.put("fetchURLField", "");
     configMap.put("extMetadataType", "");
-    configMap.put("googleConnectorWorkDir", "D:/Google/projects/ChangeBranch/db/config");
+    configMap.put("googleConnectorWorkDir",
+                  "D:/Google/projects/ChangeBranch/db/config");
   }
 
   protected void tearDown() throws Exception {
@@ -84,15 +85,14 @@ public class DBConnectorTypeTest extends TestCase {
   }
 
   /**
-   * test method for validateConfig method.
+   * Test method for validateConfig method.
    */
   public void testValidateConfig() {
-
     LOG.info("Testing validateConfig()...");
-
     MockDBConnectorFactory mdbConnectorFactory = new MockDBConnectorFactory(
         TestUtils.TESTCONFIG_DIR + TestUtils.CONNECTOR_INSTANCE_XML);
-    ConfigureResponse configRes = this.connectorType.validateConfig(this.configMap, Locale.ENGLISH, mdbConnectorFactory);
+    ConfigureResponse configRes = this.connectorType.validateConfig(
+        this.configMap, Locale.ENGLISH, mdbConnectorFactory);
 
     LOG.info("Checking for Required field Database Name...");
     String strPattern = ".*Required fields are missing.*";
@@ -102,31 +102,33 @@ public class DBConnectorTypeTest extends TestCase {
 
     LOG.info("Checking when all required fields are provided...");
     configMap.put("dbName", LanguageResource.getPropertyValue("dbName"));
-    configRes = this.connectorType.validateConfig(this.configMap, Locale.ENGLISH, mdbConnectorFactory);
+    configRes = this.connectorType.validateConfig(this.configMap,
+        Locale.ENGLISH, mdbConnectorFactory);
     assertNull(configRes);
     LOG.info("[ validateConfig() ] Test Passed.");
-
   }
 
   /**
-   * scenario when more than one primary key is provided and connector is
-   * configured for using the parameterized crawl query
+   * Scenario when more than one primary key is provided and connector is
+   * configured for using the parameterized crawl query.
    */
   public void testParameterizedQueryAndMutiplePrimaryKeys() {
     MockDBConnectorFactory mdbConnectorFactory = new MockDBConnectorFactory(
         TestUtils.TESTCONFIG_DIR + TestUtils.CONNECTOR_INSTANCE_XML);
     Map<String, String> newConfigMap = this.configMap;
     newConfigMap.put("dbName", LanguageResource.getPropertyValue("dbName"));
-    newConfigMap.put("sqlQuery", "select * from TestEmpTable where id > #value#");
+    newConfigMap.put("sqlQuery",
+                     "select * from TestEmpTable where id > #value#");
     configMap.put("primaryKeysString", "id,fname");
-    ConfigureResponse configRes = this.connectorType.validateConfig(newConfigMap, Locale.ENGLISH, mdbConnectorFactory);
-    assertEquals(configRes.getMessage(), "Single Primary key should be used when configuring a parameterized crawl query");
-
+    ConfigureResponse configRes = this.connectorType.validateConfig(
+        newConfigMap, Locale.ENGLISH, mdbConnectorFactory);
+    assertEquals(configRes.getMessage(), "Single Primary key should be used "
+                 + "when configuring a parameterized crawl query");
   }
 
   /**
-   * scenario when single primary key is provided and connector is configured
-   * for using the parameterized crawl query
+   * Scenario when single primary key is provided and connector is configured
+   * for using the parameterized crawl query.
    */
   public void testParameterizedQueryAndSingleePrimaryKeys() {
     MockDBConnectorFactory mdbConnectorFactory = new MockDBConnectorFactory(
@@ -134,41 +136,41 @@ public class DBConnectorTypeTest extends TestCase {
     Map<String, String> newConfigMap = this.configMap;
     newConfigMap.put("dbName", LanguageResource.getPropertyValue("dbName"));
     newConfigMap.put("sqlQuery", "select * from TestEmpTable where id > #value#");
-    ConfigureResponse configRes = this.connectorType.validateConfig(newConfigMap, Locale.ENGLISH, mdbConnectorFactory);
+    ConfigureResponse configRes = this.connectorType.validateConfig(
+        newConfigMap, Locale.ENGLISH, mdbConnectorFactory);
     assertNull(configRes);
 
   }
 
   /**
-   * test for getConfigForm method.
+   * Test for getConfigForm method.
    */
   public void testGetConfigForm() {
-
-    final ConfigureResponse configureResponse = connectorType.getConfigForm(Locale.ENGLISH);
+    final ConfigureResponse configureResponse =
+        connectorType.getConfigForm(Locale.ENGLISH);
     final String configForm = configureResponse.getFormSnippet();
     boolean check = checkForExpectedFields(configForm);
     assertTrue(check);
   }
 
   /**
-   * test for getPopulatedConfigForm method
+   * Test for getPopulatedConfigForm method.
    */
   public void testGetPopulatedConfigForm() {
-
-    final ConfigureResponse configureResponse = connectorType.getPopulatedConfigForm(configMap, Locale.ENGLISH);
+    final ConfigureResponse configureResponse =
+        connectorType.getPopulatedConfigForm(configMap, Locale.ENGLISH);
     final String configForm = configureResponse.getFormSnippet();
     boolean check = checkForExpectedFields(configForm);
     assertTrue(check);
   }
 
   /**
-   * This method tests expected patterns in html text of configuration form
+   * Tests expected patterns in html text of configuration form.
    *
    * @param configForm is html string of configuration form for database
-   *          connector
+   *        connector
    */
   private boolean checkForExpectedFields(final String configForm) {
-
     LOG.info("Checking for Sql Query field...");
     String strPattern = "<textarea .*name=\"sqlQuery\".*>";
     Pattern pattern = Pattern.compile(strPattern);
@@ -230,34 +232,38 @@ public class DBConnectorTypeTest extends TestCase {
     assertTrue(match.find());
 
     LOG.info("Checking for radio buttons...");
-    strPattern = "<input.*type='radio'.*name='extMetadataType'.*value='url'.*onClick='.*'/>";
+    strPattern = "<input.*type='radio'.*name='extMetadataType'.*value='url'.*"
+        + "onClick='.*'/>";
     pattern = Pattern.compile(strPattern);
     match = pattern.matcher(configForm);
     assertTrue(match.find());
 
-    strPattern = "<input type='radio'.*name='extMetadataType'.*value='docId'.*onClick='.*'/>";
+    strPattern = "<input type='radio'.*name='extMetadataType'.*value='docId'.*"
+        + "onClick='.*'/>";
     pattern = Pattern.compile(strPattern);
     match = pattern.matcher(configForm);
     assertTrue(match.find());
 
-    strPattern = "<input type='radio'.*name='extMetadataType' value='lob'.*onClick='.*'/>";
+    strPattern = "<input type='radio'.*name='extMetadataType' value='lob'.*"
+        + "onClick='.*'/>";
     pattern = Pattern.compile(strPattern);
     match = pattern.matcher(configForm);
     assertTrue(match.find());
 
     LOG.info("Checking for Last Modified date Field...");
-    strPattern = "<input.*size=\"40\".*name=\"lastModifiedDate\".*id=\"lastModifiedDate\".*/>";
+    strPattern = "<input.*size=\"40\".*name=\"lastModifiedDate\".*"
+        + "id=\"lastModifiedDate\".*/>";
     pattern = Pattern.compile(strPattern);
     match = pattern.matcher(configForm);
     assertTrue(match.find());
 
     LOG.info("Checking for Document Ttitle Field...");
-    strPattern = "<input.*size=\"40\" name=\"lastModifiedDate\".*id=\"lastModifiedDate\".*/>";
+    strPattern = "<input.*size=\"40\" name=\"lastModifiedDate\".*"
+        + "id=\"lastModifiedDate\".*/>";
     pattern = Pattern.compile(strPattern);
     match = pattern.matcher(configForm);
     assertTrue(match.find());
 
     return true;
-
   }
 }

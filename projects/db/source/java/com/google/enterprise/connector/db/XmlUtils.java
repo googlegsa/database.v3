@@ -4,7 +4,7 @@
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
+//     http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -36,7 +36,7 @@ import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
 /**
- * Utility class for dealing with Xml.
+ * Utility class for dealing with XML.
  */
 public class XmlUtils {
 
@@ -52,7 +52,7 @@ public class XmlUtils {
    *    [{id=1, lastName=last_01}
    * </pre>
    *
-   * is converted to the following xml :
+   * is converted to the following XML:
    *
    * <pre>
    *    &lt;html&gt;
@@ -135,15 +135,14 @@ public class XmlUtils {
       if (null == xslt) {
         xmlString = getStringFromDomDocument(doc, null);
       } else if (xslt.length() == 0) {
-        xmlString = getStringFromDomDocument(doc, getDomDocFromXslt(getDefaultStyleSheet(dbName, row, dbContext, isCompleteDoc)));
+        xmlString = getStringFromDomDocument(doc, getDomDocFromXslt(
+            getDefaultStyleSheet(dbName, row, dbContext, isCompleteDoc)));
       } else {
         xmlString = getStringFromDomDocument(doc, getDomDocFromXslt(xslt));
       }
     } catch (TransformerException e) {
-
       throw new DBException("Unable to create XML string from the DOM document"
           + "\n" + e, e);
-
     }
     return xmlString;
   }

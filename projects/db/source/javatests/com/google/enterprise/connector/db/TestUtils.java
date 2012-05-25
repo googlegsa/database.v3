@@ -4,7 +4,7 @@
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
+//     http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -86,7 +86,10 @@ public class TestUtils {
   public static JsonDocument createDBDoc(int id, String firstName,
       String lastName, String email) throws DBException {
     ProductionTraversalContext context = new ProductionTraversalContext();
-    JsonDocument jsonDoc = JsonDocumentUtil.rowToDoc("testdb_", TestUtils.getStandardPrimaryKeys(), getRow(id, firstName, lastName, email), "localhost", null, null);
+    JsonDocument jsonDoc = JsonDocumentUtil.rowToDoc("testdb_",
+        TestUtils.getStandardPrimaryKeys(),
+        getRow(id, firstName, lastName, email),
+        "localhost", null, null);
     return jsonDoc;
   }
 
@@ -94,7 +97,8 @@ public class TestUtils {
     // Keep it in sync with connectorInstance.xml
     Map<String, String> dbTypeDriver = new HashMap<String, String>();
     dbTypeDriver.put(DB_TYPE_MYSQL, "com.mysql.jdbc.Driver");
-    dbTypeDriver.put(DB_TYPE_MS_SQL_SERVER, "com.microsoft.sqlserver.jdbc.SQLServerDriver");
+    dbTypeDriver.put(DB_TYPE_MS_SQL_SERVER,
+                     "com.microsoft.sqlserver.jdbc.SQLServerDriver");
     dbTypeDriver.put(DB_TYPE_DB2, "COM.ibm.db2.jdbc.net.DB2Driver");
     dbTypeDriver.put(DB_TYPE_ORACLE, "oracle.jdbc.OracleDriver");
     dbTypeDriver.put(DB_TYPE_SYBASE, "com.sybase.jdbc2.jdbc.SybDriver");

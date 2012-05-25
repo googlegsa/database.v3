@@ -4,7 +4,7 @@
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-// http://www.apache.org/licenses/LICENSE-2.0
+//     http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -25,7 +25,8 @@ import java.util.logging.Logger;
  */
 public class RepositoryHandlerIterator implements Iterator<JsonDocument> {
 
-  private static final Logger LOG = Logger.getLogger(RepositoryHandlerIterator.class.getName());
+  private static final Logger LOG =
+      Logger.getLogger(RepositoryHandlerIterator.class.getName());
   private Iterator<JsonDocument> recordList;
   private RepositoryHandler repositoryHandler;
 
@@ -40,7 +41,7 @@ public class RepositoryHandlerIterator implements Iterator<JsonDocument> {
   /**
    * @param recordList collection for holding JsonDocuments.
    * @param repositoryHandler RepositoryHandler object for fetching DB rows in
-   *          JsonDocument form.
+   *        JsonDocument form.
    */
   public RepositoryHandlerIterator(RepositoryHandler repositoryHandler) {
     this.repositoryHandler = repositoryHandler;
@@ -64,7 +65,7 @@ public class RepositoryHandlerIterator implements Iterator<JsonDocument> {
         }
         return true;
       } catch (SnapshotRepositoryRuntimeException e) {
-        LOG.warning("Exception in hasnext of RepositoryHandlerIterator" + "\n"
+        LOG.warning("Exception in hasNext of RepositoryHandlerIterator\n"
             + e.toString());
         throw new SnapshotRepositoryRuntimeException(
             "unable to connect to repository", e);
@@ -73,12 +74,10 @@ public class RepositoryHandlerIterator implements Iterator<JsonDocument> {
   }
 
   /**
-   * Returns the next JsonDocument element in the recordList
+   * Returns the next JsonDocument element in the recordList.
    */
   /* @Override */
   public JsonDocument next() {
-    // TODO Auto-generated method stub
-
     return recordList.next();
   }
 
@@ -89,10 +88,7 @@ public class RepositoryHandlerIterator implements Iterator<JsonDocument> {
    */
   /* @Override */
   public void remove() {
-    // TODO Auto-generated method stub
-
     throw new UnsupportedOperationException(
-        "Remove Operation not Supportrd for RepositoryHandlerIterator");
+        "Remove Operation not Supported for RepositoryHandlerIterator");
   }
-
 }

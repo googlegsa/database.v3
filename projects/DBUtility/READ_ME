@@ -1,5 +1,6 @@
 This utility is developed for inserting Employee records with BLOB data .
-User need to supply firstName lastName deptID emplNo and path of file to be uploaded as command line argument.
+User need to supply firstName lastName deptID emplNo and path of file to be
+uploaded as command line argument.
 e.g
 Ramesh Rane 4 8 "C:\Documents and Settings\suresh_ghuge\Desktop\issues for lgging.rtf".
 
