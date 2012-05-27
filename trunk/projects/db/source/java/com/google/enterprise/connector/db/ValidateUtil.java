@@ -144,8 +144,8 @@ public class ValidateUtil {
         try {
           sds = new SimpleDataSource(jdbcProps);
         } catch (Exception e) {
-          LOG.warning("Caught Exception while testing driver class name: "
-              + "\n" + e.toString());
+          LOG.warning("Caught Exception while testing driver class name:\n"
+              + e.toString());
           message = res.getString(TEST_DRIVER_CLASS);
           problemFields.add(DRIVER_CLASS_NAME);
         }
@@ -160,7 +160,7 @@ public class ValidateUtil {
         try {
           conn = sds.getConnection();
         } catch (SQLException e) {
-          LOG.warning("Caught SQLException while testing connection: " + "\n"
+          LOG.warning("Caught SQLException while testing connection:\n"
               + e.toString());
           message = res.getString(TEST_CONNECTIVITY);
           problemFields.add(DRIVER_CLASS_NAME);
@@ -185,7 +185,7 @@ public class ValidateUtil {
 
           String sqlQuery = config.get(SQL_QUERY);
           if (sqlQuery.contains(KEY_VALUE_PLACEHOLDER)) {
-            sqlQuery = sqlQuery.replace(KEY_VALUE_PLACEHOLDER, "''");
+            sqlQuery = sqlQuery.replace(KEY_VALUE_PLACEHOLDER, "0");
             result = stmt.execute(sqlQuery);
           } else {
             result = stmt.execute(sqlQuery);
@@ -334,7 +334,6 @@ public class ValidateUtil {
 
       // Validate document ID column name.
       if (documentIdField != null && documentIdField.trim().length() > 0) {
-
         if (!columnNames.contains(documentIdField)) {
           result = false;
           message = res.getString(INVALID_COLUMN_NAME);
@@ -346,7 +345,6 @@ public class ValidateUtil {
               + res.getString(BASE_URL);
           problemFields.add(BASE_URL);
         }
-
       }
 
       // Validate BLOB/CLOB and Fetch URL field.
