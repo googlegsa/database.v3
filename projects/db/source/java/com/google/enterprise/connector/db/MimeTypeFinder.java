@@ -44,7 +44,7 @@ public class MimeTypeFinder {
    * Connector Manager startup.
    */
   @VisibleForTesting
-  void setTraversalContext(TraversalContext traversalContext) {
+  static void setTraversalContext(TraversalContext traversalContext) {
     MimeTypeDetector.setTraversalContext(traversalContext);
   }
 

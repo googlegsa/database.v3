@@ -14,8 +14,10 @@
 
 package com.google.enterprise.connector.db;
 
+import com.google.common.collect.Maps;
 import com.google.enterprise.connector.spi.ConfigureResponse;
 
+import java.sql.Connection;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -31,7 +33,7 @@ import junit.framework.TestCase;
 /**
  * Tests for {@link DBConnectorType} class.
  */
-public class DBConnectorTypeTest extends TestCase {
+public class DBConnectorTypeTest extends DBTestBase {
   private static final Logger LOG =
       Logger.getLogger(DBConnectorTypeTest.class.getName());
 
@@ -43,44 +45,30 @@ public class DBConnectorTypeTest extends TestCase {
       "externalMetadata", "documentURLField", "documentIdField", "baseURL",
       "lobField", "fetchURLField", "extMetadataType" };
 
-  private Map<String, String> configMap;
+  private Connection connection;
 
   protected void setUp() throws Exception {
     super.setUp();
+    // Hold open connection to H2 in-memory DB.
+    connection =
+        getDbClient().getSqlMapClient().getDataSource().getConnection();
+    runDBScript(CREATE_TEST_DB_TABLE);
+    runDBScript(LOAD_TEST_DATA);
+
+    // De-populate a bunch of properties for config form testing and validation.
+    configMap.put("authZQuery", "");
+    configMap.put("baseURL", "");
+    configMap.put("documentIdField", "");
+    configMap.put("documentURLField", "");
+    configMap.put("fetchURLField", "");
+    configMap.put("lobField", "");
+
     configKeys = new HashSet<String>(Arrays.asList(keys));
     connectorType = new DBConnectorType(configKeys);
-    configMap = new HashMap<String, String>();
-    loadConfigMap();
-  }
-
-  /** Loads key and values in configuration map. */
-  private void loadConfigMap() {
-    configMap.put("login", LanguageResource.getPropertyValue("login"));
-    configMap.put("driverClassName",
-                  LanguageResource.getPropertyValue("driverClassName"));
-    configMap.put("password", LanguageResource.getPropertyValue("password"));
-    configMap.put("primaryKeysString",
-                  LanguageResource.getPropertyValue("primaryKeysString"));
-    configMap.put("connectionUrl",
-                  LanguageResource.getPropertyValue("connectionUrl"));
-    configMap.put("sqlQuery", LanguageResource.getPropertyValue("sqlQuery"));
-    configMap.put("dbName", "");
-    configMap.put("hostname", LanguageResource.getPropertyValue("hostname"));
-    configMap.put("xslt", "");
-    configMap.put("authZQuery", "");
-    configMap.put("lastModifiedDate", "");
-    configMap.put("externalMetadata", "");
-    configMap.put("documentURLField", "");
-    configMap.put("documentIdField", "");
-    configMap.put("baseURL", "");
-    configMap.put("lobField", "");
-    configMap.put("fetchURLField", "");
-    configMap.put("extMetadataType", "");
-    configMap.put("googleConnectorWorkDir",
-                  "D:/Google/projects/ChangeBranch/db/config");
   }
 
   protected void tearDown() throws Exception {
+    connection.close();
     super.tearDown();
   }
 
@@ -89,10 +77,13 @@ public class DBConnectorTypeTest extends TestCase {
    */
   public void testValidateConfig() {
     LOG.info("Testing validateConfig()...");
+    Map<String, String> newConfigMap = Maps.newHashMap(this.configMap);
+    // Remove a required field.
+    newConfigMap.put("dbName", "");
     MockDBConnectorFactory mdbConnectorFactory = new MockDBConnectorFactory(
         TestUtils.TESTCONFIG_DIR + TestUtils.CONNECTOR_INSTANCE_XML);
     ConfigureResponse configRes = this.connectorType.validateConfig(
-        this.configMap, Locale.ENGLISH, mdbConnectorFactory);
+        newConfigMap, Locale.ENGLISH, mdbConnectorFactory);
 
     LOG.info("Checking for Required field Database Name...");
     String strPattern = ".*Required fields are missing.*";
@@ -101,10 +92,11 @@ public class DBConnectorTypeTest extends TestCase {
     assertTrue(match.find());
 
     LOG.info("Checking when all required fields are provided...");
-    configMap.put("dbName", LanguageResource.getPropertyValue("dbName"));
-    configRes = this.connectorType.validateConfig(this.configMap,
+    configRes = this.connectorType.validateConfig(configMap,
         Locale.ENGLISH, mdbConnectorFactory);
-    assertNull(configRes);
+    if (configRes != null) {
+      fail(configRes.getMessage());
+    }
     LOG.info("[ validateConfig() ] Test Passed.");
   }
 
@@ -115,31 +107,30 @@ public class DBConnectorTypeTest extends TestCase {
   public void testParameterizedQueryAndMutiplePrimaryKeys() {
     MockDBConnectorFactory mdbConnectorFactory = new MockDBConnectorFactory(
         TestUtils.TESTCONFIG_DIR + TestUtils.CONNECTOR_INSTANCE_XML);
-    Map<String, String> newConfigMap = this.configMap;
-    newConfigMap.put("dbName", LanguageResource.getPropertyValue("dbName"));
+    Map<String, String> newConfigMap = Maps.newHashMap(this.configMap);
     newConfigMap.put("sqlQuery",
                      "select * from TestEmpTable where id > #value#");
-    configMap.put("primaryKeysString", "id,fname");
+    newConfigMap.put("primaryKeysString", "id,fname");
     ConfigureResponse configRes = this.connectorType.validateConfig(
         newConfigMap, Locale.ENGLISH, mdbConnectorFactory);
-    assertEquals(configRes.getMessage(), "Single Primary key should be used "
-                 + "when configuring a parameterized crawl query");
+    assertEquals("Single Primary key should be used when configuring a "
+                 + "parameterized crawl query", configRes.getMessage());
   }
 
   /**
    * Scenario when single primary key is provided and connector is configured
    * for using the parameterized crawl query.
    */
-  public void testParameterizedQueryAndSingleePrimaryKeys() {
+  public void testParameterizedQueryAndSinglePrimaryKeys() {
     MockDBConnectorFactory mdbConnectorFactory = new MockDBConnectorFactory(
         TestUtils.TESTCONFIG_DIR + TestUtils.CONNECTOR_INSTANCE_XML);
-    Map<String, String> newConfigMap = this.configMap;
-    newConfigMap.put("dbName", LanguageResource.getPropertyValue("dbName"));
+    Map<String, String> newConfigMap = Maps.newHashMap(this.configMap);
     newConfigMap.put("sqlQuery", "select * from TestEmpTable where id > #value#");
     ConfigureResponse configRes = this.connectorType.validateConfig(
         newConfigMap, Locale.ENGLISH, mdbConnectorFactory);
-    assertNull(configRes);
-
+    if (configRes != null) {
+      fail(configRes.getMessage());
+    }
   }
 
   /**

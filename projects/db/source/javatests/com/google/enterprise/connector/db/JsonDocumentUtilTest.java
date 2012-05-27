@@ -37,9 +37,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.logging.Logger;
 
-public class JsonDocumenrUtilTest extends DBTestBase {
+public class JsonDocumentUtilTest extends DBTestBase {
   private static final Logger LOG =
-      Logger.getLogger(JsonDocumenrUtilTest.class.getName());
+      Logger.getLogger(JsonDocumentUtilTest.class.getName());
   public static final String ROW_CHECKSUM = "dbconnector:checksum";
 
   /**
@@ -271,6 +271,7 @@ public class JsonDocumenrUtilTest extends DBTestBase {
       mimeTypeMap.setUnsupportedMimeTypes(unsupportedMime);
       context.setMimeTypeMap(mimeTypeMap);
       JsonDocument.setTraversalContext(context);
+      MimeTypeFinder.setTraversalContext(context);
       blobDoc = JsonDocumentUtil.largeObjectToDoc("testdb_", primaryKeys,
           rowMap, "localhost", dbContext, context);
       blobDoc.setChanged();

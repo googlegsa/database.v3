@@ -34,7 +34,7 @@ import junit.framework.TestCase;
  */
 public abstract class DBTestBase extends TestCase {
 
-  private Map<String, String> configMap = new HashMap<String, String>();
+  protected Map<String, String> configMap = new HashMap<String, String>();
 
   public static final String CREATE_TEST_DB_TABLE = "com/google/enterprise/connector/db/config/createTable.sql";
   public static final String LOAD_TEST_DATA = "com/google/enterprise/connector/db/config/loadTestData.sql";
@@ -68,7 +68,6 @@ public abstract class DBTestBase extends TestCase {
     configMap.put("lobField", "lob");
     configMap.put("fetchURLField", "fetchURL");
     configMap.put("extMetadataType", "");
-
   }
 
   protected ProductionTraversalContext getProductionTraversalContext() {
