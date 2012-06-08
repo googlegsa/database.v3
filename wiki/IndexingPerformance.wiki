@@ -1,5 +1,10 @@
+#summary This page is under construction. Do not use these instructions.
 #labels Phase-Deploy,Deprecated
 *This page is under construction. Do not use these instructions.*
+<wiki:comment>
+Summary should be something like:
+Improving indexing performance with the 2.8.4 release
+</wiki:comment>
 
 = Introduction =
 
