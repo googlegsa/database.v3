@@ -1,0 +1,81 @@
+#labels Phase-Deploy,Deprecated
+*This page is under construction. Do not use these instructions.*
+
+= Introduction =
+
+This document describes steps to improve indexing performance in certain circumstances when using connector version 2.8.4
+
+=Prerequisites=
+  * Database connector version 2.8.4 is required.
+  * The SQL query must be ordered by a single, integer-valued column that provides a total ordering (e.g., a sequence or identity primary key).
+  * *Note:* The SQL query for the database connector must always have an `ORDER BY` clause that imposes a total ordering, even when not using this optimization. Using an unordered query will result in erratic behavior, deleting and reindexing database rows.
+ 
+=Configuring the connector instance=
+
+You will need to edit the connectorInstance.xml file. The instructions differ for GSA 6.14 or later.
+
+==Using GSA 6.14 or later==
+  <ol>
+  <li> In the GSA admin console, create or edit a connector instance.
+  <li> For a new connector, fill out the configuration form as usual.
+  <li> In the *SQL Query* field, include a clause of the form _key_ `> #value#`, for example,
+    {{{ 
+     select * from employee where emp_id > #value# order by emp_id
+    }}}
+  <li> Under *Advanced properties*, click *Show/Hide*.
+  <li> Uncomment the following line:
+  {{{ 
+    <!--
+    <property name="parameterizedQueryFlag" value="true"></property>
+    -->
+  }}}
+  so that it reads:
+  {{{ 
+    <property name="parameterizedQueryFlag" value="true"></property>
+  }}}
+  <li> If necessary (this is unlikely), uncomment the `minValue` property and supply a value other than the default value of -1.
+  <li> Click the *Save Configuration* button.
+
+== Using GSA 6.12 or earlier==
+  <ol>
+  <li> In the GSA admin console, create or edit a connector instance.
+  <li> For a new connector, fill out the configuration form as usual.
+  <li> In the *SQL Query* field, include a clause of the form _key_ `> #value#`, for example,
+    {{{ 
+     select * from employee where emp_id > #value# order by emp_id
+    }}}
+  <li> Under *Disable Traversal*, select the checkbox.
+  <li> Click the *Save Configuration* button.
+  <li> In a file browser or command window, go to your connector installation directory, and then go to the Tomcat/webapps/connector-manager/WEB-INF/connectors/DBConnector directory, and then go to the directory with your connector instance name.
+  <li> Open connectorInstance.xml in a text editor.
+  <li> Uncomment the following line:
+  {{{ 
+    <!--
+    <property name="parameterizedQueryFlag" value="true"></property>
+    -->
+  }}}
+  so that it reads:
+  {{{ 
+    <property name="parameterizedQueryFlag" value="true"></property>
+  }}}
+  <li> If necessary (this is unlikely), uncomment the `minValue` property and supply a value other than the default value of -1.
+  <li> Save the file.
+  <li> In the GSA admin console, edit the connector configuration again.
+  <li> Under *Disable Traversal*, unselect the checkbox.
+  <li> Click the *Save Configuration* button.
+
+
+<wiki:comment>
+     *eedit IbatisSqlMap.xml file to modify the replace it with the new sqlQuery value:
+     {{{     
+	     For Example:Modify the element as below
+        <select id="getAll" resultClass="java.util.HashMap"> 
+           select * from employee where emp_id between 1 and 100
+         </select> 
+                            TO
+        <select id="getAll" resultClass="java.util.HashMap"> 
+           select * from employee where emp_id between #minvalue# and #maxvalue#
+        </select> 
+     }}}
+
+</wiki:comment>
