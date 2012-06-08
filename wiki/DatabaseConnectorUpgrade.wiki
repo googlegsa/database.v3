@@ -1,8 +1,8 @@
-Steps to upgrade Database Connector for performance issue.
-
+#labels Deprecated,Phase-Deploy
 = Introduction =
 
-This document describes steps to be followed when upgrading Database Connector for performance fix patch. The instructions mentioned here are applicable to connector version 2.8.0.
+This document describes steps to be followed when upgrading from database connector version 2.8.0 to the 2.8.1-X1 performance patch. For instructions on using the 2.8.4 release, see IndexingPerformance.
+
 
 =Pre-requisites=
   * Apache Tomcat 6. You can download it from it from http://tomcat.apache.org/download-60.cgi
