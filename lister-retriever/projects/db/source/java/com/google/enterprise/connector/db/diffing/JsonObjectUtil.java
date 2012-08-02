@@ -4,7 +4,7 @@
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-// http://www.apache.org/licenses/LICENSE-2.0
+//     http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -34,8 +34,10 @@ import java.util.logging.Logger;
  */
 public class JsonObjectUtil {
 
-  private static final Logger LOG = Logger.getLogger(JsonObjectUtil.class.getName());
-  private final Map<String, List<Value>> properties = new HashMap<String, List<Value>>();
+  private static final Logger LOG =
+      Logger.getLogger(JsonObjectUtil.class.getName());
+  private final Map<String, List<Value>> properties =
+      new HashMap<String, List<Value>>();
 
   public Map<String, List<Value>> getProperties() {
     return properties;
@@ -56,10 +58,11 @@ public class JsonObjectUtil {
   public void setProperty(String propertyName, String propertyValue) {
     if (propertyValue != null) {
       try {
-
-        properties.put(propertyName, Collections.singletonList(Value.getStringValue(propertyValue)));
+        properties.put(propertyName, Collections.singletonList(
+            Value.getStringValue(propertyValue)));
         jsonObject.put(propertyName, new SimpleProperty(
-            Collections.singletonList(Value.getStringValue(propertyValue))).nextValue().toString());
+            Collections.singletonList(Value.getStringValue(propertyValue)))
+            .nextValue().toString());
       } catch (JSONException e) {
         LOG.warning("Exception for " + propertyName + " with value "
             + propertyValue + "\n" + e.toString());
@@ -68,7 +71,7 @@ public class JsonObjectUtil {
   }
 
   /**
-   * This method adds the last modified date property to the JSON Object
+   * Adds the last modified date property to the JSON Object.
    *
    * @param propertyName
    * @param propertyValue
@@ -82,11 +85,12 @@ public class JsonObjectUtil {
       return;
     }
     try {
-      properties.put(propertyName, Collections.singletonList(Value.getDateValue(cal)));
+      properties.put(propertyName,
+          Collections.singletonList(Value.getDateValue(cal)));
       jsonObject.put(propertyName, new SimpleProperty(
-          Collections.singletonList(Value.getDateValue(cal))).nextValue().toString());
+          Collections.singletonList(Value.getDateValue(cal))).nextValue()
+          .toString());
     } catch (JSONException e) {
-
       LOG.warning("Exception for " + propertyName + " with value "
           + propertyValue + "\n" + e.toString());
     }
@@ -103,11 +107,11 @@ public class JsonObjectUtil {
     if (propertyValue == null) {
       return;
     }
-    properties.put(propertyName, Collections.singletonList(Value.getBinaryValue((byte[]) propertyValue)));
+    properties.put(propertyName, Collections.singletonList(
+        Value.getBinaryValue((byte[]) propertyValue)));
   }
 
   public JSONObject getJsonObject() {
     return jsonObject;
   }
-
 }

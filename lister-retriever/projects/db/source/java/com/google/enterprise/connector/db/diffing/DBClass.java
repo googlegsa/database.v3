@@ -4,7 +4,7 @@
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-// http://www.apache.org/licenses/LICENSE-2.0
+//     http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -45,7 +45,8 @@ public class DBClass implements DocumentHandle, DocumentSnapshot {
     jsonString = document.toJson();
   }
 
-  public static Function<JsonDocument, DBClass> factoryFunction = new Function<JsonDocument, DBClass>() {
+  public static Function<JsonDocument, DBClass> factoryFunction =
+      new Function<JsonDocument, DBClass>() {
     /* @Override */
     public DBClass apply(JsonDocument jsonDoc) {
       return new DBClass(jsonDoc);
@@ -69,7 +70,8 @@ public class DBClass implements DocumentHandle, DocumentSnapshot {
     }
     document = new JsonDocument(jo);
     try {
-      documentId = Value.getSingleValueString(document, SpiConstants.PROPNAME_DOCID);
+      documentId = Value.getSingleValueString(document,
+                                              SpiConstants.PROPNAME_DOCID);
     } catch (RepositoryException e) {
       LOG.warning("Exception thrown while extracting docId for Document"
           + document + "\n" + e.toString());
@@ -98,30 +100,29 @@ public class DBClass implements DocumentHandle, DocumentSnapshot {
   /* @Override */
   public DocumentHandle getUpdate(DocumentSnapshot onGsa)
       throws RepositoryException {
-    // the diffing framework sends in a null to indicate that it hasn't seen
+    // The diffing framework sends in a null to indicate that it has not seen
     // this snapshot before. So we return the corresponding Handle (in our
-    // case,
-    // the same object)
+    // case, the same object)
     if (onGsa == null) {
       this.document.setChanged();
       return this;
     }
-    // if the parameter is non-null, then it should be an DBClass
+    // If the parameter is non-null, then it should be an DBClass
     // (it was created via an DBClassRepository).
     if (!(onGsa instanceof DBClass)) {
       throw new IllegalArgumentException(
           "Illegal parameter passed to getUpdate of DocumentSnapshot."
-              + "The paramater passed is not a instance of DBCLass");
+          + "The paramater passed is not a instance of DBCLass");
     }
     DBClass p = DBClass.class.cast(onGsa);
-    // we just assume that if the serialized form is the same, then nothing
+    // We just assume that if the serialized form is the same, then nothing
     // has changed.
     if (this.jsonString.equals(p.toString())) {
       // null return tells the diffing framework to do nothing
       return null;
     }
     // Something has changed, so return the corresponding handle
-    // and set the changed flag of the document
+    // and set the changed flag of the document.
     this.document.setChanged();
     LOG.info("Change for Document with Id " + getDocumentId() + " at time "
         + new Date());

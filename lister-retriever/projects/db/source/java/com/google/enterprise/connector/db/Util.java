@@ -4,7 +4,7 @@
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
+//     http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -40,10 +40,9 @@ public class Util {
   private static final char[] HEX_CHARS = "0123456789abcdef".toCharArray();
   private static final String CHECKSUM_ALGO = "SHA1";
   private static final String DBCONNECTOR_PROTOCOL = "dbconnector://";
-  private static final String DATABASE_TITLE_PREFIX = "Database Connector Result";
+  private static final String DATABASE_TITLE_PREFIX =
+      "Database Connector Result";
   public static final String ROW_CHECKSUM = "dbconnector:checksum";
-
-  public static String WITH_BASE_URL = "withBaseURL";
 
   // This class should not be initialized.
   private Util() {
@@ -53,7 +52,8 @@ public class Util {
       String docId) {
     // displayurl is of the form -
     // dbconnector://example.com/mysql/2a61639c96ed45ec8f6e3d4e1ab79944cd1d1923
-    String displayUrl = String.format("%s%s/%s/%s", DBCONNECTOR_PROTOCOL, hostname, dbName, docId);
+    String displayUrl = String.format("%s%s/%s/%s", DBCONNECTOR_PROTOCOL,
+                                      hostname, dbName, docId);
     return displayUrl;
   }
 
@@ -84,7 +84,7 @@ public class Util {
           }
         }
         if (!keySet.contains(primaryKey)) {
-          String msg = "Primary Key does not match with any of the coulmn names";
+          String msg = "Primary Key does not match any of the column names.";
           LOG.info(msg);
           throw new DBException(msg);
         }
@@ -101,11 +101,11 @@ public class Util {
     } else {
       String msg = "";
       if (row != null && (primaryKeys != null && primaryKeys.length > 0)) {
-        msg = "row is null and primary key array is empty";
+        msg = "Row is null and primary key array is empty.";
       } else if (row != null) {
-        msg = "hash map row is null";
+        msg = "Hash map row is null.";
       } else {
-        msg = "primary key array is empty or null";
+        msg = "Primary key array is empty or null.";
       }
       LOG.info(msg);
       throw new DBException(msg);
@@ -147,8 +147,8 @@ public class Util {
   }
 
   /**
-   * This method set the values for predefined Document properties For example
-   * PROPNAME_DISPLAYURL , PROPNAME_TITLE , PROPNAME_LASTMODIFIED.
+   * Sets the values for predefined Document properties. For example
+   * PROPNAME_DISPLAYURL, PROPNAME_TITLE, PROPNAME_LASTMODIFIED.
    *
    * @param row Map representing database row
    * @param hostname connector host name
@@ -164,13 +164,13 @@ public class Util {
     // set last modified date
     Object lastModified = row.get(dbContext.getLastModifiedDate());
     if (lastModified != null && (lastModified instanceof Timestamp)) {
-      jsonObjectUtil.setLastModifiedDate(SpiConstants.PROPNAME_LASTMODIFIED, (Timestamp) lastModified);
-
+      jsonObjectUtil.setLastModifiedDate(SpiConstants.PROPNAME_LASTMODIFIED,
+                                         (Timestamp) lastModified);
     }
   }
 
   /**
-   * This method will add value of each column as metadata to Database document
+   * Adds the value of each column as metadata to Database document
    * except the values of columns in skipColumns list.
    *
    * @param doc
@@ -189,13 +189,13 @@ public class Util {
           jsonObjectUtil.setProperty(key, value.toString());
 
       } else {
-        LOG.info("skipping metadata indexing of column " + key);
+        LOG.info("Skipping metadata indexing of column " + key);
       }
     }
   }
 
   /**
-   * this method copies all elements from map representing a row except BLOB
+   * Copies all elements from map representing a row except BLOB
    * column and return the resultant map.
    *
    * @param row
@@ -214,13 +214,12 @@ public class Util {
   }
 
   /**
-   * This method extract the columns for Last Modified date and Document Title
+   * Extract the columns for Last Modified date and Document Title
    * and add in list of skip columns.
    *
    * @param skipColumns list of columns to be skipped as metadata
    * @param dbContext
    */
-
   public static void skipOtherProperties(List<String> skipColumns,
       DBContext dbContext) {
     String lastModColumn = dbContext.getLastModifiedDate();
@@ -230,14 +229,13 @@ public class Util {
   }
 
   /**
-   * This method converts the Input AStream into byte array.
+   * Converts the Input AStream into byte array.
    *
    * @param length
    * @param inStream
    * @return byte array of Input Stream
    */
   public static byte[] getBytes(int length, InputStream inStream) {
-
     int bytesRead = 0;
     byte[] content = new byte[length];
     while (bytesRead < length) {
@@ -248,8 +246,8 @@ public class Util {
           break;
         bytesRead += result;
       } catch (IOException e) {
-        LOG.warning("Exception occurred while converting InputStream into byte array"
-            + e.toString());
+        LOG.warning("Exception occurred while converting InputStream into "
+            + "byte array: "+ e.toString());
         return null;
       }
     }
@@ -257,7 +255,7 @@ public class Util {
   }
 
   /**
-   * This method sets the content of blob data in JsonDocument.
+   * Sets the content of blob data in JsonDocument.
    *
    * @param blobContent BLOB content to be set
    * @param dbName name of the database
@@ -273,16 +271,21 @@ public class Util {
       throws DBException {
 
     jsonObjectUtil.setBinaryContent(SpiConstants.PROPNAME_CONTENT, blobContent);
-    // get xml representation of document(exclude the BLOB column).
+    // Get XML representation of document (exclude the BLOB column).
     Map<String, Object> rowForXmlDoc = getRowForXmlDoc(row, dbContext);
-    String xmlRow = XmlUtils.getXMLRow(dbName, rowForXmlDoc, primaryKeys, "", dbContext, true);
-    // get checksum of blob
+    String xmlRow = XmlUtils.getXMLRow(dbName, rowForXmlDoc, primaryKeys,
+                                       "", dbContext, true);
+    // Get checksum of BLOB.
     String blobCheckSum = Util.getChecksum((blobContent));
-    // get checksum of other column
+
+    // Get checksum of other column.
     String otherColumnCheckSum = Util.getChecksum(xmlRow.getBytes());
-    // get checksum of blob object and other column
-    String docCheckSum = Util.getChecksum((otherColumnCheckSum + blobCheckSum).getBytes());
-    // set checksum of this document
+
+    // Get checksum of BLOB object and other column.
+    String docCheckSum =
+        Util.getChecksum((otherColumnCheckSum + blobCheckSum).getBytes());
+
+    // Set checksum of this document.
     jsonObjectUtil.setProperty(ROW_CHECKSUM, docCheckSum);
     LOG.info("BLOB Data found");
 

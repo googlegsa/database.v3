@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
-"http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd" >
+    "http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd" >
 <hibernate-mapping>
-    <class name="com.google.db.util.Employee" table="Employee_Info">
-        <id name="empId" type="int" column="EmpId">
-            <generator class="assigned" />
-        </id>
-        <property name="lastName" column="LName" type="java.lang.String" />
-        <property name="firstName" column="FName" type="java.lang.String" />
-        <property name="deptId" column="DeptId" type="java.lang.Integer" />
-        <property name="reportBlob" column="Report" type="blob" />
-    </class>
+  <class name="com.google.db.util.Employee" table="Employee_Info">
+    <id name="empId" type="int" column="EmpId">
+      <generator class="assigned" />
+    </id>
+    <property name="lastName" column="LName" type="java.lang.String" />
+    <property name="firstName" column="FName" type="java.lang.String" />
+    <property name="deptId" column="DeptId" type="java.lang.Integer" />
+    <property name="reportBlob" column="Report" type="blob" />
+  </class>
 </hibernate-mapping>

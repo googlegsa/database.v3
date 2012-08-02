@@ -1,16 +1,16 @@
-//Copyright 2011 Google Inc.
+// Copyright 2011 Google Inc.
 //
-//Licensed under the Apache License, Version 2.0 (the "License");
-//you may not use this file except in compliance with the License.
-//You may obtain a copy of the License at
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
 //
-//http://www.apache.org/licenses/LICENSE-2.0
+//     http://www.apache.org/licenses/LICENSE-2.0
 //
-//Unless required by applicable law or agreed to in writing, software
-//distributed under the License is distributed on an "AS IS" BASIS,
-//WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//See the License for the specific language governing permissions and
-//limitations under the License.
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 package com.google.enterprise.connector.db;
 
@@ -34,7 +34,7 @@ import junit.framework.TestCase;
  */
 public abstract class DBTestBase extends TestCase {
 
-  private Map<String, String> configMap = new HashMap<String, String>();
+  protected Map<String, String> configMap = new HashMap<String, String>();
 
   public static final String CREATE_TEST_DB_TABLE = "com/google/enterprise/connector/db/config/createTable.sql";
   public static final String LOAD_TEST_DATA = "com/google/enterprise/connector/db/config/loadTestData.sql";
@@ -68,7 +68,6 @@ public abstract class DBTestBase extends TestCase {
     configMap.put("lobField", "lob");
     configMap.put("fetchURLField", "fetchURL");
     configMap.put("extMetadataType", "");
-
   }
 
   protected ProductionTraversalContext getProductionTraversalContext() {
@@ -77,9 +76,7 @@ public abstract class DBTestBase extends TestCase {
   }
 
   protected DBContext getDbContext() {
-    DBContext dbContext;
-
-    dbContext = new DBContext(configMap.get("connectionUrl"),
+    DBContext dbContext = new DBContext(configMap.get("connectionUrl"),
         configMap.get("hostname"), configMap.get("driverClassName"),
         configMap.get("login"), configMap.get("password"),
         configMap.get("dbName"), configMap.get("sqlQuery"),
@@ -96,10 +93,8 @@ public abstract class DBTestBase extends TestCase {
   }
 
   protected DBClient getDbClient() throws RepositoryException {
-
     DBClient dbClient;
     try {
-
       dbClient = new DBClient(getDbContext());
       return dbClient;
     } catch (DBException e) {
@@ -116,14 +111,15 @@ public abstract class DBTestBase extends TestCase {
   }
 
   /**
-   * This method executes the database script.
+   * Executes the database script.
    *
    * @param scriptPath path of SQL script file
    */
   protected void runDBScript(String scriptPath) {
     Connection connection = null;
     try {
-      connection = getDbClient().getSqlMapClient().getDataSource().getConnection();
+      connection =
+          getDbClient().getSqlMapClient().getDataSource().getConnection();
       ScriptRunner runner = new ScriptRunner(connection, false, true);
       runner.runScript(Resources.getResourceAsReader(scriptPath));
     } catch (SQLException se) {
@@ -146,5 +142,4 @@ public abstract class DBTestBase extends TestCase {
       }
     }
   }
-
 }

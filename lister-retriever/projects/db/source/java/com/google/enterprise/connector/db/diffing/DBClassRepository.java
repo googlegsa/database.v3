@@ -4,13 +4,14 @@
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-// http://www.apache.org/licenses/LICENSE-2.0
+//     http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 package com.google.enterprise.connector.db.diffing;
 
 import com.google.common.base.Function;
@@ -27,10 +28,9 @@ import java.util.logging.Logger;
  * DBClassRepository Implements the @link SnapshotRepository Interface.
  * Implemented by delegating to an {@link Iterable}<{@link JsonDocument}>
  */
-
 public class DBClassRepository implements SnapshotRepository<DBClass> {
-
-  private static final Logger LOG = Logger.getLogger(DBClassRepository.class.getName());
+  private static final Logger LOG =
+      Logger.getLogger(DBClassRepository.class.getName());
 
   private final Iterable<JsonDocument> dbFetcher;
 
@@ -39,7 +39,8 @@ public class DBClassRepository implements SnapshotRepository<DBClass> {
   }
 
   /* @Override */
-  public Iterator<DBClass> iterator() throws SnapshotRepositoryRuntimeException {
+  public Iterator<DBClass> iterator()
+      throws SnapshotRepositoryRuntimeException {
     final Function<JsonDocument, DBClass> f = new ConversionFunction();
     Iterator<DBClass> it1 = Iterators.transform(dbFetcher.iterator(), f);
     return it1;

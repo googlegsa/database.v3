@@ -4,7 +4,7 @@
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-// http://www.apache.org/licenses/LICENSE-2.0
+//     http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -44,8 +44,8 @@ import java.util.logging.Logger;
  * A simple {@link Document} implementation created from a {@link JSONObject}.
  */
 public class JsonDocument implements Document {
-
-  private static final Logger LOG = Logger.getLogger(JsonDocument.class.getName());
+  private static final Logger LOG =
+      Logger.getLogger(JsonDocument.class.getName());
 
   private final String jsonString;
   private final String objectId;
@@ -58,10 +58,12 @@ public class JsonDocument implements Document {
   }
 
   /**
-   * Constructor used by @link Util.java for creating a JsonDocument object used
-   * by @link RepositoryHandler.java for building a collection over JsonDocument
+   * Constructor used by {@link JsonDocumentUtil} for creating a
+   * {@link JsonDocument} object used by {@link RepositoryHandler}
+   * for building a collection over JsonDocument.
    */
-  public JsonDocument(Map<String, List<Value>> properties, JSONObject jsonObject) {
+  public JsonDocument(Map<String, List<Value>> properties,
+                      JSONObject jsonObject) {
     this.properties = properties;
     jsonString = jsonObject.toString();
     try {
@@ -81,15 +83,13 @@ public class JsonDocument implements Document {
   }
 
   public boolean getChanged() {
-
     return this.changed;
   }
 
   /**
-   * Constructor used by DBClass for creating JsonDocument for change Detection
-   * purpose.
+   * Constructor used by {@link DBClass} for creating {@link JsonDocument}
+   * for change detection purposes.
    */
-
   public JsonDocument(JSONObject jsonObject) {
     this.properties = buildJsonProperties(jsonObject);
     jsonString = jsonObject.toString();
@@ -102,7 +102,6 @@ public class JsonDocument implements Document {
       throw new IllegalArgumentException(
           "Unable to parse for docID from the JSON string:" + jsonString);
     }
-
   }
 
   public String getDocumentId() {
@@ -115,12 +114,13 @@ public class JsonDocument implements Document {
 
   /**
    * A class level method for extracting attributes from JSONObject object and
-   * creating a Map<String,List<Value>> used by the superclass(@link
-   * SimpleDocument) constructor and hence creating a JsonDocument Object.
+   * creating a {@code Map<String,List<Value>>} used by the superclass({@link
+   * SimpleDocument}) constructor and hence creating a JsonDocument Object.
    */
   @SuppressWarnings("unchecked")
   private static Map<String, List<Value>> buildJsonProperties(JSONObject jo) {
-    ImmutableMap.Builder<String, List<Value>> mapBuilder = new ImmutableMap.Builder<String, List<Value>>();
+    ImmutableMap.Builder<String, List<Value>> mapBuilder =
+        new ImmutableMap.Builder<String, List<Value>>();
     Iterator<String> jsonKeys = jo.keys();
     while (jsonKeys.hasNext()) {
 
@@ -137,7 +137,7 @@ public class JsonDocument implements Document {
 
   /**
    * A class level method for extracting attributes from JSONObject object used
-   * by buildJsonProperties.
+   * by {@link #buildJsonProperties}.
    */
   private static void extractAttributes(JSONObject jo,
       ImmutableMap.Builder<String, List<Value>> mapBuilder, String key)
@@ -167,8 +167,8 @@ public class JsonDocument implements Document {
       throw new IllegalArgumentException(
           "Internal consistency error: missing docid", e);
     }
-    mapBuilder.put(SpiConstants.PROPNAME_DOCID, ImmutableList.of(Value.getStringValue(docid)));
-
+    mapBuilder.put(SpiConstants.PROPNAME_DOCID,
+                   ImmutableList.of(Value.getStringValue(docid)));
   }
 
   public Property findProperty(String name) throws RepositoryDocumentException {
@@ -189,18 +189,22 @@ public class JsonDocument implements Document {
     // Null mimeTypeProperty indicates MimeType detection needs to be done
     // for Blob content.
     if (mimeTypeProperty == null) {
-      String docId = this.properties.get(SpiConstants.PROPNAME_DOCID).iterator().next().toString();
+      String docId = this.properties.get(SpiConstants.PROPNAME_DOCID)
+          .iterator().next().toString();
       String mimeType = null;
       List<Value> content = this.properties.get(SpiConstants.PROPNAME_CONTENT);
-      InputStream is = ((BinaryValue) content.iterator().next()).getInputStream();
+      InputStream is =
+          ((BinaryValue) content.iterator().next()).getInputStream();
       int mimeTypeSupportLevel = 1;
 
       try {
-        mimeType = MimeTypeFinder.getInstance().find(is, traversalContext);
+        mimeType = MimeTypeFinder.getInstance().getMimeType(is);
         is.close();
-        this.properties.put(SpiConstants.PROPNAME_MIMETYPE, Collections.singletonList(Value.getStringValue(mimeType)));
+        this.properties.put(SpiConstants.PROPNAME_MIMETYPE,
+            Collections.singletonList(Value.getStringValue(mimeType)));
         if (traversalContext != null) {
-          mimeTypeSupportLevel = traversalContext.mimeTypeSupportLevel(mimeType);
+          mimeTypeSupportLevel =
+              traversalContext.mimeTypeSupportLevel(mimeType);
         }
       } catch (IOException e) {
         // TODO Auto-generated catch block
@@ -208,11 +212,13 @@ public class JsonDocument implements Document {
       }
 
       if (mimeTypeSupportLevel == 0) {
-        LOG.warning("Skipping the contents with docId : " + docId
-            + " as content mime type " + mimeType + " is not supported");
+        LOG.warning("Skipping the contents with docId: " + docId
+            + " as content mime type " + mimeType + " is not supported.");
         return 0;
       } else if (mimeTypeSupportLevel < 0) {
-        String msg = new StringBuilder("Skipping the document with docId : ").append(docId).append(" as the mime type ").append(mimeType).append(" is in the 'ignored' mimetypes list").toString();
+        String msg = new StringBuilder("Skipping the document with docId: ")
+            .append(docId).append(" as the mime type ").append(mimeType)
+            .append(" is in the 'ignored' mimetypes list.").toString();
         LOG.warning(msg);
         throw new SkippedDocumentException(msg);
       }
