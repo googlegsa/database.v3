@@ -4,7 +4,7 @@
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
+//     http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -35,7 +35,8 @@ import java.util.logging.Logger;
  * Implementation of {@link ConnectorType} for {@link DBConnectorType}.
  */
 public class DBConnectorType implements ConnectorType {
-  private static final Logger LOG = Logger.getLogger(DBConnectorType.class.getName());
+  private static final Logger LOG =
+      Logger.getLogger(DBConnectorType.class.getName());
   private static final String LOCALE_DB = "config/DbConnectorResources";
   private ResourceBundle resource;
   private static final String VALUE = "value";
@@ -102,9 +103,12 @@ public class DBConnectorType implements ConnectorType {
   private static final String ON_CLICK = "onClick";
   public static final String NO_EXT_METADATA = "noExt";
 
-  private static final String COMPLETE_URL_SCRIPT = "'javascript:setReadOnlyProperties(false , true , true)'";
-  private static final String DOC_ID_SCRIPT = "'javascript:setReadOnlyProperties(true , false , true)'";
-  private static final String BLOB_CLOB_SCRIPT = "'javascript:setReadOnlyProperties(true , true , false)'";
+  private static final String COMPLETE_URL_SCRIPT =
+      "'javascript:setReadOnlyProperties(false , true , true)'";
+  private static final String DOC_ID_SCRIPT =
+      "'javascript:setReadOnlyProperties(true , false , true)'";
+  private static final String BLOB_CLOB_SCRIPT =
+      "'javascript:setReadOnlyProperties(true , true , false)'";
 
   private final Set<String> configKeys;
   private String initialConfigForm = null;
@@ -140,9 +144,7 @@ public class DBConnectorType implements ConnectorType {
     if (configKeys == null) {
       throw new IllegalStateException();
     }
-
     this.initialConfigForm = makeConfigForm(null);
-
     return initialConfigForm;
   }
 
@@ -186,10 +188,8 @@ public class DBConnectorType implements ConnectorType {
 
     appendStartRow(buf, key, red, value, config);
 
-    /*
-     * Check if key is "externalMetadata". For this label we don't have to
-     * create corresponding Text Field/Area . End TD and TR elements and return.
-     */
+    // Check if key is "externalMetadata". For this label we don't have to
+    // create corresponding Text Field/Area . End TD and TR elements and return.
     if (EXT_METADATA.equalsIgnoreCase(key)) {
       appendEndRow(buf);
       return buf.toString();
@@ -197,9 +197,7 @@ public class DBConnectorType implements ConnectorType {
 
     buf.append(OPEN_ELEMENT);
 
-    /*
-     * Create text area for SQL Query, XSLT and AuthZ Query fields.
-     */
+    // Create text area for SQL Query, XSLT and AuthZ Query fields.
     if (key.equals(SQL_QUERY) || key.equals(XSLT) || AUTHZ_QUERY.equals(key)) {
       buf.append(TEXT_AREA);
       appendAttribute(buf, ROWS, ROWS_VALUE);
@@ -273,7 +271,7 @@ public class DBConnectorType implements ConnectorType {
   }
 
   /**
-   * This method creates the 'TR' and 'TD' elements for Fields Labels. Field
+   * Creates the 'TR' and 'TD' elements for Fields Labels. Field
    * labels are displayed in RED if there is any validation error.
    *
    * @param buf
@@ -306,16 +304,11 @@ public class DBConnectorType implements ConnectorType {
       buf.append("<font color=\"red\">");
     }
 
-    /*
-     * add radio buttons before "Stylesheet", "Document URL Field",
-     * "Document Id Field" and "BLOB/CLOB Field"
-     */
-
+    // Add radio buttons before "Stylesheet", "Document URL Field",
+    // "Document Id Field" and "BLOB/CLOB Field"
     if (DOCUMENT_URL_FIELD.equals(key)) {
-      /*
-       * set isChecked flag true only if value of Document URL Field is not
-       * empty.
-       */
+      // Set isChecked flag true only if value of Document URL Field is not
+      // empty.
       boolean isChecked = value != null && value.trim().length() > 0;
       buf.append(getRadio(COMPLETE_URL, isChecked));
     } else if (DOCUMENT_ID_FIELD.equals(key)) {
@@ -323,10 +316,8 @@ public class DBConnectorType implements ConnectorType {
       if (config != null) {
         baseURL = config.get(BASE_URL);
       }
-      /*
-       * set isChecked flag true if value of Document Id field is not empty or
-       * if user has entered value for base URL.
-       */
+      // Set isChecked flag true if value of Document ID field is not empty or
+      // if user has entered value for base URL.
       boolean isChecked = (value != null && value.trim().length() > 0)
           || (baseURL != null && baseURL.trim().length() > 0);
       buf.append(getRadio(DOC_ID, isChecked));
@@ -339,9 +330,8 @@ public class DBConnectorType implements ConnectorType {
           || (fetchURL != null && fetchURL.trim().length() > 0);
       buf.append(getRadio(BLOB_CLOB, isChecked));
     }
-    /*
-     * No label for External Metadata Type(Radio button)
-     */
+
+    // No label for External Metadata Type (Radio button).
     if (!GROUP.equalsIgnoreCase(key)) {
       buf.append(OPEN_ELEMENT);
       buf.append(DIV);
@@ -360,13 +350,12 @@ public class DBConnectorType implements ConnectorType {
       buf.append(BOLD_TEXT_END);
     }
 
-    /*
-     * add red asterisk for required fields.
-     */
+    // Add red asterisk for required fields.
     if (requiredFields.contains(key)) {
       buf.append(OPEN_ELEMENT);
       buf.append(DIV);
-      appendAttribute(buf, "style", "text-align: right; color: red; font-weight: bold; margin-right: 0.3em;");
+      appendAttribute(buf, "style", "text-align: right; color: red; "
+                      + "font-weight: bold; margin-right: 0.3em;");
       buf.append(CLOSE_ELEMENT);
       buf.append(RED_ASTERISK);
       buf.append(OPEN_ELEMENT_SLASH);
@@ -413,7 +402,8 @@ public class DBConnectorType implements ConnectorType {
     } catch (MissingResourceException e) {
       resource = ResourceBundle.getBundle(LOCALE_DB);
     }
-    ConfigureResponse result = new ConfigureResponse("", getInitialConfigForm());
+    ConfigureResponse result =
+        new ConfigureResponse("", getInitialConfigForm());
     LOG.info("getConfigForm form:\n" + result.getFormSnippet());
     return result;
   }
@@ -462,16 +452,13 @@ public class DBConnectorType implements ConnectorType {
   }
 
   public String getRadio(String value, boolean isChecked) {
-
     StringBuilder stringBuilder = new StringBuilder();
-
     stringBuilder.append(OPEN_ELEMENT + INPUT + " " + TYPE + "=" + "'" + RADIO
         + "' " + NAME + "=" + "'" + GROUP + "' " + VALUE + "=" + "'" + value
         + "' ");
     if (isChecked) {
       stringBuilder.append(CHECKED + "=" + "'" + CHECKED + "' ");
     }
-
     if (COMPLETE_URL.equals(value)) {
       stringBuilder.append(ON_CLICK + "=" + COMPLETE_URL_SCRIPT);
     } else if (DOC_ID.equals(value)) {
@@ -485,7 +472,7 @@ public class DBConnectorType implements ConnectorType {
   }
 
   /**
-   * This method builds the JavaScript for making External metadata related
+   * Builds the JavaScript for making External metadata related
    * fields (Document URL Field , Document Id Field , Base URL , BLOB/CLOB Field
    * and Fetch URL Field) and "AuthZ Query" field editable/non-editable
    * depending upon user selection. When user selects any of the external
@@ -497,13 +484,13 @@ public class DBConnectorType implements ConnectorType {
    *         editable/non-editable depending upon context.
    */
   private static String getJavaScript() {
-
     /*
      * urlField , docIdField , lobField are boolean values for making external
      * metadata fields readOnly. "AuthZ Field" will become editable when user
      * selects BLOB/CLOB Field i.e when BLOB/CLOB field is editable.
      */
-    String javascript = "<SCRIPT> function setReadOnlyProperties(urlField , docIdField , lobField){"
+    String javascript = "<SCRIPT> "
+        + "function setReadOnlyProperties(urlField , docIdField , lobField){"
         + "document.getElementById('documentURLField').readOnly=urlField ;    "
         + "document.getElementById('documentIdField').readOnly=docIdField ;    "
         + "document.getElementById('baseURL').readOnly=docIdField ;    "
@@ -522,7 +509,7 @@ public class DBConnectorType implements ConnectorType {
   }
 
   /**
-   * This method set readOnly='true' for External Metadata fields like
+   * Set readOnly='true' for External Metadata fields like
    * "Document URl Field", "Document Id Field" and "Base URL Field". "Base URL"
    * and "Fetch URL" fields are set read-only , only when "Document ID Field"
    * and "BLOB/CLOB Field" are read only respectively.
@@ -533,20 +520,14 @@ public class DBConnectorType implements ConnectorType {
    */
   private void setReadOnly(String key, String value, StringBuilder buf,
       Map<String, String> config) {
-    /*
-     * Set fields non-editable only if they are empty
-     */
+    // Set fields non-editable only if they are empty.
     if (value == null || value.trim().equals("")) {
       if (DOCUMENT_URL_FIELD.equals(key)) {
-        /*
-         * Set "Document URL Field" non-editable
-         */
+        // Set "Document URL Field" non-editable.
         appendAttribute(buf, DISABLED, TRUE);
       } else if (DOCUMENT_ID_FIELD.equals(key)) {
-        /*
-         * Set "Document Id Field" non-editable only if user has not entered
-         * value for base URL
-         */
+        // Set "Document Id Field" non-editable only if user has not entered
+        // value for base URL.
         String baseURL = null;
         if (config != null) {
           baseURL = config.get(BASE_URL);
@@ -556,31 +537,24 @@ public class DBConnectorType implements ConnectorType {
           isDocIdDisabled = true;
         }
       } else if (BASE_URL.equals(key) && isDocIdDisabled) {
-        /*
-         * Set "Base URL" field non-editable if "Document Id Field" field is
-         * non-editable.
-         */
+        // Set "Base URL" field non-editable if "Document Id Field" field is
+        // non-editable.
         appendAttribute(buf, DISABLED, TRUE);
         isDocIdDisabled = false;
       } else if (CLOB_BLOB_FIELD.equals(key)) {
-        /*
-         * Set "BLOB/CLOB Field" non-editable only if user has not entered value
-         * for fetch URL.
-         */
+        // Set "BLOB/CLOB Field" non-editable only if user has not entered value
+        // for fetch URL.
         String fetchURL = null;
         if (config != null) {
           fetchURL = config.get(FETCH_URL_FIELD);
         }
-
         if (fetchURL == null || fetchURL.trim().length() == 0) {
           appendAttribute(buf, DISABLED, TRUE);
           isLOBFieldDisable = true;
         }
       } else if (FETCH_URL_FIELD.equals(key) && isLOBFieldDisable) {
-        /*
-         * Set "Fetch URL" field not editable if "BLOB/CLOB Field" field is
-         * non-editable.
-         */
+        // Set "Fetch URL" field not editable if "BLOB/CLOB Field" field is
+        // non-editable.
         appendAttribute(buf, DISABLED, TRUE);
         isLOBFieldDisable = false;
       }

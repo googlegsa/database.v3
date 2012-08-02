@@ -4,7 +4,7 @@
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
+//     http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -54,7 +54,8 @@ public class XmlUtilsTest extends TestCase {
         + "<firstName>first_01</firstName><id>1</id>"
         + "<lastName>last_01</lastName>" + "</testdb_>";
     try {
-      String rowXml = XmlUtils.getXMLRow("testdb_", rowMap, TestUtils.getStandardPrimaryKeys(), null, null, true);
+      String rowXml = XmlUtils.getXMLRow("testdb_", rowMap,
+           TestUtils.getStandardPrimaryKeys(), null, null, true);
       assertTrue(rowXml.contains(expected));
     } catch (DBException e) {
       fail(" Caught exception");
@@ -68,7 +69,8 @@ public class XmlUtilsTest extends TestCase {
         "<th>email</th>", "<th>firstName</th>", "<td>1</td>",
         "<td>last_01</td>", "<td>01@google.com</td>", "<td>first_01</td>" };
     try {
-      String rowXml = XmlUtils.getXMLRow("testdb_", rowMap, TestUtils.getStandardPrimaryKeys(), "", null, true);
+      String rowXml = XmlUtils.getXMLRow("testdb_", rowMap,
+          TestUtils.getStandardPrimaryKeys(), "", null, true);
       assertCheckPatterns(rowXml, expectedPatterns);
     } catch (DBException e) {
       fail(" Caught exception");
@@ -76,7 +78,6 @@ public class XmlUtilsTest extends TestCase {
   }
 
   public final void testGetXmlRowWithXslt() {
-
     String xslt = "<?xml version=\"1.0\" encoding=\"ISO-8859-1\" "
         + "standalone=\"no\"?><xsl:stylesheet xmlns:xsl="
         + "\"http://www.w3.org/1999/XSL/Transform\" version=\"1.0\">\n\n"
@@ -100,7 +101,8 @@ public class XmlUtilsTest extends TestCase {
         "<td>01@google.com</td>", "<td>first_01</td>", "<td>1</td>",
         "<td>last_01</td>" };
     try {
-      String rowXml = XmlUtils.getXMLRow("testdb_", rowMap, TestUtils.getStandardPrimaryKeys(), xslt, null, true);
+      String rowXml = XmlUtils.getXMLRow("testdb_", rowMap,
+          TestUtils.getStandardPrimaryKeys(), xslt, null, true);
       assertCheckPatterns(rowXml, expectedPatterns);
     } catch (DBException e) {
       fail(" Caught exception");
@@ -184,7 +186,6 @@ public class XmlUtilsTest extends TestCase {
    */
   private void assertCheckPatterns(final String docStringUnderTest,
       final String[] expectedPatterns) {
-
     Pattern pattern = null;
     Matcher match = null;
 

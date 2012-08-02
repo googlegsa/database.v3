@@ -1,16 +1,16 @@
-//Copyright 2011 Google Inc.
+// Copyright 2011 Google Inc.
 //
-//Licensed under the Apache License, Version 2.0 (the "License");
-//you may not use this file except in compliance with the License.
-//You may obtain a copy of the License at
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
 //
-//http://www.apache.org/licenses/LICENSE-2.0
+//     http://www.apache.org/licenses/LICENSE-2.0
 //
-//Unless required by applicable law or agreed to in writing, software
-//distributed under the License is distributed on an "AS IS" BASIS,
-//WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//See the License for the specific language governing permissions and
-//limitations under the License.
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 package com.google.enterprise.connector.db;
 
@@ -24,10 +24,9 @@ import junit.framework.TestCase;
 public class DocIdUtilTest extends TestCase {
 
   /**
-   * test getDocIdString method
+   * Test getDocIdString method.
    */
   public void testGetDocIdString() {
-
     // doc Ids under test
     String docId1 = "1,Jan";
     String docId2 = "2,Feb";
@@ -47,7 +46,7 @@ public class DocIdUtilTest extends TestCase {
   }
 
   /**
-   *test method decodeBase64String
+   * Test method decodeBase64String.
    */
   public void testDecodeBase64String() {
     String encodedString = "MSxtYXJjaA==";
@@ -59,7 +58,7 @@ public class DocIdUtilTest extends TestCase {
   }
 
   /**
-   * test getBase64EncodedString method
+   * Test getBase64EncodedString method.
    */
   public void testGetBase64EncodedString() {
     String testString = "1,march";
@@ -70,39 +69,31 @@ public class DocIdUtilTest extends TestCase {
   }
 
   /**
-   *test generateDocId method.
+   * Test generateDocId method.
    */
   public void testGenerateDocId() {
-
-    /*
-     * create a row representing a row in database table.
-     */
+    // Create a row representing a row in database table.
     Map<String, Object> row = new HashMap<String, Object>();
-    /*
-     * array of primary key column names.
-     */
+
+    // Array of primary key column names.
     String[] primaryKeys = new String[2];
 
     String pkCol1 = "id";
     String pkCol2 = "month";
-    /*
-     * add "id" and "month" as primary key columns.
-     */
+
+    // Add "id" and "month" as primary key columns.
     primaryKeys[0] = pkCol1;
     primaryKeys[1] = pkCol2;
 
-    /*
-     * put "id" and "month" column values in map along with other columns.
-     */
+    // Put "id" and "month" column values in map along with other columns.
     row.put(pkCol1, 1);
     row.put(pkCol2, "Jan");
     row.put("col1", "value1");
     row.put("col2", "value2");
     row.put("col3", "value3");
-    /*
-     * expected doc Id should be Base 64 encoded comma separated values of
-     * primary key columns that is "1,Jan" .
-     */
+
+    // Expected doc ID should be Base64-encoded, comma-separated values of
+    // primary key columns, for example: "1,Jan".
     String expectedDocId = "MSxKYW4";
     String actualDocId = null;
     try {

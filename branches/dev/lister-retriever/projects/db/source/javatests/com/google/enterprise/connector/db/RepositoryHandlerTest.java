@@ -4,7 +4,7 @@
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-// http://www.apache.org/licenses/LICENSE-2.0
+//     http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -34,7 +34,8 @@ public class RepositoryHandlerTest extends DBTestBase {
   public void testMakeRepositoryHandlerFromConfig() {
     try {
       DBClient dbClient = getDbClient();
-      RepositoryHandler repositoryHandler = RepositoryHandler.makeRepositoryHandlerFromConfig(dbClient, null);
+      RepositoryHandler repositoryHandler =
+          RepositoryHandler.makeRepositoryHandlerFromConfig(dbClient, null);
       assertNotNull(repositoryHandler);
     } catch (RepositoryException e) {
       fail();
@@ -46,7 +47,8 @@ public class RepositoryHandlerTest extends DBTestBase {
     try {
       int cursorDB = 5;
       dbClient = getDbClient();
-      RepositoryHandler repositoryHandler = RepositoryHandler.makeRepositoryHandlerFromConfig(dbClient, null);
+      RepositoryHandler repositoryHandler =
+          RepositoryHandler.makeRepositoryHandlerFromConfig(dbClient, null);
       repositoryHandler.setCursorDB(cursorDB);
       assertEquals(5, repositoryHandler.getCursorDB());
     } catch (RepositoryException e) {
@@ -63,9 +65,11 @@ public class RepositoryHandlerTest extends DBTestBase {
     DBClient dbClient;
     try {
       dbClient = new DBClient(dbContext);
-      RepositoryHandler repositoryHandler = RepositoryHandler.makeRepositoryHandlerFromConfig(dbClient, null);
+      RepositoryHandler repositoryHandler =
+          RepositoryHandler.makeRepositoryHandlerFromConfig(dbClient, null);
       repositoryHandler.setTraversalContext(new ProductionTraversalContext());
-      LinkedList<JsonDocument> jsonDocumenList = repositoryHandler.executeQueryAndAddDocs();
+      LinkedList<JsonDocument> jsonDocumenList =
+          repositoryHandler.executeQueryAndAddDocs();
       JsonDocument jsonDocument = jsonDocumenList.iterator().next();
       assertEquals("MQ", jsonDocument.getDocumentId());
     } catch (DBException e) {
@@ -77,9 +81,11 @@ public class RepositoryHandlerTest extends DBTestBase {
   public void testExecuteQueryAndAddDocs() {
     try {
       DBClient dbClient = getDbClient();
-      RepositoryHandler repositoryHandler = RepositoryHandler.makeRepositoryHandlerFromConfig(dbClient, null);
+      RepositoryHandler repositoryHandler =
+          RepositoryHandler.makeRepositoryHandlerFromConfig(dbClient, null);
       repositoryHandler.setTraversalContext(new ProductionTraversalContext());
-      LinkedList<JsonDocument> jsonDocumenList = repositoryHandler.executeQueryAndAddDocs();
+      LinkedList<JsonDocument> jsonDocumenList =
+          repositoryHandler.executeQueryAndAddDocs();
       assertEquals(true, jsonDocumenList.iterator().hasNext());
     } catch (RepositoryException e) {
       fail("Repository Exception in testExecuteQueryAndAddDocs");

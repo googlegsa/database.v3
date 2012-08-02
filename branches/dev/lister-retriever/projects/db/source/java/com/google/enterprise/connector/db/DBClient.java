@@ -4,7 +4,7 @@
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
+//     http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -45,7 +45,6 @@ import javax.sql.DataSource;
  * required by IBatis.
  */
 public class DBClient {
-
   private static final Logger LOG = Logger.getLogger(DBClient.class.getName());
 
   private final DBContext dbContext;
@@ -101,7 +100,6 @@ public class DBClient {
    *
    * @return SqlMapClient that is used to perform database operations like CRUD.
    */
-
   public SqlMapClient getSqlMapClient() {
     return sqlMapClient;
   }
@@ -128,9 +126,9 @@ public class DBClient {
     try {
       rows = sqlMapClient.queryForList("IbatisDBClient.getAll", null);
     } catch (SQLException e) {
-      throw new DBException("Could not execute query on the database\n", e);
+      throw new DBException("Could not execute query on the database.", e);
     }
-    LOG.info("Rows returned : " + rows);
+    LOG.info("Rows returned: " + rows);
     return rows;
   }
 
@@ -166,7 +164,7 @@ public class DBClient {
   }
 
   /**
-   * This method executes the partial parameterized query for given keyValue and
+   * Executes the partial parameterized query for given keyValue and
    * returns the list of records having their key value greater than keyValue
    * parameter.
    *
@@ -214,7 +212,7 @@ public class DBClient {
           + e.toString());
       rows = new ArrayList<Map<String, Object>>();
     } catch (SQLException e1) {
-      LOG.warning("Unable to connect to the database\n" + e1.toString());
+      LOG.warning("Unable to connect to the database:\n" + e1.toString());
       throw new SnapshotRepositoryRuntimeException(
           "Unable to connect to the database\n", e1);
     } finally {
@@ -264,7 +262,7 @@ public class DBClient {
     String newString = " <property name=\"JDBC.Password\" value=\"" + "*****"
         + "\" />";
 
-    LOG.config("Generated sqlMapConfig : \n"
+    LOG.config("Generated sqlMapConfig:\n"
         + sqlMapConfig.replace(oldString, newString));
   }
 
@@ -298,10 +296,9 @@ public class DBClient {
      */
     if (dbContext.getAuthZQuery() != null
         && dbContext.getAuthZQuery().trim().length() > 0) {
-      sqlMap = sqlMap
-          + "<select id=\"getAuthorizedDocs\"  parameterClass=\"java.util.HashMap\"  resultClass=\"java.lang.String\"> \n "
+      sqlMap = sqlMap + "<select id=\"getAuthorizedDocs\"  parameterClass="
+          + "\"java.util.HashMap\"  resultClass=\"java.lang.String\"> \n "
           + dbContext.getAuthZQuery() + "</select>";
-
       dbContext.setPublicFeed(false);
     } else {
       dbContext.setPublicFeed(true);
@@ -324,7 +321,7 @@ public class DBClient {
   }
 
   /**
-   * This method return the database name and version details.
+   * Returns the database name and version details.
    *
    * @author Suresh_Ghuge
    * @return database name and version details
@@ -347,14 +344,14 @@ public class DBClient {
         }
       }
     } catch (SQLException e) {
-      LOG.warning("Caught SQLException while fetching database details"
+      LOG.warning("Caught SQLException while fetching database details: "
           + e.toString());
     } finally {
       if (conn != null) {
         try {
           conn.close();
         } catch (SQLException e) {
-          LOG.warning("Caught SQLException while closing connection : "
+          LOG.warning("Caught SQLException while closing connection: "
               + e.toString());
         }
       }
@@ -363,7 +360,7 @@ public class DBClient {
   }
 
   /**
-   * This method executes the authZ query for given user-name and list of
+   * Executes the AuthZ query for given user-name and list of
    * documents and returns the list of authorized documents.
    *
    * @param userName user-name
@@ -373,20 +370,18 @@ public class DBClient {
   @SuppressWarnings("unchecked")
   public List<String> executeAuthZQuery(String userName, String docIds) {
     List<String> authorizedDocs = new ArrayList<String>();
-    /*
-     * Create a hashmap as to provide input parameters user-name and list of
-     * documents to authZ query.
-     */
+    // Create a hashmap as to provide input parameters userName and list of
+    // documents to AuthZ query.
     Map<String, Object> paramMap = new HashMap<String, Object>();
     paramMap.put("username", userName);
     paramMap.put("docIds", docIds);
-    /*
-     * Execute the authZ query.
-     */
+
+    // Execute the AuthZ query.
     try {
-      authorizedDocs = sqlMapClient.queryForList("IbatisDBClient.getAuthorizedDocs", paramMap);
+      authorizedDocs = sqlMapClient.queryForList(
+          "IbatisDBClient.getAuthorizedDocs", paramMap);
     } catch (Exception e) {
-      LOG.warning("Could not execute AuthZ query on the database\n"
+      LOG.warning("Could not execute AuthZ query on the database.\n"
           + e.getMessage());
     }
     return authorizedDocs;

@@ -4,13 +4,14 @@
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
+//     http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 package com.google.enterprise.connector.db;
 
 import com.google.enterprise.connector.spi.RepositoryException;
@@ -33,15 +34,12 @@ public class DBClientTest extends DBTestBase {
   }
 
   public void testDBClient() {
-
     try {
       DBClient dbClient = getDbClient();
       assertNotNull(dbClient);
     } catch (RepositoryException e) {
       fail("Repository Exception in testDBClient");
-
     }
-
   }
 
   /* @Override */
@@ -50,22 +48,21 @@ public class DBClientTest extends DBTestBase {
   }
 
   public void testConnectivity() {
-
     Connection connection;
     try {
-      connection = getDbClient().getSqlMapClient().getDataSource().getConnection();
+      connection =
+          getDbClient().getSqlMapClient().getDataSource().getConnection();
       assertNotNull(connection);
     } catch (SQLException e) {
       fail("SQL Exception in testConnectivity");
     } catch (RepositoryException e) {
       fail("Repository Exception in testConnectivity");
     }
-
   }
 
   /**
    * Test Case when SQL Crawl Query Contains XML reserved symbols(<,>) when
-   * IbatisSQLMap is generated with CDATA section for crawl query
+   * IbatisSQLMap is generated with CDATA section for crawl query.
    */
   public void testDBClientWithCDATA() {
     String sqlQuery = "SELECT * FROM TestEmpTable where id < 15";
@@ -82,7 +79,7 @@ public class DBClientTest extends DBTestBase {
 
   /**
    * Test Case when SQL Crawl Query Contains XML reserved symbols(<,>) when
-   * IbatisSQLMap is generated without CDATA section for crawl query
+   * IbatisSQLMap is generated without CDATA section for crawl query.
    */
   public void testDBClientWithoutCDATA() {
     String sqlQuery = "SELECT * FROM TestEmpTable where id < 15";
@@ -100,7 +97,7 @@ public class DBClientTest extends DBTestBase {
   }
 
   /**
-   * Method to generate IbatisSQLMAp without CDATA section
+   * Method to generate IbatisSQLMAp without CDATA section.
    */
   private String generateIbatisSqlMap(DBContext dbContext) {
     String sqlMap = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n"

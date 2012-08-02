@@ -4,7 +4,7 @@
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
+//     http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -103,7 +103,8 @@ public class RepositoryHandler {
    * result set(map).
    */
   private void setPrimaryKeyColumn(Set<String> keySet) {
-    String keys[] = dbClient.getDBContext().getPrimaryKeys().split(Util.PRIMARY_KEYS_SEPARATOR);
+    String keys[] = dbClient.getDBContext().getPrimaryKeys()
+        .split(Util.PRIMARY_KEYS_SEPARATOR);
     String primaryKey = keys[0];
     for (String key : keySet) {
       if (primaryKey.equalsIgnoreCase(key)) {
@@ -145,10 +146,11 @@ public class RepositoryHandler {
     if (!dbClient.getDBContext().isParameterizedQueryFlag()) {
 
       try {
-        rows = dbClient.executePartialQuery(cursorDB, dbClient.getDBContext().getNumberOfRows());
+        rows = dbClient.executePartialQuery(cursorDB,
+            dbClient.getDBContext().getNumberOfRows());
       } catch (SnapshotRepositoryRuntimeException e) {
-        LOG.info("Repository Unreachable."
-            + "Setting CursorDB value to zero to start traversal from begining after recovery. ");
+        LOG.info("Repository Unreachable.  Setting CursorDB value to zero to "
+            + "start traversal from begining after recovery.");
         setCursorDB(0);
         LOG.warning("Unable to connect to the database\n" + e.toString());
         throw new SnapshotRepositoryRuntimeException(
@@ -173,17 +175,17 @@ public class RepositoryHandler {
         }
         rows = dbClient.executeParameterizePartialQuery(keyValue);
       } catch (SnapshotRepositoryRuntimeException e) {
-        LOG.info("Repository Unreachable."
-            + "Resetting  keyValue to minValue for starting traversal from begining after recovery. ");
+        LOG.info("Repository Unreachable. Resetting keyValue to minValue for "
+            + "starting traversal from begining after recovery.");
         keyValue = dbClient.getDBContext().getMinValue();
         LOG.warning("Unable to connect to the database\n" + e.toString());
         throw new SnapshotRepositoryRuntimeException(
-            "Unable to connect to the database\n ", e);
+            "Unable to connect to the database\n", e);
       }
       if (rows.size() == 0) {
         LOG.info("No records returned for keyValue= " + keyValue);
-        LOG.info("Crawl cycle completed for ordered Database "
-            + "Resetting  keyValue  to minValue for starting traversal from begining ");
+        LOG.info("Crawl cycle completed for ordered Database. Resetting "
+            + "keyValue to minValue for starting traversal from begining.");
         keyValue = dbClient.getDBContext().getMinValue();
       } else {
         updateKeyValue(rows);
@@ -192,7 +194,8 @@ public class RepositoryHandler {
     if (traversalContext == null) {
       LOG.info("Setting Traversal Context");
       setTraversalContext(traversalContextManager.getTraversalContext());
-      JsonDocument.setTraversalContext(traversalContextManager.getTraversalContext());
+      JsonDocument.setTraversalContext(
+          traversalContextManager.getTraversalContext());
     }
     JsonDocument jsonDoc = null;
     if (rows != null && rows.size() > 0) {
@@ -205,10 +208,14 @@ public class RepositoryHandler {
 
         for (Map<String, Object> row : rows) {
           try {
-            jsonDoc = JsonDocumentUtil.generateMetadataURLFeed(dbClient.getDBContext().getDbName(), dbClient.getDBContext().getPrimaryKeys().split(Util.PRIMARY_KEYS_SEPARATOR), row, dbClient.getDBContext().getHostname(), dbClient.getDBContext(), "");
+            jsonDoc = JsonDocumentUtil.generateMetadataURLFeed(
+                dbClient.getDBContext().getDbName(), dbClient.getDBContext()
+                .getPrimaryKeys().split(Util.PRIMARY_KEYS_SEPARATOR), row,
+                dbClient.getDBContext().getHostname(), dbClient.getDBContext(),
+                "");
           } catch (DBException e) {
-            LOG.warning("Cannot convert datbase record to JsonDocument for record"
-                + row + "\n" + e);
+            LOG.warning("Cannot convert datbase record to JsonDocument for "
+                + "record "+ row + "\n" + e);
           }
           docList.add(jsonDoc);
         }
@@ -218,10 +225,14 @@ public class RepositoryHandler {
         jsonDoc = null;
         for (Map<String, Object> row : rows) {
           try {
-            jsonDoc = JsonDocumentUtil.generateMetadataURLFeed(dbClient.getDBContext().getDbName(), dbClient.getDBContext().getPrimaryKeys().split(Util.PRIMARY_KEYS_SEPARATOR), row, dbClient.getDBContext().getHostname(), dbClient.getDBContext(), Util.WITH_BASE_URL);
+            jsonDoc = JsonDocumentUtil.generateMetadataURLFeed(
+                dbClient.getDBContext().getDbName(), dbClient.getDBContext()
+                .getPrimaryKeys().split(Util.PRIMARY_KEYS_SEPARATOR), row,
+                dbClient.getDBContext().getHostname(), dbClient.getDBContext(),
+                JsonDocumentUtil.WITH_BASE_URL);
           } catch (DBException e) {
-            LOG.warning("Cannot convert datbase record to JsonDocument for record"
-                + row + "\n" + e);
+            LOG.warning("Cannot convert datbase record to JsonDocument for "
+                + "record "+ row + "\n" + e);
           }
           docList.add(jsonDoc);
         }
@@ -231,13 +242,17 @@ public class RepositoryHandler {
         jsonDoc = null;
         for (Map<String, Object> row : rows) {
           try {
-            jsonDoc = JsonDocumentUtil.largeObjectToDoc(dbClient.getDBContext().getDbName(), dbClient.getDBContext().getPrimaryKeys().split(Util.PRIMARY_KEYS_SEPARATOR), row, dbClient.getDBContext().getHostname(), dbClient.getDBContext(), traversalContext);
+            jsonDoc = JsonDocumentUtil.largeObjectToDoc(
+                dbClient.getDBContext().getDbName(), dbClient.getDBContext()
+                .getPrimaryKeys().split(Util.PRIMARY_KEYS_SEPARATOR), row,
+                dbClient.getDBContext().getHostname(), dbClient.getDBContext(),
+                traversalContext);
             if (jsonDoc != null) {
               docList.add(jsonDoc);
             }
           } catch (DBException e) {
-            LOG.warning("Cannot convert datbase record to JsonDocument for record"
-                + row + "\n" + e);
+            LOG.warning("Cannot convert datbase record to JsonDocument for "
+                + "record" + row + "\n" + e);
           }
         }
         break;
@@ -245,13 +260,17 @@ public class RepositoryHandler {
       default:
         for (Map<String, Object> row : rows) {
           try {
-            jsonDoc = JsonDocumentUtil.rowToDoc(dbClient.getDBContext().getDbName(), dbClient.getDBContext().getPrimaryKeys().split(Util.PRIMARY_KEYS_SEPARATOR), row, dbClient.getDBContext().getHostname(), dbClient.getDBContext().getXslt(), dbClient.getDBContext());
+            jsonDoc = JsonDocumentUtil.rowToDoc(
+                dbClient.getDBContext().getDbName(), dbClient.getDBContext()
+                .getPrimaryKeys().split(Util.PRIMARY_KEYS_SEPARATOR), row,
+                dbClient.getDBContext().getHostname(), dbClient.getDBContext()
+                .getXslt(), dbClient.getDBContext());
             if (jsonDoc != null) {
               docList.add(jsonDoc);
             }
           } catch (DBException e) {
-            LOG.warning("Cannot convert datbase record to JsonDocument for record"
-                + row + "\n" + e);
+            LOG.warning("Cannot convert datbase record to JsonDocument for "
+                + "record" + row + "\n" + e);
           }
         }
         break;
@@ -263,13 +282,11 @@ public class RepositoryHandler {
   }
 
   /**
-   * this method will detect the execution mode from the column names(Normal,
+   * Detect the execution mode from the column names(Normal,
    * CLOB, BLOB or External Metadata) of the DB Connector and returns the
    * integer value representing execution mode
    */
-
   private int getExecutionScenario(DBContext dbContext) {
-
     String extMetaType = dbContext.getExtMetadataType();
     String lobField = dbContext.getLobField();
     String docURLField = dbContext.getDocumentURLField();
@@ -304,41 +321,32 @@ public class RepositoryHandler {
   }
 
   /**
-   * this method return appropriate log message as per current execution mode.
+   * Return appropriate log message as per current execution mode.
    *
    * @param excMode current execution mode
-   * @return
+   * @return appropriate log message as per current execution mode.
    */
   private static String getExcLogMessage(int excMode) {
-
     switch (excMode) {
-
-    case MODE_METADATA_URL: {
-      /*
-       * execution mode: Externam Metadata feed using complete document URL
-       */
-      return " DB Connector is running in External Metadata feed mode with complete document URL";
+      case MODE_METADATA_URL: {
+        // execution mode: Externam Metadata feed using complete document URL
+        return " DB Connector is running in External Metadata feed mode with "
+            + "complete document URL";
+      }
+      case MODE_METADATA_BASE_URL: {
+        // execution mode: Externam Metadata feed using Base URL and document Id
+        return " DB Connector is running in External Metadata feed mode with "
+            + "Base URL and document ID";
+      }
+      case MODE_BLOB_CLOB: {
+        // execution mode: Content feed mode for BLOB/CLOB data.
+        return
+            " DB Connector is running in Content Feed Mode for BLOB/CLOB data";
+      }
+      default: {
+        // execution mode: Content feed mode for Text data.
+        return " DB Connector is running in content feed mode for text data";
+      }
     }
-    case MODE_METADATA_BASE_URL: {
-      /*
-       * execution mode: Externam Metadata feed using Base URL and document Id
-       */
-      return " DB Connector is running in External Metadata feed mode with Base URL and document ID";
-    }
-    case MODE_BLOB_CLOB: {
-      /*
-       * execution mode: Content feed mode for BLOB/CLOB data.
-       */
-      return " DB Connector is running in Content Feed Mode for BLOB/CLOB data";
-    }
-
-    default: {
-      /*
-       * execution mode: Content feed mode for Text data.
-       */return " DB Connector is running in content feed mode for text data";
-    }
-    }
-
   }
-
 }
