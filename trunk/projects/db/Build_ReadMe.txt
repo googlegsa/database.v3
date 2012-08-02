@@ -7,8 +7,10 @@ Following are the steps to build Google Search Appliance Connector for Databases
 
 2. Ensure that you have Connector Manager on your system. You can get it at
    http://code.google.com/p/google-enterprise-connector-manager/source/checkout
-   It is recommended you check out a stable branch of the Connector Manager
-   instead of the trunk.
+   It is recommended you check out a stable branch or tag of the Connector Manager,
+   instead of the trunk.  Choose a compatible Connector Manager version
+   as described in the version.properties file in this directory.
+
    2a) svn checkout https://google-enterprise-connector-manager.googlecode.com/svn/branches/3.0.x/ google-enterprise-connector-manager
    2b) Follow the instructions for building the Connector Manager as described here:
        http://code.google.com/p/google-enterprise-connector-manager/wiki/DeveloperEnvironmentSetup
