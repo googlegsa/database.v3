@@ -14,18 +14,24 @@
 
 package com.google.enterprise.connector.db.diffing;
 
+import com.google.common.io.FileBackedOutputStream;
+import com.google.common.io.InputSupplier;
 import com.google.enterprise.connector.spi.SimpleProperty;
 import com.google.enterprise.connector.spi.Value;
+import com.google.enterprise.connector.util.InputStreamFactory;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.sql.Timestamp;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -103,15 +109,54 @@ public class JsonObjectUtil {
    * @param propertyName
    * @param propertyValue
    */
-  public void setBinaryContent(String propertyName, Object propertyValue) {
+  public void setBinaryContent(String propertyName, byte[] propertyValue) {
     if (propertyValue == null) {
       return;
     }
-    properties.put(propertyName, Collections.singletonList(
-        Value.getBinaryValue((byte[]) propertyValue)));
+    try {
+      InputStreamFactory isf = new FileBackedInputStreamFactory(propertyValue);
+      properties.put(propertyName, Collections.singletonList(
+          Value.getBinaryValue(isf)));
+    } catch (IOException e) {
+      if (LOG.isLoggable(Level.FINEST)) {
+        LOG.log(Level.WARNING, "Failed to cache document content for "
+                + propertyName, e);
+      } else {
+        LOG.warning("Failed to cache document content for " + propertyName 
+                    + ":\n" + e.toString());
+      }
+      // Resort to holding the binary data in memory, rather than on disk.
+      properties.put(propertyName, Collections.singletonList(
+          Value.getBinaryValue(propertyValue)));
+    }
   }
 
   public JSONObject getJsonObject() {
     return jsonObject;
+  }
+
+  /** An InputStreamFactory backed by a FileBackedOutputStream. */
+  private static class FileBackedInputStreamFactory
+      implements InputStreamFactory {
+    private static int IN_MEMORY_THRESHOLD = 32 * 1024;
+
+    /**
+     * We hold onto a single supplier, because when that gets finalized,
+     * the backing file will get deleted.
+     */
+    private InputSupplier<InputStream> supplier;
+
+    FileBackedInputStreamFactory(byte[] data) throws IOException {
+      FileBackedOutputStream out =
+          new FileBackedOutputStream(IN_MEMORY_THRESHOLD, true);
+      out.write(data);
+      out.close();
+      supplier = out.getSupplier();
+    }
+
+    @Override
+    public InputStream getInputStream() throws IOException {
+      return supplier.getInput();
+    }
   }
 }
