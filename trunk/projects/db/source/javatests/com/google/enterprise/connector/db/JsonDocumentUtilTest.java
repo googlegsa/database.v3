@@ -14,12 +14,14 @@
 
 package com.google.enterprise.connector.db;
 
+import com.google.common.io.ByteStreams;
 import com.google.enterprise.connector.db.diffing.JsonDocument;
 import com.google.enterprise.connector.db.diffing.JsonDocumentUtil;
 import com.google.enterprise.connector.spi.Property;
 import com.google.enterprise.connector.spi.RepositoryException;
 import com.google.enterprise.connector.spi.SkippedDocumentException;
 import com.google.enterprise.connector.spi.SpiConstants;
+import com.google.enterprise.connector.spi.Value;
 import com.google.enterprise.connector.spiimpl.BinaryValue;
 import com.google.enterprise.connector.traversal.FileSizeLimitInfo;
 import com.google.enterprise.connector.traversal.MimeTypeMap;
@@ -34,6 +36,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 import java.util.logging.Logger;
 
@@ -172,8 +175,14 @@ public class JsonDocumentUtilTest extends DBTestBase {
     dbContext = getDbContext();
 
     // In iBATIS CLOB data is represented as String or char array.
-    // Define CLOB data for this test case
-    String clobContent = "This IS CLOB Text";
+    // Define CLOB data larger than the FileBackedOutputStream will
+    // hold in memory for this test case.
+    StringBuilder builder = new StringBuilder(100000);
+    Random random = new Random();
+    for (int i = 0; i < 100000; i++) {
+      builder.append(Character.toChars(32 + random.nextInt(94)));
+    }
+    String clobContent = builder.toString();
     // set CLOB content. Use alias "dbconn_clob" for column used for storing
     // CLOB data.
     rowMap.put(dbContext.getLobField(), clobContent);
@@ -192,7 +201,7 @@ public class JsonDocumentUtilTest extends DBTestBase {
        */
       assertNull(clobDoc);
       // increase the maximum supported size of the document
-      fileSizeLimitInfo.setMaxDocumentSize(1024);
+      fileSizeLimitInfo.setMaxDocumentSize(1024 * 1024);
       context.setFileSizeLimitInfo(fileSizeLimitInfo);
       clobDoc = JsonDocumentUtil.largeObjectToDoc("testdb_", primaryKeys,
           rowMap, "localhost", dbContext, context);
@@ -201,14 +210,17 @@ public class JsonDocumentUtilTest extends DBTestBase {
       // test scenario:- this doc will have column name "version" as
       // metadata key and value will be "2.3.4"
       assertEquals("2.3.4", clobDoc.findProperty("version").nextValue().toString());
+
       // test scenario:- the content of this document will be same as the
       // content of CLOB column(dbconn_clob).
-      assertEquals(clobContent, clobDoc.findProperty(
-          SpiConstants.PROPNAME_CONTENT).nextValue().toString());
+      String actualContent = new String(readBlobContent(clobDoc), "UTF-8");
+      assertEquals(clobContent, actualContent);
+
       // test scenario:- primary key column should be excluded while
       // indexing external metadata
       assertNull(clobDoc.findProperty("id"));
-
+    } catch (IOException e) {
+      fail("Unexpected exception" + e.toString());
     } catch (DBException e) {
       fail("Unexpected exception" + e.toString());
     } catch (RepositoryException e) {
@@ -317,14 +329,8 @@ public class JsonDocumentUtilTest extends DBTestBase {
             row, "localhost", dbContext, new ProductionTraversalContext());
       }
       jsonDocument.setChanged();
-      InputStream is = ((BinaryValue) jsonDocument.findProperty(
-          SpiConstants.PROPNAME_CONTENT).nextValue()).getInputStream();
 
-      byte[] blobcontent = new byte[14000];
-      is.read(blobcontent);
-      is.close();
-      // (byte[])Value.getSingleValue(jsonDocument,
-      // SpiConstants.PROPNAME_CONTENT);
+      byte[] blobcontent = readBlobContent(jsonDocument);
 
       File newFile = new File("newreport.pdf");
       if (!newFile.exists()) {
@@ -347,4 +353,14 @@ public class JsonDocumentUtilTest extends DBTestBase {
       fail("Repository Exception while testing for PDF Blob Comtent");
     }
   }
+
+  private byte[] readBlobContent(JsonDocument doc)
+      throws IOException, RepositoryException {
+    Value value = Value.getSingleValue(doc, SpiConstants.PROPNAME_CONTENT);
+    assertNotNull(value);
+    InputStream is = ((BinaryValue) value).getInputStream();
+    byte[] blobContent = ByteStreams.toByteArray(is);
+    is.close();
+    return blobContent;
+  }    
 }
