@@ -14,12 +14,16 @@
 
 package com.google.enterprise.connector.db;
 
+import com.google.common.io.ByteStreams;
 import com.google.enterprise.connector.db.diffing.JsonDocumentUtil;
 import com.google.enterprise.connector.db.diffing.JsonObjectUtil;
 import com.google.enterprise.connector.spi.SpiConstants;
 
+import java.io.ByteArrayOutputStream;
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.Reader;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.sql.Timestamp;
@@ -229,35 +233,58 @@ public class Util {
   }
 
   /**
-   * Converts the Input AStream into byte array.
+   * Converts the InputStream into byte array.
    *
    * @param length
    * @param inStream
    * @return byte array of Input Stream
    */
   public static byte[] getBytes(int length, InputStream inStream) {
-    int bytesRead = 0;
     byte[] content = new byte[length];
-    while (bytesRead < length) {
-      int result;
-      try {
-        result = inStream.read(content, bytesRead, length - bytesRead);
-        if (result == -1)
-          break;
-        bytesRead += result;
-      } catch (IOException e) {
-        LOG.warning("Exception occurred while converting InputStream into "
-            + "byte array: "+ e.toString());
-        return null;
-      }
+    try {
+      ByteStreams.read(inStream, content, 0, length);
+    } catch (IOException e) {
+      LOG.warning("Exception occurred while converting InputStream into "
+                  + "byte array: "+ e.toString());
+      return null;
     }
     return content;
   }
 
   /**
-   * Sets the content of blob data in JsonDocument.
+   * Converts the Character Reader into a UTF-8 encoded byte array.
    *
-   * @param blobContent BLOB content to be set
+   * @param length the length (in characters) of the content to be read
+   * @param reader a character Reader
+   * @return byte array of read data
+   */
+  public static byte[] getBytes(int length, Reader reader) {
+    int charsRead = 0;
+    ByteArrayOutputStream content = new ByteArrayOutputStream(length *2);
+    char[] chars = new char[Math.min(length, 32 * 1024)];
+    while (charsRead < length) {
+      try {
+        int result = reader.read(chars);
+        if (result == -1) {
+          break;
+        }
+        charsRead += result;
+        // Convert the chars to bytes in UTF-8 representation.
+        byte[] bytes = (new String(chars, 0, result)).getBytes("UTF-8");
+        content.write(bytes);
+      } catch (IOException e) {
+        LOG.warning("Exception occurred while converting character reader into"
+            + " byte array: "+ e.toString());
+        return null;
+      }
+    }
+    return content.toByteArray();
+  }
+
+  /**
+   * Sets the content of LOB data in JsonDocument.
+   *
+   * @param binaryContent LOB content to be set
    * @param dbName name of the database
    * @param row Map representing row in the database table
    * @param dbContext object of DBContext
@@ -265,29 +292,27 @@ public class Util {
    * @return JsonDocument
    * @throws DBException
    */
-  public static JsonObjectUtil setBlobContent(byte[] blobContent,
+  public static JsonObjectUtil setBinaryContent(byte[] binaryContent,
       JsonObjectUtil jsonObjectUtil, String dbName, Map<String, Object> row,
       DBContext dbContext, String[] primaryKeys, String docId)
       throws DBException {
-
-    jsonObjectUtil.setBinaryContent(SpiConstants.PROPNAME_CONTENT, blobContent);
+    jsonObjectUtil.setBinaryContent(SpiConstants.PROPNAME_CONTENT, binaryContent);
     // Get XML representation of document (exclude the BLOB column).
     Map<String, Object> rowForXmlDoc = getRowForXmlDoc(row, dbContext);
     String xmlRow = XmlUtils.getXMLRow(dbName, rowForXmlDoc, primaryKeys,
                                        "", dbContext, true);
-    // Get checksum of BLOB.
-    String blobCheckSum = Util.getChecksum((blobContent));
+    // Get checksum of LOB.
+    String blobCheckSum = Util.getChecksum(binaryContent);
 
     // Get checksum of other column.
     String otherColumnCheckSum = Util.getChecksum(xmlRow.getBytes());
 
-    // Get checksum of BLOB object and other column.
+    // Get checksum of LOB object and other column.
     String docCheckSum =
         Util.getChecksum((otherColumnCheckSum + blobCheckSum).getBytes());
 
     // Set checksum of this document.
     jsonObjectUtil.setProperty(ROW_CHECKSUM, docCheckSum);
-    LOG.info("BLOB Data found");
 
     return jsonObjectUtil;
   }

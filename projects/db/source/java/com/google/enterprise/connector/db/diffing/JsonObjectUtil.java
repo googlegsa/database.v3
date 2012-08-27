@@ -103,8 +103,8 @@ public class JsonObjectUtil {
   }
 
   /**
-   * In case of BLOB data iBATIS returns binary array for BLOB data-type. This
-   * method sets the "binary array" as a content of JSON Object.
+   * This method sets the "binary array" property value as the content of
+   * JSON Object.
    *
    * @param propertyName
    * @param propertyValue

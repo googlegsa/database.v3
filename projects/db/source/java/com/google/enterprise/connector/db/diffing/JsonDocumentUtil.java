@@ -23,6 +23,9 @@ import com.google.enterprise.connector.spi.SpiConstants;
 import com.google.enterprise.connector.spi.TraversalContext;
 
 import java.io.InputStream;
+import java.io.CharArrayReader;
+import java.io.Reader;
+import java.io.StringReader;
 import java.sql.Blob;
 import java.sql.Clob;
 import java.sql.SQLException;
@@ -229,18 +232,13 @@ public class JsonDocumentUtil {
       // Check if large object is of type BLOB from the the type of largeObject.
       // If the largeObject is of type java.sql.Blob or byte array means large
       // object is of type BLOB, else it is CLOB.
-      byte[] blobContent = null;
+      byte[] binaryContent = null;
       // Maximum document size that connector manager supports.
       long maxDocSize = context.maxDocumentSize();
 
       if (largeObject instanceof byte[]) {
-        blobContent = (byte[]) largeObject;
-
-        byte[] blobData = new byte[blobContent.length];
-        for (int i = 0; i < blobContent.length; i++)
-          blobData[i] = blobContent[i];
-
-        int length = blobContent.length;
+        binaryContent = (byte[]) largeObject;
+        int length = binaryContent.length;
         // Check if the size of document exceeds Max document size that
         // Connector Manager supports. Skip document if it exceeds.
         if (length > maxDocSize) {
@@ -251,16 +249,15 @@ public class JsonDocumentUtil {
 
         // A SkippedDocumentException while setting BLOB content means mime
         // type or content encoding of the current document is not supported.
-        jsonObjectUtil = Util.setBlobContent(blobData, jsonObjectUtil,
+        jsonObjectUtil = Util.setBinaryContent(binaryContent, jsonObjectUtil,
             dbName, row, dbContext, primaryKeys, docId);
         if (jsonObjectUtil == null) {
           // Return null if the mimetype not supported for the document.
           return null;
         }
-
+        LOG.info("BLOB Data found");
       } else if (largeObject instanceof Blob) {
         int length;
-
         try {
           length = (int) ((Blob) largeObject).length();
           // Check if the size of document exceeds Max document size that
@@ -270,99 +267,83 @@ public class JsonDocumentUtil {
                 + "' is larger than supported");
             return null;
           }
-          blobContent = ((Blob) largeObject).getBytes(0, length);
+        } catch (SQLException e) {
+          LOG.warning("Exception occurred while retrieving Blob content length:"
+              + "\n" + e.toString());
+          return null;
+        }
+
+        try {
+          binaryContent = ((Blob) largeObject).getBytes(1, length);
         } catch (SQLException e) {
           // Try to get byte array of blob content from input stream.
           InputStream contentStream;
           try {
-            length = (int) ((Blob) largeObject).length();
-            // Check if the size of document exceeds Max document size that
-            // Connector Manager supports. Skip document if it exceeds.
-            if (length > maxDocSize) {
-              LOG.warning("Size of the document '" + docId
-                  + "' is larger than supported");
-              return null;
-            }
             contentStream = ((Blob) largeObject).getBinaryStream();
             if (contentStream != null) {
-              blobContent = Util.getBytes(length, contentStream);
+              binaryContent = Util.getBytes(length, contentStream);
             }
-
           } catch (SQLException e1) {
-            LOG.warning("Exception occured while retrivieving Blob content:\n"
+            LOG.warning("Exception occurred while retrieving Blob content:\n"
                 + e.toString());
             return null;
           }
         }
-        jsonObjectUtil = Util.setBlobContent(blobContent, jsonObjectUtil,
+        jsonObjectUtil = Util.setBinaryContent(binaryContent, jsonObjectUtil,
             dbName, row, dbContext, primaryKeys, docId);
         if (jsonObjectUtil == null) {
           // Return null if the mimetype not supported for the document.
           return null;
         }
+        LOG.info("BLOB Data found");
       } else {
         // Get the value of CLOB as StringBuilder. iBATIS returns char array or
         // String for CLOB data depending upon Database.
+        int length;
+        Reader clobReader;
         if (largeObject instanceof char[]) {
-          int length = ((char[]) largeObject).length;
-          // Check if the size of document exceeds Max document size that
-          // Connector Manager supports. Skip document if it exceeds.
-          if (length > maxDocSize) {
-            LOG.warning("Size of the document '" + docId
-                + "' is larger than supported");
-            return null;
-          }
-          clobValue = new String((char[]) largeObject);
+          length = ((char[]) largeObject).length;
+          clobReader = new CharArrayReader((char[]) largeObject);
         } else if (largeObject instanceof String) {
-          int length = largeObject.toString().getBytes().length;
-          // Check if the size of document exceeds Max document size that
-          // Connector Manager supports. Skip document if it exceeds.
-          if (length > maxDocSize) {
-            LOG.warning("Size of the document '" + docId
-                + "' is larger than supported");
-            return null;
-          }
-          clobValue = largeObject.toString();
+          length = ((String) largeObject).length();
+          clobReader = new StringReader((String) largeObject);
         } else if (largeObject instanceof Clob) {
           try {
-            int length = (int) ((Clob) largeObject).length();
-            // Check if the size of document exceeds Max document size that
-            // Connector Manager supports. Skip document if it exceeds.
-            if (length > maxDocSize) {
-              LOG.warning("Size of the document '" + docId
-                  + "' is larger than supported");
-              return null;
-            }
-            InputStream clobStream = ((Clob) largeObject).getAsciiStream();
-            clobValue = new String(Util.getBytes(length, clobStream));
+            length = (int) ((Clob) largeObject).length();
+            clobReader = ((Clob) largeObject).getCharacterStream();
           } catch (SQLException e) {
-            LOG.warning("Exception occured while retrivieving Clob content:\n"
-                + e.toString());
+            LOG.warning("Exception occurred while retrieving Clob content:\n"
+                        + e.toString());
+            return null;
           }
-        }
-        if (clobValue != null) {
-          jsonObjectUtil.setProperty(SpiConstants.PROPNAME_CONTENT,
-                                     clobValue.toString());
         } else {
-          LOG.warning("Content of documnet " + docId + " is null");
+          length = 0;
+          clobReader = null;
+        }
+
+        if (clobReader != null && length <= maxDocSize) {
+          binaryContent = Util.getBytes(length, clobReader);
+          length = binaryContent.length;
+        } else {
+          // No content or content obviously too large.
+        }
+
+        // Check if the size of document exceeds Max document size that
+        // Connector Manager supports. Skip document if it exceeds.
+        if (length > maxDocSize) {
+          LOG.warning("Size of the document '" + docId
+                      + "' is larger than supported");
           return null;
         }
-        jsonObjectUtil.setProperty(SpiConstants.PROPNAME_MIMETYPE, MIMETYPE);
 
-        // Get XML representation of document (exclude the CLOB column).
-        Map<String, Object> rowForXmlDoc = Util.getRowForXmlDoc(row, dbContext);
-        String xmlRow = XmlUtils.getXMLRow(dbName, rowForXmlDoc, primaryKeys,
-                                           "", dbContext, true);
-        // Get checksum of CLOB.
-        String clobCheckSum = Util.getChecksum(clobValue.toString().getBytes());
-        // Get checksum of other column.
-        String otherColumnCheckSum = Util.getChecksum(xmlRow.getBytes());
-        // Get checksum of blob object and other column.
-        String docCheckSum =
-            Util.getChecksum((otherColumnCheckSum + clobCheckSum).getBytes());
-        // Set checksum of this document.
-        jsonObjectUtil.setProperty(ROW_CHECKSUM, docCheckSum);
-
+        // A SkippedDocumentException while setting CLOB content means mime
+        // type or content encoding of the current document is not supported.
+        jsonObjectUtil = Util.setBinaryContent(binaryContent, jsonObjectUtil,
+            dbName, row, dbContext, primaryKeys, docId);
+        if (jsonObjectUtil == null) {
+          // Return null if the mimetype not supported for the document.
+          return null;
+        }
         LOG.info("CLOB Data found");
       }
       /*
