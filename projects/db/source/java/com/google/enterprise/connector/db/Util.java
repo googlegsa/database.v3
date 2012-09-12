@@ -296,7 +296,14 @@ public class Util {
       JsonObjectUtil jsonObjectUtil, String dbName, Map<String, Object> row,
       DBContext dbContext, String[] primaryKeys, String docId)
       throws DBException {
+    String mimeType =
+        dbContext.getMimeTypeDetector().getMimeType(null, binaryContent);
+    jsonObjectUtil.setProperty(SpiConstants.PROPNAME_MIMETYPE, mimeType);
+
+    // TODO (bmj): I would really like to skip caching the content if the
+    // mimeTypeSupportLevel is <= 0, but I don't have a TraversalContext here.
     jsonObjectUtil.setBinaryContent(SpiConstants.PROPNAME_CONTENT, binaryContent);
+
     // Get XML representation of document (exclude the BLOB column).
     Map<String, Object> rowForXmlDoc = getRowForXmlDoc(row, dbContext);
     String xmlRow = XmlUtils.getXMLRow(dbName, rowForXmlDoc, primaryKeys,
