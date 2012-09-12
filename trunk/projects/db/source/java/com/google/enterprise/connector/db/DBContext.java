@@ -14,6 +14,8 @@
 
 package com.google.enterprise.connector.db;
 
+import com.google.enterprise.connector.util.MimeTypeDetector;
+
 import java.util.logging.Logger;
 
 /**
@@ -22,6 +24,7 @@ import java.util.logging.Logger;
  */
 public class DBContext {
   private static final Logger LOG = Logger.getLogger(DBContext.class.getName());
+  private final MimeTypeDetector mimeTypeDetector = new MimeTypeDetector();
   private String connectionUrl;
   private String hostname;
   private String login;
@@ -75,6 +78,10 @@ public class DBContext {
     this.fetchURLField = fetchURLField;
     this.lastModifiedDate = lastModifiedDate;
 
+  }
+
+  public MimeTypeDetector getMimeTypeDetector() {
+    return mimeTypeDetector;
   }
 
   public boolean isParameterizedQueryFlag() {

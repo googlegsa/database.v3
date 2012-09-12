@@ -247,14 +247,8 @@ public class JsonDocumentUtil {
           return null;
         }
 
-        // A SkippedDocumentException while setting BLOB content means mime
-        // type or content encoding of the current document is not supported.
         jsonObjectUtil = Util.setBinaryContent(binaryContent, jsonObjectUtil,
             dbName, row, dbContext, primaryKeys, docId);
-        if (jsonObjectUtil == null) {
-          // Return null if the mimetype not supported for the document.
-          return null;
-        }
         LOG.info("BLOB Data found");
       } else if (largeObject instanceof Blob) {
         int length;
@@ -291,10 +285,6 @@ public class JsonDocumentUtil {
         }
         jsonObjectUtil = Util.setBinaryContent(binaryContent, jsonObjectUtil,
             dbName, row, dbContext, primaryKeys, docId);
-        if (jsonObjectUtil == null) {
-          // Return null if the mimetype not supported for the document.
-          return null;
-        }
         LOG.info("BLOB Data found");
       } else {
         // Get the value of CLOB as StringBuilder. iBATIS returns char array or
@@ -336,14 +326,8 @@ public class JsonDocumentUtil {
           return null;
         }
 
-        // A SkippedDocumentException while setting CLOB content means mime
-        // type or content encoding of the current document is not supported.
         jsonObjectUtil = Util.setBinaryContent(binaryContent, jsonObjectUtil,
             dbName, row, dbContext, primaryKeys, docId);
-        if (jsonObjectUtil == null) {
-          // Return null if the mimetype not supported for the document.
-          return null;
-        }
         LOG.info("CLOB Data found");
       }
       /*
