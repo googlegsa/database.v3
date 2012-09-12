@@ -45,6 +45,9 @@ public abstract class DBTestBase extends TestCase {
   public static final String LOAD_USER_DOC_MAP_TEST_DATA = "com/google/enterprise/connector/db/config/loadUerDocMapTable.sql";
   public static final String DROP_USER_DOC_MAP_TABLE = "com/google/enterprise/connector/db/config/dropUserDocMapTable.sql";
 
+  // Keep an open connection to H2 to prevent in-memory DB from getting deleted.
+  private Connection dbConnection = null;
+
   @Override
   protected void setUp() throws Exception {
     TestDirectoryManager testDirManager = new TestDirectoryManager(this);
@@ -68,6 +71,16 @@ public abstract class DBTestBase extends TestCase {
     configMap.put("lobField", "lob");
     configMap.put("fetchURLField", "fetchURL");
     configMap.put("extMetadataType", "");
+    dbConnection =
+        getDbClient().getSqlMapClient().getDataSource().getConnection();
+  }
+
+  @Override
+  protected void tearDown() throws Exception {
+    if (dbConnection != null) {
+      dbConnection.close();
+      dbConnection = null;
+    }
   }
 
   protected ProductionTraversalContext getProductionTraversalContext() {
@@ -103,11 +116,6 @@ public abstract class DBTestBase extends TestCase {
     }
 
     return null;
-  }
-
-  /* @Override */
-  protected void tearDown() throws Exception {
-    super.tearDown();
   }
 
   /**
