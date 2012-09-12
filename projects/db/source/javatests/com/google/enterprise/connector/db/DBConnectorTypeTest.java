@@ -17,7 +17,6 @@ package com.google.enterprise.connector.db;
 import com.google.common.collect.Maps;
 import com.google.enterprise.connector.spi.ConfigureResponse;
 
-import java.sql.Connection;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -45,13 +44,8 @@ public class DBConnectorTypeTest extends DBTestBase {
       "externalMetadata", "documentURLField", "documentIdField", "baseURL",
       "lobField", "fetchURLField", "extMetadataType" };
 
-  private Connection connection;
-
   protected void setUp() throws Exception {
     super.setUp();
-    // Hold open connection to H2 in-memory DB.
-    connection =
-        getDbClient().getSqlMapClient().getDataSource().getConnection();
     runDBScript(CREATE_TEST_DB_TABLE);
     runDBScript(LOAD_TEST_DATA);
 
@@ -65,11 +59,6 @@ public class DBConnectorTypeTest extends DBTestBase {
 
     configKeys = new HashSet<String>(Arrays.asList(keys));
     connectorType = new DBConnectorType(configKeys);
-  }
-
-  protected void tearDown() throws Exception {
-    connection.close();
-    super.tearDown();
   }
 
   /**
