@@ -25,10 +25,10 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.ResourceBundle;
-import java.util.Set;
 import java.util.TreeMap;
 import java.util.logging.Logger;
 
@@ -43,55 +43,17 @@ public class ValidateUtil {
   private static final String TEST_SQL_QUERY = "TEST_SQL_QUERY";
   private static final String TEST_PRIMARY_KEYS = "TEST_PRIMARY_KEYS";
   private static final String INVALID_COLUMN_NAME = "INVALID_COLUMN_NAME";
+  private static final String INVALID_AUTH_QUERY = "INVALID_AUTH_QUERY";
   private static final String FQDN_HOSTNAME = "FQDN_HOSTNAME";
   private static final String MISSING_ATTRIBUTES = "MISSING_ATTRIBUTES";
   private static final String REQ_FIELDS = "REQ_FIELDS";
   private static final String TEST_PRIMARY_KEYS_AND_KEY_VALUE_PLACEHOLDER =
       "TEST_PRIMARY_KEYS_AND_KEY_VALUE_PLACEHOLDER";
+  private static final String PRIMARY_KEYS_SEPARATOR = ",";
   // Red asterisk for required fields.
   public static final String RED_ASTERISK = "<font color=\"RED\">*</font>";
 
-  private static final String PASSWORD = "password";
-  public static final String BOLD_TEXT_START = "<b>";
-  public static final String BOLD_TEXT_END = "</b>";
-  public static final String COMPLETE_URL = "url";
-  public static final String DOC_ID = "docId";
-  public static final String BLOB_CLOB = "lob";
-  private static final String HOSTNAME = "hostname";
-  private static final String CONNECTION_URL = "connectionUrl";
-  private static final String LOGIN = "login";
-  private static final String DRIVER_CLASS_NAME = "driverClassName";
-  private static final String DB_NAME = "dbName";
-  private static final String SQL_QUERY = "sqlQuery";
-  private static final String PRIMARY_KEYS_STRING = "primaryKeysString";
-  private static final String XSLT = "xslt";
-  private static final String LAST_MODIFIED_DATE_FIELD = "lastModifiedDate";
-  // AuthZ Query
-  private static final String AUTHZ_QUERY = "authZQuery";
-  private static final String INVALID_AUTH_QUERY = "INVALID_AUTH_QUERY";
-  private static final String DOCUMENT_URL_FIELD = "documentURLField";
-  private static final String DOCUMENT_ID_FIELD = "documentIdField";
-  private static final String BASE_URL = "baseURL";
-  private static final String CLOB_BLOB_FIELD = "lobField";
-  private static final String FETCH_URL_FIELD = "fetchURLField";
-  public static final String NO_EXT_METADATA = "noExt";
-
-  private final Set<String> configKeys;
-  /*
-   * List of required fields.
-   */
-  List<String> requiredFields = Arrays.asList(new String[] { HOSTNAME,
-      CONNECTION_URL, DB_NAME, LOGIN, DRIVER_CLASS_NAME, SQL_QUERY,
-      PRIMARY_KEYS_STRING });
-
-  /**
-   * @param configKeys names of required configuration variables.
-   */
-  public ValidateUtil(Set<String> configKeys) {
-    if (configKeys == null) {
-      throw new RuntimeException("configKeys must be non-null");
-    }
-    this.configKeys = configKeys;
+  public ValidateUtil() {
   }
 
   /**
@@ -147,7 +109,7 @@ public class ValidateUtil {
           LOG.warning("Caught Exception while testing driver class name:\n"
               + e.toString());
           message = res.getString(TEST_DRIVER_CLASS);
-          problemFields.add(DRIVER_CLASS_NAME);
+          problemFields.add(DBConnectorType.DRIVER_CLASS_NAME);
         }
       }
       result = sds != null;
@@ -163,10 +125,10 @@ public class ValidateUtil {
           LOG.warning("Caught SQLException while testing connection:\n"
               + e.toString());
           message = res.getString(TEST_CONNECTIVITY);
-          problemFields.add(DRIVER_CLASS_NAME);
-          problemFields.add(LOGIN);
-          problemFields.add(PASSWORD);
-          problemFields.add(CONNECTION_URL);
+          problemFields.add(DBConnectorType.DRIVER_CLASS_NAME);
+          problemFields.add(DBConnectorType.LOGIN);
+          problemFields.add(DBConnectorType.PASSWORD);
+          problemFields.add(DBConnectorType.CONNECTION_URL);
         }
       }
       result = conn != null;
@@ -183,7 +145,7 @@ public class ValidateUtil {
           stmt = conn.createStatement();
           stmt.setMaxRows(1);
 
-          String sqlQuery = config.get(SQL_QUERY);
+          String sqlQuery = config.get(DBConnectorType.SQL_QUERY);
           if (sqlQuery.contains(KEY_VALUE_PLACEHOLDER)) {
             sqlQuery = sqlQuery.replace(KEY_VALUE_PLACEHOLDER, "0");
             result = stmt.execute(sqlQuery);
@@ -192,13 +154,13 @@ public class ValidateUtil {
           }
           if (!result) {
             message = res.getString(TEST_SQL_QUERY);
-            problemFields.add(SQL_QUERY);
+            problemFields.add(DBConnectorType.SQL_QUERY);
           }
         } catch (SQLException e) {
           LOG.warning("Caught SQLException while testing SQL crawl query:\n"
               + e.toString());
           message = res.getString(TEST_SQL_QUERY);
-          problemFields.add(SQL_QUERY);
+          problemFields.add(DBConnectorType.SQL_QUERY);
         }
       }
       return result;
@@ -221,7 +183,8 @@ public class ValidateUtil {
             columnNames.add(colName);
           }
 
-          String[] primaryKeys = config.get(PRIMARY_KEYS_STRING).split(",");
+          String[] primaryKeys = config.get(DBConnectorType.PRIMARY_KEYS_STRING)
+              .split(PRIMARY_KEYS_SEPARATOR);
           for (String key : primaryKeys) {
             flag = false;
             for (int i = 1; i <= columnCount; i++) {
@@ -233,7 +196,7 @@ public class ValidateUtil {
             if (!flag) {
               LOG.info("One or more primary keys are invalid");
               message = res.getString(TEST_PRIMARY_KEYS);
-              problemFields.add(PRIMARY_KEYS_STRING);
+              problemFields.add(DBConnectorType.PRIMARY_KEYS_STRING);
               break;
             }
           }
@@ -277,7 +240,7 @@ public class ValidateUtil {
           LOG.warning("Caught SQLException while testing AuthZ query:\n"
               + e.toString());
           message = res.getString(INVALID_AUTH_QUERY);
-          problemFields.add(AUTHZ_QUERY);
+          problemFields.add(DBConnectorType.AUTHZ_QUERY);
         }
 
         // Close database connection and statement.
@@ -294,7 +257,7 @@ public class ValidateUtil {
 
       } else {
         message = res.getString(INVALID_AUTH_QUERY);
-        problemFields.add(AUTHZ_QUERY);
+        problemFields.add(DBConnectorType.AUTHZ_QUERY);
       }
 
       return flag;
@@ -310,26 +273,26 @@ public class ValidateUtil {
       boolean result = true;
 
       // Validate Document URL field.
-      String documentURLField = config.get(DOCUMENT_URL_FIELD);
+      String documentURLField = config.get(DBConnectorType.DOCUMENT_URL_FIELD);
       if (documentURLField != null && documentURLField.trim().length() > 0) {
         if (!columnNames.contains(documentURLField.trim())) {
           result = false;
           message = res.getString(INVALID_COLUMN_NAME);
-          problemFields.add(DOCUMENT_URL_FIELD);
+          problemFields.add(DBConnectorType.DOCUMENT_URL_FIELD);
         }
       }
 
       // Validate DocID and Base URL fields.
-      String documentIdField = config.get(DOCUMENT_ID_FIELD);
-      String baseURL = config.get(BASE_URL);
+      String documentIdField = config.get(DBConnectorType.DOCUMENT_ID_FIELD);
+      String baseURL = config.get(DBConnectorType.BASE_URL);
 
       // Check if Base URL field exists without DocId Field.
       if ((baseURL != null && baseURL.trim().length() > 0)
           && (documentIdField == null || documentIdField.trim().length() == 0)) {
         result = false;
         message = res.getString(MISSING_ATTRIBUTES) + ": "
-            + res.getString(DOCUMENT_ID_FIELD);
-        problemFields.add(DOCUMENT_ID_FIELD);
+            + res.getString(DBConnectorType.DOCUMENT_ID_FIELD);
+        problemFields.add(DBConnectorType.DOCUMENT_ID_FIELD);
       }
 
       // Validate document ID column name.
@@ -337,27 +300,27 @@ public class ValidateUtil {
         if (!columnNames.contains(documentIdField)) {
           result = false;
           message = res.getString(INVALID_COLUMN_NAME);
-          problemFields.add(DOCUMENT_ID_FIELD);
+          problemFields.add(DBConnectorType.DOCUMENT_ID_FIELD);
         }
         if (baseURL == null || baseURL.trim().length() == 0) {
           result = false;
           message = res.getString(MISSING_ATTRIBUTES) + ": "
-              + res.getString(BASE_URL);
-          problemFields.add(BASE_URL);
+              + res.getString(DBConnectorType.BASE_URL);
+          problemFields.add(DBConnectorType.BASE_URL);
         }
       }
 
       // Validate BLOB/CLOB and Fetch URL field.
-      String blobClobField = config.get(CLOB_BLOB_FIELD);
-      String fetchURL = config.get(FETCH_URL_FIELD);
+      String blobClobField = config.get(DBConnectorType.CLOB_BLOB_FIELD);
+      String fetchURL = config.get(DBConnectorType.FETCH_URL_FIELD);
 
       // Check if Fetch URL field exists without BLOB/CLOB Field.
       if ((fetchURL != null && fetchURL.trim().length() > 0)
           && (blobClobField == null || blobClobField.trim().length() == 0)) {
         result = false;
         message = res.getString(MISSING_ATTRIBUTES) + ": "
-            + res.getString(CLOB_BLOB_FIELD);
-        problemFields.add(CLOB_BLOB_FIELD);
+            + res.getString(DBConnectorType.CLOB_BLOB_FIELD);
+        problemFields.add(DBConnectorType.CLOB_BLOB_FIELD);
       }
 
       // Check for valid BLOB/CLOB column name.
@@ -365,14 +328,14 @@ public class ValidateUtil {
         if (!columnNames.contains(blobClobField)) {
           result = false;
           message = res.getString(INVALID_COLUMN_NAME);
-          problemFields.add(CLOB_BLOB_FIELD);
+          problemFields.add(DBConnectorType.CLOB_BLOB_FIELD);
         }
 
         if (fetchURL != null && fetchURL.trim().length() > 0
             && !columnNames.contains(fetchURL)) {
           result = false;
           message = res.getString(INVALID_COLUMN_NAME);
-          problemFields.add(FETCH_URL_FIELD);
+          problemFields.add(DBConnectorType.FETCH_URL_FIELD);
         }
       }
 
@@ -387,11 +350,12 @@ public class ValidateUtil {
      */
     private boolean validateLastModifiedField() {
       boolean result = true;
-      String lastModifiedDateField = config.get(LAST_MODIFIED_DATE_FIELD);
+      String lastModifiedDateField =
+          config.get(DBConnectorType.LAST_MODIFIED_DATE_FIELD);
       if (!columnNames.contains(lastModifiedDateField)) {
         result = false;
         message = res.getString(INVALID_COLUMN_NAME);
-        problemFields.add(LAST_MODIFIED_DATE_FIELD);
+        problemFields.add(DBConnectorType.LAST_MODIFIED_DATE_FIELD);
       }
       return result;
     }
@@ -403,10 +367,10 @@ public class ValidateUtil {
      * @return true if every validation method return true else return false.
      */
     public boolean validate() {
-      password = config.get(PASSWORD);
-      login = config.get(LOGIN);
-      connectionUrl = config.get(CONNECTION_URL);
-      driverClassName = config.get(DRIVER_CLASS_NAME);
+      password = config.get(DBConnectorType.PASSWORD);
+      login = config.get(DBConnectorType.LOGIN);
+      connectionUrl = config.get(DBConnectorType.CONNECTION_URL);
+      driverClassName = config.get(DBConnectorType.DRIVER_CLASS_NAME);
 
       // Test JDBC driver class.
       success = testDriverClass();
@@ -439,7 +403,8 @@ public class ValidateUtil {
       }
 
       // Validate last modified date column name.
-      String lastModDateColumn = config.get(LAST_MODIFIED_DATE_FIELD);
+      String lastModDateColumn =
+          config.get(DBConnectorType.LAST_MODIFIED_DATE_FIELD);
       if (lastModDateColumn != null && lastModDateColumn.trim().length() > 0) {
         success = validateLastModifiedField();
         if (!success) {
@@ -447,7 +412,7 @@ public class ValidateUtil {
         }
       }
 
-      String authZQuery = config.get(AUTHZ_QUERY);
+      String authZQuery = config.get(DBConnectorType.AUTHZ_QUERY);
       // Validate authZ query if connector admin has provided one.
       if (authZQuery != null && authZQuery.trim().length() > 0) {
         success = validateAuthZQuery(authZQuery);
@@ -505,10 +470,10 @@ public class ValidateUtil {
 
     public boolean validate() {
       List<String> missingAttributes = new ArrayList<String>();
-      for (Object configKey : configKeys) {
+      for (String configKey : DBConnectorType.configKeys) {
         if (!config.containsKey(configKey)
-            && !configKey.toString().equalsIgnoreCase("externalMetadata")) {
-          missingAttributes.add((String) configKey);
+            && !configKey.equalsIgnoreCase(DBConnectorType.EXT_METADATA)) {
+          missingAttributes.add(configKey);
         }
       }
       if (missingAttributes.isEmpty()) {
@@ -539,8 +504,6 @@ public class ValidateUtil {
     Map<String, String> config;
     private String message = "";
     private boolean success = false;
-    private String[] requiredFields = { HOSTNAME, CONNECTION_URL, DB_NAME,
-        LOGIN, DRIVER_CLASS_NAME, SQL_QUERY, PRIMARY_KEYS_STRING };
     private List<String> problemFields;
     ResourceBundle res;
 
@@ -558,7 +521,7 @@ public class ValidateUtil {
     }
 
     public boolean validate() {
-      for (String field : requiredFields) {
+      for (String field : DBConnectorType.requiredFields) {
         if (config.get(field).equals("")) {
           missingFields.add(field);
         }
@@ -612,7 +575,7 @@ public class ValidateUtil {
     }
 
     public boolean validate() {
-      xslt = new StringBuilder(config.get(XSLT));
+      xslt = new StringBuilder(config.get(DBConnectorType.XSLT));
       if (xslt != null) {
         String XSLT_RECORD_TITLE_ELEMENT2;
         int index2;
@@ -622,7 +585,7 @@ public class ValidateUtil {
         if (index2 != -1) {
           success = false;
           message = res.getString("XSLT_VALIDATE");
-          problemFields.add(XSLT);
+          problemFields.add(DBConnectorType.XSLT);
         } else {
           success = true;
         }
@@ -644,7 +607,6 @@ public class ValidateUtil {
     private boolean success = false;
     private List<String> problemFields = new ArrayList<String>();
     private static final String KEY_VALUE_PLACEHOLDER = "#value#";
-    public static final String PRIMARY_KEYS_SEPARATOR = ",";
     String[] primaryKeys;
     String sqlCrawlQuery;
 
@@ -663,16 +625,16 @@ public class ValidateUtil {
     }
 
     public boolean validate() {
-      primaryKeys = config.get(PRIMARY_KEYS_STRING).split(PRIMARY_KEYS_SEPARATOR);
-      sqlCrawlQuery = config.get(SQL_QUERY);
+      primaryKeys = config.get(DBConnectorType.PRIMARY_KEYS_STRING).split(PRIMARY_KEYS_SEPARATOR);
+      sqlCrawlQuery = config.get(DBConnectorType.SQL_QUERY);
       // This check is required when configuring connector using parameterized
       // crawl query to assure that single primary key is used .
       if (primaryKeys.length > 1
           && sqlCrawlQuery.contains(KEY_VALUE_PLACEHOLDER)) {
         success = false;
         message = res.getString(TEST_PRIMARY_KEYS_AND_KEY_VALUE_PLACEHOLDER);
-        problemFields.add(PRIMARY_KEYS_STRING);
-        problemFields.add(SQL_QUERY);
+        problemFields.add(DBConnectorType.PRIMARY_KEYS_STRING);
+        problemFields.add(DBConnectorType.SQL_QUERY);
       } else {
         success = true;
       }
@@ -705,12 +667,12 @@ public class ValidateUtil {
     }
 
     public boolean validate() {
-      hostName = config.get(HOSTNAME);
+      hostName = config.get(DBConnectorType.HOSTNAME);
       if (hostName.contains(".")) {
         success = true;
       } else {
         message = res.getString(FQDN_HOSTNAME);
-        problemFields.add(HOSTNAME);
+        problemFields.add(DBConnectorType.HOSTNAME);
       }
       return success;
     }
