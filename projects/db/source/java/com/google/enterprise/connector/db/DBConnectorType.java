@@ -14,6 +14,7 @@
 
 package com.google.enterprise.connector.db;
 
+import com.google.common.collect.ImmutableList;
 import com.google.enterprise.connector.spi.ConfigureResponse;
 import com.google.enterprise.connector.spi.ConnectorFactory;
 import com.google.enterprise.connector.spi.ConnectorType;
@@ -63,45 +64,49 @@ public class DBConnectorType implements ConnectorType {
   private static final String OPEN_ELEMENT = "<";
   private static final String OPEN_ELEMENT_SLASH = "</";
   private static final String CLOSE_ELEMENT = ">";
-  private static final String PASSWORD = "password";
-  private static final String TR_END = "</tr>\n";
-  private static final String TD_END = "</td>\n";
-  public static final String BOLD_TEXT_START = "<b>";
-  public static final String BOLD_TEXT_END = "</b>";
+  private static final String BOLD_TEXT_START = "<b>";
+  private static final String BOLD_TEXT_END = "</b>";
 
   private static final String RADIO = "radio";
   private static final String ALIGN = "align";
   private static final String CENTER = "center";
   private static final String TD_OPEN = "<td";
   private static final String TR_OPEN = "<tr";
-  private static final String GROUP = "extMetadataType";
-
-  public static final String COMPLETE_URL = "url";
-  public static final String DOC_ID = "docId";
-  public static final String BLOB_CLOB = "lob";
-
-  private static final String HOSTNAME = "hostname";
-  private static final String CONNECTION_URL = "connectionUrl";
-  private static final String LOGIN = "login";
-  private static final String DRIVER_CLASS_NAME = "driverClassName";
-  private static final String DB_NAME = "dbName";
-  private static final String SQL_QUERY = "sqlQuery";
-  private static final String PRIMARY_KEYS_STRING = "primaryKeysString";
-  private static final String XSLT = "xslt";
-  // AuthZ Query
-  private static final String AUTHZ_QUERY = "authZQuery";
-  private static final String EXT_METADATA = "externalMetadata";
-  private static final String DOCUMENT_URL_FIELD = "documentURLField";
-  private static final String DOCUMENT_ID_FIELD = "documentIdField";
-  private static final String BASE_URL = "baseURL";
-  private static final String CLOB_BLOB_FIELD = "lobField";
-  private static final String FETCH_URL_FIELD = "fetchURLField";
+  private static final String TR_END = "</tr>\n";
+  private static final String TD_END = "</td>\n";
   private static final String CHECKED = "checked";
   private static final String DISABLED = "readonly";
   private static final String HIDDEN = "hidden";
   private static final String TRUE = "true";
   private static final String ON_CLICK = "onClick";
+
+  // These are public for ValidateUtil.
+  public static final String COMPLETE_URL = "url";
+  public static final String DOC_ID = "docId";
+  public static final String BLOB_CLOB = "lob";
+
+  public static final String HOSTNAME = "hostname";
+  public static final String CONNECTION_URL = "connectionUrl";
+  public static final String LOGIN = "login";
+  // Note: "password" is both the name of the property and the form input type.
+  public static final String PASSWORD = "password";
+  public static final String DRIVER_CLASS_NAME = "driverClassName";
+  public static final String DB_NAME = "dbName";
+  public static final String SQL_QUERY = "sqlQuery";
+  public static final String PRIMARY_KEYS_STRING = "primaryKeysString";
+  public static final String XSLT = "xslt";
+  public static final String LAST_MODIFIED_DATE_FIELD = "lastModifiedDate";
+  
+  // AuthZ Query
+  public static final String AUTHZ_QUERY = "authZQuery";
+  public static final String DOCUMENT_URL_FIELD = "documentURLField";
+  public static final String DOCUMENT_ID_FIELD = "documentIdField";
+  public static final String BASE_URL = "baseURL";
+  public static final String CLOB_BLOB_FIELD = "lobField";
+  public static final String FETCH_URL_FIELD = "fetchURLField";
+  public static final String EXT_METADATA = "externalMetadata";
   public static final String NO_EXT_METADATA = "noExt";
+  private static final String EXT_METADATA_TYPE = "extMetadataType";
 
   private static final String COMPLETE_URL_SCRIPT =
       "'javascript:setReadOnlyProperties(false , true , true)'";
@@ -110,42 +115,36 @@ public class DBConnectorType implements ConnectorType {
   private static final String BLOB_CLOB_SCRIPT =
       "'javascript:setReadOnlyProperties(true , true , false)'";
 
-  private final Set<String> configKeys;
-  private String initialConfigForm = null;
-
-  private boolean isDocIdDisabled = false;
-  private boolean isLOBFieldDisable = false;
-  /*
-   * List of required fields.
-   */
-  List<String> requiredFields = Arrays.asList(new String[] { HOSTNAME,
+  /** List of required fields. */
+  public static List<String> requiredFields = Arrays.asList(new String[] { HOSTNAME,
       CONNECTION_URL, DB_NAME, LOGIN, DRIVER_CLASS_NAME, SQL_QUERY,
       PRIMARY_KEYS_STRING });
 
-  /**
-   * @param configKeys names of required configuration variables.
-   */
-  public DBConnectorType(Set<String> configKeys) {
-    if (configKeys == null) {
-      throw new RuntimeException("configKeys must be non-null");
-    }
-    this.configKeys = configKeys;
-  }
+  public static final List<String> configKeys = ImmutableList.<String>builder().add(
+        HOSTNAME,
+        DRIVER_CLASS_NAME,
+        CONNECTION_URL,
+        DB_NAME,
+        LOGIN,
+        PASSWORD,
+        SQL_QUERY,
+        PRIMARY_KEYS_STRING,
+        LAST_MODIFIED_DATE_FIELD,
+        XSLT,
+        AUTHZ_QUERY,
+        EXT_METADATA,
+        DOCUMENT_URL_FIELD,
+        DOCUMENT_ID_FIELD,
+        BASE_URL,
+        CLOB_BLOB_FIELD,
+        FETCH_URL_FIELD,
+        EXT_METADATA_TYPE
+      ).build();
 
-  /**
-   * Gets the initial/blank form.
-   *
-   * @return HTML form as string
-   */
-  private String getInitialConfigForm() {
-    if (initialConfigForm != null) {
-      return initialConfigForm;
-    }
-    if (configKeys == null) {
-      throw new IllegalStateException();
-    }
-    this.initialConfigForm = makeConfigForm(null);
-    return initialConfigForm;
+  private boolean isDocIdDisabled = false;
+  private boolean isLOBFieldDisable = false;
+
+  public DBConnectorType() {
   }
 
   /**
@@ -156,20 +155,11 @@ public class DBConnectorType implements ConnectorType {
    * @return config form snippet
    */
   private String makeConfigForm(Map<String, String> configMap) {
-    StringBuilder buf = new StringBuilder();
-
-    buf.append(getJavaScript());
-
+    StringBuilder buf = new StringBuilder(getJavaScript());
     for (String key : configKeys) {
-      String value;
-      if (configMap != null) {
-        value = configMap.get(key);
-      } else {
-        value = null;
-      }
+      String value = (configMap == null) ? null : configMap.get(key);
       buf.append(formSnippetWithColor(key, value, false, configMap));
     }
-
     return buf.toString();
   }
 
@@ -185,7 +175,6 @@ public class DBConnectorType implements ConnectorType {
   private String formSnippetWithColor(String key, String value, boolean red,
       Map<String, String> config) {
     StringBuilder buf = new StringBuilder();
-
     appendStartRow(buf, key, red, value, config);
 
     // Check if key is "externalMetadata". For this label we don't have to
@@ -211,9 +200,9 @@ public class DBConnectorType implements ConnectorType {
       buf.append(OPEN_ELEMENT_SLASH);
       buf.append(TEXT_AREA);
       buf.append(CLOSE_ELEMENT);
-    } else if (GROUP.equals(key)) {
+    } else if (EXT_METADATA_TYPE.equals(key)) {
       buf.append(INPUT);
-      appendAttribute(buf, NAME, GROUP);
+      appendAttribute(buf, NAME, EXT_METADATA_TYPE);
       appendAttribute(buf, TYPE, HIDDEN);
       appendAttribute(buf, ID, key);
       appendAttribute(buf, VALUE, NO_EXT_METADATA);
@@ -255,7 +244,7 @@ public class DBConnectorType implements ConnectorType {
     buf.append(getJavaScript());
     List<String> problemfields;
 
-    ValidateUtil validator = new ValidateUtil(configKeys);
+    ValidateUtil validator = new ValidateUtil();
     ConfigValidation configValidation = validator.validate(config, resource);
     problemfields = configValidation.getProblemFields();
 
@@ -332,7 +321,7 @@ public class DBConnectorType implements ConnectorType {
     }
 
     // No label for External Metadata Type (Radio button).
-    if (!GROUP.equalsIgnoreCase(key)) {
+    if (!EXT_METADATA_TYPE.equalsIgnoreCase(key)) {
       buf.append(OPEN_ELEMENT);
       buf.append(DIV);
       appendAttribute(buf, "style", "float: left;");
@@ -396,21 +385,13 @@ public class DBConnectorType implements ConnectorType {
    */
   /* @Override */
   public ConfigureResponse getConfigForm(Locale locale) {
-    // TODO(meghna): See if this is thread safe.
-    try {
-      resource = ResourceBundle.getBundle(LOCALE_DB, locale);
-    } catch (MissingResourceException e) {
-      resource = ResourceBundle.getBundle(LOCALE_DB);
-    }
-    ConfigureResponse result =
-        new ConfigureResponse("", getInitialConfigForm());
-    LOG.info("getConfigForm form:\n" + result.getFormSnippet());
-    return result;
+    return getPopulatedConfigForm(null, locale);
   }
 
   /* @Override */
   public ConfigureResponse getPopulatedConfigForm(
       Map<String, String> configMap, Locale locale) {
+    // TODO: Global resource is not thread-safe.
     try {
       resource = ResourceBundle.getBundle(LOCALE_DB, locale);
     } catch (MissingResourceException e) {
@@ -429,12 +410,13 @@ public class DBConnectorType implements ConnectorType {
   public ConfigureResponse validateConfig(Map<String, String> config,
       Locale locale, ConnectorFactory factory) {
     boolean success = false;
+    // TODO: Global resource is not thread-safe.
     try {
       resource = ResourceBundle.getBundle(LOCALE_DB, locale);
     } catch (MissingResourceException e) {
       resource = ResourceBundle.getBundle(LOCALE_DB);
     }
-    ValidateUtil validator = new ValidateUtil(configKeys);
+    ValidateUtil validator = new ValidateUtil();
     ConfigValidation configValidation = validator.validate(config, resource);
     success = configValidation.validate();
     if (success) {
@@ -454,8 +436,8 @@ public class DBConnectorType implements ConnectorType {
   public String getRadio(String value, boolean isChecked) {
     StringBuilder stringBuilder = new StringBuilder();
     stringBuilder.append(OPEN_ELEMENT + INPUT + " " + TYPE + "=" + "'" + RADIO
-        + "' " + NAME + "=" + "'" + GROUP + "' " + VALUE + "=" + "'" + value
-        + "' ");
+        + "' " + NAME + "=" + "'" + EXT_METADATA_TYPE + "' " + VALUE + "=" 
+        + "'" + value + "' ");
     if (isChecked) {
       stringBuilder.append(CHECKED + "=" + "'" + CHECKED + "' ");
     }
