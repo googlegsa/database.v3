@@ -286,10 +286,10 @@ public class JsonDocumentUtilTest extends DBTestBase {
    */
   public void testPdfBlob(String[] primaryKeys, DBContext dbContext)
       throws IOException, DBException, RepositoryException {
-    DBClient dbClient = getDbClient();
-    dbClient.getDBContext().setNumberOfRows(1);
+    DBClient dbClient = dbContext.getClient();
+    dbContext.setNumberOfRows(1);
     List<Map<String, Object>> rows = dbClient.executePartialQuery(0,
-        dbClient.getDBContext().getNumberOfRows());
+        dbContext.getNumberOfRows());
     JsonDocument jsonDocument = null;
     for (Map<String, Object> row : rows) {
       jsonDocument = JsonDocumentUtil.largeObjectToDoc("mysql", primaryKeys,

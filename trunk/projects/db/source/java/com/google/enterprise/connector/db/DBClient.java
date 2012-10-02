@@ -14,6 +14,7 @@
 
 package com.google.enterprise.connector.db;
 
+import com.google.common.base.Charsets;
 import com.google.enterprise.connector.util.diffing.SnapshotRepositoryRuntimeException;
 
 import com.ibatis.sqlmap.client.SqlMapClient;
@@ -47,10 +48,14 @@ import javax.sql.DataSource;
 public class DBClient {
   private static final Logger LOG = Logger.getLogger(DBClient.class.getName());
 
-  private final DBContext dbContext;
-  private final SqlMapClient sqlMapClient;
-  private String sqlMapConfig = null;
-  private String sqlMap = null;
+  protected DBContext dbContext;
+
+  private SqlMapClient sqlMapClient;
+  private String sqlMapConfig;
+  private String sqlMap;
+
+  public DBClient() {
+  }
 
   /**
    * @param dbContext holds the database context.
@@ -59,19 +64,11 @@ public class DBClient {
    * @param primaryKeys primary keys for the result DB table.
    * @throws DBException
    */
-  public DBClient(DBContext dbContext) throws DBException {
+  public void setDBContext(DBContext dbContext) throws DBException {
     this.dbContext = dbContext;
     generateSqlMapConfig();
     generateSqlMap();
-    InputStream resources;
-    try {
-      resources = new ByteArrayInputStream(sqlMapConfig.getBytes("UTF-8"));
-      this.sqlMapClient = SqlMapClientBuilder.buildSqlMapClient(resources);
-    } catch (UnsupportedEncodingException e) {
-      throw new DBException("Could not instantiate DBClient.", e);
-    } catch (RuntimeException e) {
-      throw new RuntimeException("XML is not well formed", e);
-    }
+    this.sqlMapClient = getSqlMapClient(sqlMapConfig);
     LOG.info("DBClient for database " + getDatabaseInfo() + " is instantiated");
   }
 
@@ -83,12 +80,14 @@ public class DBClient {
     this.dbContext = dbContext;
     generateSqlMapConfig();
     this.sqlMap = sqlMap;
-    InputStream resources;
+    this.sqlMapClient = getSqlMapClient(sqlMapConfig);
+  }
+
+  private SqlMapClient getSqlMapClient(String sqlMapConfig) {
     try {
-      resources = new ByteArrayInputStream(sqlMapConfig.getBytes("UTF-8"));
-      this.sqlMapClient = SqlMapClientBuilder.buildSqlMapClient(resources);
-    } catch (UnsupportedEncodingException e) {
-      throw new DBException("Could not instantiate DBClient.", e);
+      InputStream resources =
+          new ByteArrayInputStream(sqlMapConfig.getBytes(Charsets.UTF_8));
+      return SqlMapClientBuilder.buildSqlMapClient(resources);
     } catch (RuntimeException e) {
       throw new RuntimeException("XML is not well formed", e);
     }
@@ -102,13 +101,6 @@ public class DBClient {
    */
   public SqlMapClient getSqlMapClient() {
     return sqlMapClient;
-  }
-
-  /**
-   * @return dbContext
-   */
-  public DBContext getDBContext() {
-    return dbContext;
   }
 
   /**

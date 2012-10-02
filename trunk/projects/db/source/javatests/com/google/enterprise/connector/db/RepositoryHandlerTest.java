@@ -32,28 +32,17 @@ public class RepositoryHandlerTest extends DBTestBase {
   }
 
   public void testMakeRepositoryHandlerFromConfig() {
-    try {
-      DBClient dbClient = getDbClient();
-      RepositoryHandler repositoryHandler =
-          RepositoryHandler.makeRepositoryHandlerFromConfig(dbClient, null);
-      assertNotNull(repositoryHandler);
-    } catch (RepositoryException e) {
-      fail();
-    }
+    RepositoryHandler repositoryHandler =
+        RepositoryHandler.makeRepositoryHandlerFromConfig(getDbContext(), null);
+    assertNotNull(repositoryHandler);
   }
 
   public void testSetCursorDB() {
-    DBClient dbClient;
-    try {
-      int cursorDB = 5;
-      dbClient = getDbClient();
-      RepositoryHandler repositoryHandler =
-          RepositoryHandler.makeRepositoryHandlerFromConfig(dbClient, null);
-      repositoryHandler.setCursorDB(cursorDB);
-      assertEquals(5, repositoryHandler.getCursorDB());
-    } catch (RepositoryException e) {
-      fail();
-    }
+    int cursorDB = 5;
+    RepositoryHandler repositoryHandler =
+        RepositoryHandler.makeRepositoryHandlerFromConfig(getDbContext(), null);
+    repositoryHandler.setCursorDB(cursorDB);
+    assertEquals(5, repositoryHandler.getCursorDB());
   }
 
   public void testExecuteQueryAndAddDocsForParameterizedQuery() {
@@ -62,33 +51,23 @@ public class RepositoryHandlerTest extends DBTestBase {
     DBContext dbContext = getDbContext();
     dbContext.setSqlQuery(sqlQuery);
     dbContext.setParameterizedQueryFlag(true);
-    DBClient dbClient;
-    try {
-      dbClient = new DBClient(dbContext);
-      RepositoryHandler repositoryHandler =
-          RepositoryHandler.makeRepositoryHandlerFromConfig(dbClient, null);
-      repositoryHandler.setTraversalContext(new ProductionTraversalContext());
-      LinkedList<JsonDocument> jsonDocumenList =
-          repositoryHandler.executeQueryAndAddDocs();
-      JsonDocument jsonDocument = jsonDocumenList.iterator().next();
-      assertEquals("MQ", jsonDocument.getDocumentId());
-    } catch (DBException e) {
-      // TODO Auto-generated catch block
-      e.printStackTrace();
-    }
+    RepositoryHandler repositoryHandler =
+        RepositoryHandler.makeRepositoryHandlerFromConfig(dbContext, null);
+    repositoryHandler.setTraversalContext(new ProductionTraversalContext());
+    LinkedList<JsonDocument> jsonDocumenList =
+        repositoryHandler.executeQueryAndAddDocs();
+    JsonDocument jsonDocument = jsonDocumenList.iterator().next();
+    assertEquals("MQ", jsonDocument.getDocumentId());
   }
 
   public void testExecuteQueryAndAddDocs() {
     try {
-      DBClient dbClient = getDbClient();
       RepositoryHandler repositoryHandler =
-          RepositoryHandler.makeRepositoryHandlerFromConfig(dbClient, null);
+          RepositoryHandler.makeRepositoryHandlerFromConfig(getDbContext(), null);
       repositoryHandler.setTraversalContext(new ProductionTraversalContext());
       LinkedList<JsonDocument> jsonDocumenList =
           repositoryHandler.executeQueryAndAddDocs();
       assertEquals(true, jsonDocumenList.iterator().hasNext());
-    } catch (RepositoryException e) {
-      fail("Repository Exception in testExecuteQueryAndAddDocs");
     } catch (SnapshotRepositoryRuntimeException e) {
       fail("Database Exception in testExecuteQueryAndAddDocs");
     }

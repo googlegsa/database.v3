@@ -89,33 +89,28 @@ public abstract class DBTestBase extends TestCase {
   }
 
   protected DBContext getDbContext() {
-    DBContext dbContext = new DBContext(configMap.get("connectionUrl"),
-        configMap.get("hostname"), configMap.get("driverClassName"),
-        configMap.get("login"), configMap.get("password"),
-        configMap.get("dbName"), configMap.get("sqlQuery"),
-        configMap.get("googleConnectorWorkDir"),
-        configMap.get("primaryKeysString"), configMap.get("xslt"),
-        configMap.get("authZQuery"), configMap.get("lastModifiedDate"),
-        configMap.get("documentTitle"), configMap.get("documentURLField"),
-        configMap.get("documentIdField"), configMap.get("baseURL"),
-        configMap.get("lobField"), configMap.get("fetchURLField"),
-        configMap.get("extMetadataType"));
-    dbContext.setNumberOfRows(2);
-
-    return dbContext;
+    try {
+      DBContext dbContext = new DBContext(configMap.get("connectionUrl"),
+          configMap.get("hostname"), configMap.get("driverClassName"),
+          configMap.get("login"), configMap.get("password"),
+          configMap.get("dbName"), configMap.get("sqlQuery"),
+          configMap.get("googleConnectorWorkDir"),
+          configMap.get("primaryKeysString"), configMap.get("xslt"),
+          configMap.get("authZQuery"), configMap.get("lastModifiedDate"),
+          configMap.get("documentTitle"), configMap.get("documentURLField"),
+          configMap.get("documentIdField"), configMap.get("baseURL"),
+          configMap.get("lobField"), configMap.get("fetchURLField"),
+          configMap.get("extMetadataType"));
+      dbContext.setNumberOfRows(2);
+      return dbContext;
+    } catch (DBException e) {
+      // Wrap a rare exception to avoid requiring throws clauses everywhere.
+      throw new RuntimeException(e);
+    }
   }
 
-  protected DBClient getDbClient() throws RepositoryException {
-    DBClient dbClient;
-    try {
-      dbClient = new DBClient(getDbContext());
-      return dbClient;
-    } catch (DBException e) {
-      // TODO Auto-generated catch block
-      e.printStackTrace();
-    }
-
-    return null;
+  protected DBClient getDbClient() {
+    return getDbContext().getClient();
   }
 
   /**
@@ -133,9 +128,6 @@ public abstract class DBTestBase extends TestCase {
     } catch (SQLException se) {
       fail("SQLException is occured while closing database connection"
           + se.toString());
-    } catch (RepositoryException re) {
-      fail("RepositoryException is occured while closing database connection"
-          + re.toString());
     } catch (IOException ioe) {
       fail("IOException is occured while closing database connection"
           + ioe.toString());
