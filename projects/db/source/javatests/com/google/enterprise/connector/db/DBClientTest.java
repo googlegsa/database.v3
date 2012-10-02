@@ -34,12 +34,8 @@ public class DBClientTest extends DBTestBase {
   }
 
   public void testDBClient() {
-    try {
-      DBClient dbClient = getDbClient();
-      assertNotNull(dbClient);
-    } catch (RepositoryException e) {
-      fail("Repository Exception in testDBClient");
-    }
+    DBClient dbClient = getDbClient();
+    assertNotNull(dbClient);
   }
 
   /* @Override */
@@ -55,8 +51,6 @@ public class DBClientTest extends DBTestBase {
       assertNotNull(connection);
     } catch (SQLException e) {
       fail("SQL Exception in testConnectivity");
-    } catch (RepositoryException e) {
-      fail("Repository Exception in testConnectivity");
     }
   }
 
@@ -68,13 +62,7 @@ public class DBClientTest extends DBTestBase {
     String sqlQuery = "SELECT * FROM TestEmpTable where id < 15";
     DBContext dbContext = getDbContext();
     dbContext.setSqlQuery(sqlQuery);
-    try {
-      DBClient dbClient = new DBClient(dbContext);
-    } catch (DBException e) {
-      fail("Failed to initialize DBClient" + e);
-    } catch (RuntimeException e) {
-      fail("Failed to Initialize DBClient" + e);
-    }
+    DBClient dbClient = dbContext.getClient();
   }
 
   /**

@@ -28,9 +28,9 @@ public class DBClassRepositoryTest extends DBTestBase {
     super.setUp();
     runDBScript(CREATE_TEST_DB_TABLE);
     runDBScript(LOAD_TEST_DATA);
-    DBClient dbClient = getDbClient();
+    DBContext dbContext = getDbContext();
     RepositoryHandler repositoryHandler =
-        RepositoryHandler.makeRepositoryHandlerFromConfig(dbClient, null);
+        RepositoryHandler.makeRepositoryHandlerFromConfig(dbContext, null);
     repositoryHandler.setTraversalContext(new ProductionTraversalContext());
     DBJsonDocumentFetcher dbJsonDocumentFetcher = new DBJsonDocumentFetcher(
         repositoryHandler);

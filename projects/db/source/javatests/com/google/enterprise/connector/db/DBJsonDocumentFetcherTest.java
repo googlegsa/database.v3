@@ -29,18 +29,12 @@ public class DBJsonDocumentFetcherTest extends DBTestBase {
   }
 
   public void testIterator() {
-    DBClient dbClient;
-    try {
-      dbClient = getDbClient();
-      RepositoryHandler repositoryHandler =
-          RepositoryHandler.makeRepositoryHandlerFromConfig(dbClient, null);
-      repositoryHandler.setTraversalContext(new ProductionTraversalContext());
-      DBJsonDocumentFetcher dbJsonDocumentFetcher = new DBJsonDocumentFetcher(
-          repositoryHandler);
-      assertTrue(dbJsonDocumentFetcher.iterator().hasNext());
-    } catch (RepositoryException e) {
-      fail("Repository Exception in testIterator");
-    }
+    RepositoryHandler repositoryHandler =
+        RepositoryHandler.makeRepositoryHandlerFromConfig(getDbContext(), null);
+    repositoryHandler.setTraversalContext(new ProductionTraversalContext());
+    DBJsonDocumentFetcher dbJsonDocumentFetcher = new DBJsonDocumentFetcher(
+        repositoryHandler);
+    assertTrue(dbJsonDocumentFetcher.iterator().hasNext());
   }
 
   /* @Override */
