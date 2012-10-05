@@ -14,7 +14,6 @@
 
 package com.google.enterprise.connector.db.testing;
 
-import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -22,11 +21,13 @@ import com.google.enterprise.connector.db.DBClient;
 import com.google.enterprise.connector.db.DBContext;
 import com.google.enterprise.connector.db.DBException;
 
-import javax.sql.DataSource;
+import java.io.UnsupportedEncodingException;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.logging.Logger;
+
+import javax.sql.DataSource;
 
 /**
  * A stub client that does not rely on live data in a database and
@@ -36,7 +37,16 @@ public class MockClient extends DBClient {
   private static final Logger LOG =
       Logger.getLogger(MockClient.class.getName());
 
-  private static final byte[] PDF_PREFIX = "%PDF-".getBytes(Charsets.UTF_8);
+  // TODO: "%PDF-".getBytes(Charsets.UTF_8) returns Java 6.
+  private static final byte[] PDF_PREFIX;
+
+  static {
+    try {
+      PDF_PREFIX = "%PDF-".getBytes("UTF-8");
+    } catch (UnsupportedEncodingException e) {
+      throw new AssertionError(e);
+    }
+  }
 
   /**
    * Generates a byte array of a given size, filled with either zeroes
