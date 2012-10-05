@@ -16,6 +16,7 @@ package com.google.enterprise.connector.db;
 
 import com.google.enterprise.connector.db.diffing.DBClass;
 import com.google.enterprise.connector.db.diffing.JsonDocument;
+import com.google.enterprise.connector.db.diffing.JsonDocumentUtil;
 import com.google.enterprise.connector.db.diffing.JsonObjectUtil;
 import com.google.enterprise.connector.spi.Document;
 import com.google.enterprise.connector.spi.RepositoryException;
@@ -34,71 +35,72 @@ public class DBClassTest extends TestCase {
     jsonObjectUtil.setProperty(SpiConstants.PROPNAME_DOCID, "1");
     jsonObjectUtil.setProperty(SpiConstants.PROPNAME_ISPUBLIC, "false");
     jsonObjectUtil.setProperty(SpiConstants.PROPNAME_MIMETYPE, "text/plain");
-    jsonDocument = new JsonDocument(jsonObjectUtil.getJsonObject());
+    jsonObjectUtil.setProperty(JsonDocumentUtil.ROW_CHECKSUM, "1234");
+    jsonDocument = new JsonDocument(jsonObjectUtil.getProperties(),
+                                    jsonObjectUtil.getJsonObject());
   }
 
   public void testFactoryFunction() {
-    DBClass dbClass;
-    dbClass = DBClass.factoryFunction.apply(jsonDocument);
+    DBClass dbClass = DBClass.factoryFunction.apply(jsonDocument);
     assertNotNull(dbClass);
   }
 
-  public void testGetDocument() {
-    DBClass dbClass;
-    dbClass = new DBClass(jsonDocument);
-    try {
-      Document document = dbClass.getDocument();
-      assertNotNull(document);
-    } catch (RepositoryException e) {
-      fail("Repository Exception in testGetDocument");
-    }
+  public void testGetDocument() throws Exception {
+    DBClass dbClass = new DBClass(jsonDocument);
+    assertNotNull(dbClass.getDocument());
   }
 
   public void testGetDocumentId() {
-    DBClass dbClass;
-    dbClass = new DBClass(jsonDocument);
+    DBClass dbClass = new DBClass(jsonDocument);
     String expected = "1";
     assertEquals(expected, dbClass.getDocumentId());
   }
 
-  public void testGetUpdate() {
-    DocumentHandle documentHandle = new DBClass(jsonDocument);
+  public void testGetUpdateNewDocument() throws Exception {
     DocumentSnapshot documentSnapshot = new DBClass(jsonDocument);
-    try {
-      DocumentHandle actual = documentSnapshot.getUpdate(null);
-      // The diffing framework sends in a null to indicate that it has not
-      // seen this snapshot before. So we return the corresponding Handle
-      // (in our case, the same object).
-      assertEquals(documentHandle.getDocument(), actual.getDocument());
-
-      // We just assume that if the serialized form is the same, then
-      // nothing has changed.
-      assertNull(documentSnapshot.getUpdate(documentSnapshot));
-
-      // Something has changed, so return the corresponding handle.
-      JsonObjectUtil jsonObjectUtil = new JsonObjectUtil();
-      jsonObjectUtil.setProperty(SpiConstants.PROPNAME_DOCID, "2");
-      jsonObjectUtil.setProperty(SpiConstants.PROPNAME_ISPUBLIC, "false");
-      jsonObjectUtil.setProperty(SpiConstants.PROPNAME_MIMETYPE, "text/plain");
-      JsonDocument jDoc = new JsonDocument(jsonObjectUtil.getJsonObject());
-      DocumentSnapshot newdocumentSnapshot = new DBClass(jDoc);
-      // Verify whether the changed property of the document has not been set.
-      assertTrue(!jDoc.getChanged());
-      DocumentHandle onGSA = documentSnapshot.getUpdate(newdocumentSnapshot);
-      assertNotSame(documentHandle.getDocument(), onGSA);
-      // Verify whether the changed property of the document has been set.
-      JsonDocument jsonDoc = (JsonDocument) onGSA.getDocument();
-      assertTrue(jsonDoc.getChanged());
-    } catch (RepositoryException e) {
-      fail("Repository Exception in testGetUpdate");
-    }
+    DocumentHandle actual = documentSnapshot.getUpdate(null);
+    // The diffing framework sends in a null to indicate that it has not
+    // seen this snapshot before. So we return the corresponding Handle
+    // (in our case, the same object).
+    assertSame(jsonDocument, actual.getDocument());
   }
 
+  public void testGetUpdateNoChange() throws Exception {
+    DocumentSnapshot documentSnapshot = new DBClass(jsonDocument);
+    // We just assume that if the serialized form is the same, then
+    // nothing has changed.
+    assertNull(documentSnapshot.getUpdate(documentSnapshot));
+  }
+
+  public void testGetUpdateChangedDocument() throws Exception {
+    // This represents the serialized snapshot that the GSA knows about.
+    JsonObjectUtil jsonObjectUtil = new JsonObjectUtil();
+    jsonObjectUtil.setProperty(SpiConstants.PROPNAME_DOCID, "1");
+    jsonObjectUtil.setProperty(SpiConstants.PROPNAME_ISPUBLIC, "false");
+    jsonObjectUtil.setProperty(SpiConstants.PROPNAME_MIMETYPE, "text/plain");
+    // Checksum change indicates document changed.
+    jsonObjectUtil.setProperty(JsonDocumentUtil.ROW_CHECKSUM, "9999");
+    DocumentSnapshot onGsa =
+        new DBClass(new JsonDocument(jsonObjectUtil.getJsonObject()));
+
+    // This represents the document as found in the repository.
+    DocumentSnapshot documentSnapshot = new DBClass(jsonDocument);
+    // Verify whether the changed property of the document has not been set.
+    assertFalse(jsonDocument.getChanged());
+
+    DocumentHandle update = documentSnapshot.getUpdate(onGsa);
+    assertSame(update.getDocument(), jsonDocument);
+    // Verify whether the changed property of the document has been set.
+    assertTrue(jsonDocument.getChanged());
+  }
+
+  /**
+   * Test that the JSON obect snapshot string is a limited subset of all the
+   * properties. Only the docid and checksum should be included.
+   */
   public void testToString() {
-    DBClass dbClass;
-    String expected = "{\"google:ispublic\":\"false\",\"google:docid\":\"1\","
-        + "\"google:mimetype\":\"text/plain\"}";
-    dbClass = new DBClass(jsonDocument);
+    DBClass dbClass = new DBClass(jsonDocument);
+    String expected = "{\"google:docid\":\"1\",\"google:sum\":\"1234\"}";
     assertEquals(expected, dbClass.toString());
   }
 }

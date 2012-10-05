@@ -43,7 +43,6 @@ import java.util.logging.Logger;
 public class JsonDocumentUtilTest extends DBTestBase {
   private static final Logger LOG =
       Logger.getLogger(JsonDocumentUtilTest.class.getName());
-  public static final String ROW_CHECKSUM = "dbconnector:checksum";
 
   /**
    * Test for converting DB row to DB Doc.
@@ -58,8 +57,19 @@ public class JsonDocumentUtilTest extends DBTestBase {
       LOG.info(propName + ":    " + getProperty(doc, propName));
     }
     assertEquals("MSxsYXN0XzAx", getProperty(doc, SpiConstants.PROPNAME_DOCID));
-    assertEquals("7ffd1d7efaf0d1ee260c646d827020651519e7b0",
-        getProperty(doc, ROW_CHECKSUM));
+    String content = getProperty(doc, SpiConstants.PROPNAME_CONTENT);
+    assertNotNull(content);
+    assertTrue(content.contains("id=1"));
+    assertTrue(content.contains("lastName=last_01"));
+    assertEquals("text/html", getProperty(doc, SpiConstants.PROPNAME_MIMETYPE));
+
+    // Checksum should be hidden as a public property.
+    assertNull(doc.findProperty(JsonDocumentUtil.ROW_CHECKSUM));
+      
+    // But the checksum should be included in the snapshot string.
+    String expected = "{\"google:docid\":\"MSxsYXN0XzAx\","
+        + "\"google:sum\":\"7ffd1d7efaf0d1ee260c646d827020651519e7b0\"}";
+    assertEquals(expected, doc.toJson());
   }
 
   /**
@@ -193,7 +203,7 @@ public class JsonDocumentUtilTest extends DBTestBase {
 
     // The MIME type of the content should have been automatically determined.
     assertEquals("text/plain",
-        Value.getSingleValueString(clobDoc, SpiConstants.PROPNAME_MIMETYPE));
+        getProperty(clobDoc, SpiConstants.PROPNAME_MIMETYPE));
 
     // Test scenario:- primary key column should be excluded while
     // indexing external metadata.

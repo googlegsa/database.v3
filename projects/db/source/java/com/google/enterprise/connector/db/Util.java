@@ -46,7 +46,6 @@ public class Util {
   private static final String DBCONNECTOR_PROTOCOL = "dbconnector://";
   private static final String DATABASE_TITLE_PREFIX =
       "Database Connector Result";
-  public static final String ROW_CHECKSUM = "dbconnector:checksum";
 
   // This class should not be initialized.
   private Util() {
@@ -120,10 +119,10 @@ public class Util {
   /**
    * Generates the SHA1 checksum.
    *
-   * @param buf
+   * @param bufs arrays of bytes to checksum
    * @return checksum string.
    */
-  public static String getChecksum(byte[] buf) {
+  public static String getChecksum(byte[]... bufs) {
     MessageDigest digest;
     try {
       digest = MessageDigest.getInstance(CHECKSUM_ALGO);
@@ -131,7 +130,9 @@ public class Util {
       throw new RuntimeException("Could not get a message digest for "
           + CHECKSUM_ALGO + "\n" + e);
     }
-    digest.update(buf);
+    for (byte[] buf : bufs) {
+      digest.update(buf);
+    }
     return asHex(digest.digest());
   }
 
@@ -279,48 +280,5 @@ public class Util {
       }
     }
     return content.toByteArray();
-  }
-
-  /**
-   * Sets the content of LOB data in JsonDocument.
-   *
-   * @param binaryContent LOB content to be set
-   * @param dbName name of the database
-   * @param row Map representing row in the database table
-   * @param dbContext object of DBContext
-   * @param primaryKeys primary key columns
-   * @return JsonDocument
-   * @throws DBException
-   */
-  public static JsonObjectUtil setBinaryContent(byte[] binaryContent,
-      JsonObjectUtil jsonObjectUtil, String dbName, Map<String, Object> row,
-      DBContext dbContext, String[] primaryKeys, String docId)
-      throws DBException {
-    String mimeType =
-        dbContext.getMimeTypeDetector().getMimeType(null, binaryContent);
-    jsonObjectUtil.setProperty(SpiConstants.PROPNAME_MIMETYPE, mimeType);
-
-    // TODO (bmj): I would really like to skip caching the content if the
-    // mimeTypeSupportLevel is <= 0, but I don't have a TraversalContext here.
-    jsonObjectUtil.setBinaryContent(SpiConstants.PROPNAME_CONTENT, binaryContent);
-
-    // Get XML representation of document (exclude the BLOB column).
-    Map<String, Object> rowForXmlDoc = getRowForXmlDoc(row, dbContext);
-    String xmlRow = XmlUtils.getXMLRow(dbName, rowForXmlDoc, primaryKeys,
-                                       "", dbContext, true);
-    // Get checksum of LOB.
-    String blobCheckSum = Util.getChecksum(binaryContent);
-
-    // Get checksum of other column.
-    String otherColumnCheckSum = Util.getChecksum(xmlRow.getBytes());
-
-    // Get checksum of LOB object and other column.
-    String docCheckSum =
-        Util.getChecksum((otherColumnCheckSum + blobCheckSum).getBytes());
-
-    // Set checksum of this document.
-    jsonObjectUtil.setProperty(ROW_CHECKSUM, docCheckSum);
-
-    return jsonObjectUtil;
   }
 }
