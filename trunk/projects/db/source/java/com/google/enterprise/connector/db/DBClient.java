@@ -14,7 +14,6 @@
 
 package com.google.enterprise.connector.db;
 
-import com.google.common.base.Charsets;
 import com.google.enterprise.connector.util.diffing.SnapshotRepositoryRuntimeException;
 
 import com.ibatis.sqlmap.client.SqlMapClient;
@@ -85,9 +84,12 @@ public class DBClient {
 
   private SqlMapClient getSqlMapClient(String sqlMapConfig) {
     try {
+      // TODO: sqlMapConfig.getBytes(Charsets.UTF_8) requires Java 6.
       InputStream resources =
-          new ByteArrayInputStream(sqlMapConfig.getBytes(Charsets.UTF_8));
+          new ByteArrayInputStream(sqlMapConfig.getBytes("UTF-8"));
       return SqlMapClientBuilder.buildSqlMapClient(resources);
+    } catch (UnsupportedEncodingException e) {
+      throw new AssertionError(e);
     } catch (RuntimeException e) {
       throw new RuntimeException("XML is not well formed", e);
     }
