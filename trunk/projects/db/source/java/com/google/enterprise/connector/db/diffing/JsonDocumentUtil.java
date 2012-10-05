@@ -45,7 +45,7 @@ public class JsonDocumentUtil {
   public static final String NO_TIMESTAMP = "NO_TIMESTAMP";
   public static final String NO_DOCID = "NO_DOCID";
   public static final String PRIMARY_KEYS_SEPARATOR = ",";
-  public static final String ROW_CHECKSUM = "dbconnector:checksum";
+  public static final String ROW_CHECKSUM = "google:sum";
   public static final String WITH_BASE_URL = "withBaseURL";
 
   // This class should not be initialized.
@@ -247,8 +247,8 @@ public class JsonDocumentUtil {
           return null;
         }
 
-        jsonObjectUtil = Util.setBinaryContent(binaryContent, jsonObjectUtil,
-            dbName, row, dbContext, primaryKeys, docId);
+        setBinaryContent(binaryContent, jsonObjectUtil,
+            dbName, row, dbContext, primaryKeys);
         LOG.info("BLOB Data found");
       } else if (largeObject instanceof Blob) {
         int length;
@@ -283,8 +283,8 @@ public class JsonDocumentUtil {
             return null;
           }
         }
-        jsonObjectUtil = Util.setBinaryContent(binaryContent, jsonObjectUtil,
-            dbName, row, dbContext, primaryKeys, docId);
+        setBinaryContent(binaryContent, jsonObjectUtil,
+            dbName, row, dbContext, primaryKeys);
         LOG.info("BLOB Data found");
       } else {
         // Get the value of CLOB as StringBuilder. iBATIS returns char array or
@@ -326,8 +326,8 @@ public class JsonDocumentUtil {
           return null;
         }
 
-        jsonObjectUtil = Util.setBinaryContent(binaryContent, jsonObjectUtil,
-            dbName, row, dbContext, primaryKeys, docId);
+        setBinaryContent(binaryContent, jsonObjectUtil,
+            dbName, row, dbContext, primaryKeys);
         LOG.info("CLOB Data found");
       }
       /*
@@ -383,5 +383,39 @@ public class JsonDocumentUtil {
     jsonDocument = new JsonDocument(jsonObjectUtil.getProperties(),
         jsonObjectUtil.getJsonObject());
     return jsonDocument;
+  }
+
+  /**
+   * Sets the content of LOB data in JsonDocument.
+   *
+   * @param binaryContent LOB content to be set
+   * @param dbName name of the database
+   * @param row Map representing row in the database table
+   * @param dbContext object of DBContext
+   * @param primaryKeys primary key columns
+   * @throws DBException
+   */
+  public static void setBinaryContent(byte[] binaryContent,
+      JsonObjectUtil jsonObjectUtil, String dbName, Map<String, Object> row,
+      DBContext dbContext, String[] primaryKeys)
+      throws DBException {
+    String mimeType =
+        dbContext.getMimeTypeDetector().getMimeType(null, binaryContent);
+    jsonObjectUtil.setProperty(SpiConstants.PROPNAME_MIMETYPE, mimeType);
+
+    // TODO (bmj): I would really like to skip caching the content if the
+    // mimeTypeSupportLevel is <= 0, but I don't have a TraversalContext here.
+    jsonObjectUtil.setBinaryContent(SpiConstants.PROPNAME_CONTENT, binaryContent);
+
+    // Get XML representation of document (exclude the LOB column).
+    Map<String, Object> rowForXmlDoc = Util.getRowForXmlDoc(row, dbContext);
+    String xmlRow = XmlUtils.getXMLRow(dbName, rowForXmlDoc, primaryKeys,
+                                       "", dbContext, true);
+
+    // Get checksum of LOB object and other columns.
+    String docCheckSum = Util.getChecksum(xmlRow.getBytes(), binaryContent);
+
+    // Set checksum of this document.
+    jsonObjectUtil.setProperty(ROW_CHECKSUM, docCheckSum);
   }
 }
