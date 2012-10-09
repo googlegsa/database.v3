@@ -37,12 +37,15 @@ public class MockClient extends DBClient {
   private static final Logger LOG =
       Logger.getLogger(MockClient.class.getName());
 
-  // TODO: "%PDF-".getBytes(Charsets.UTF_8) returns Java 6.
+  // TODO: String.getBytes(Charsets.UTF_8) requires Java 6.
   private static final byte[] PDF_PREFIX;
 
   static {
     try {
-      PDF_PREFIX = "%PDF-".getBytes("UTF-8");
+      // TODO: We could work harder to make this valid PDF.
+      // Include two consecutive nulls to force MimeTypeDetector to
+      // think it's binary rather than text/plain.
+      PDF_PREFIX = "%PDF-1.3\n%\0\0\n".getBytes("UTF-8");
     } catch (UnsupportedEncodingException e) {
       throw new AssertionError(e);
     }
@@ -53,10 +56,10 @@ public class MockClient extends DBClient {
    * or random bytes, prefixed with %PDF- to get a valid media type
    * from the detector.
    */
-  private static byte[] getBlob(int size, boolean random) {
+  public static byte[] getBlob(int size, boolean random) {
     // Set a minimum size to get reasonable randomness: 256^4 = 2^32
     // permutations.
-    byte[] blob = new byte[Math.min(size, PDF_PREFIX.length + 4)];
+    byte[] blob = new byte[Math.max(size, PDF_PREFIX.length + 4)];
     if (random) {
       new Random().nextBytes(blob);
     }
@@ -80,6 +83,13 @@ public class MockClient extends DBClient {
   private boolean blobSingleton = true;
 
   /** Generate a BLOB value with random bytes or all zeroes (the default). */
+  // TODO: Setting this to true forces the connector to feed every row
+  // on every pass. The intent was only to create a more realistic
+  // feed size, because the zero-filled BLOB compresses way too much.
+  // We could add another parameter to create stable values between
+  // passes even when using random values for each row. We have to
+  // avoid caching the entire random BLOBs (too much memory use), but
+  // maybe we could store a random seed for each of the rowCount rows.
   private boolean blobRandom = false;
 
   /** The singleton or current BLOB value. The current value is not used. */
