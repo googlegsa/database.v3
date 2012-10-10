@@ -44,20 +44,6 @@ public class RepositoryHandler {
   private int cursorDB = 0;
   private Integer keyValue = null;
   private String primaryKeyColumn = null;
-  // EXC_NORMAL represents that DB Connector is running in normal mode
-  private static final int MODE_NORMAL = 1;
-
-  // EXC_METADATA_URL represents that DB Connector is running for indexing
-  // External Metadada
-  private static final int MODE_METADATA_URL = 2;
-
-  // EXC_BLOB represents that DB Connector is running for indexing BLOB
-  // data
-  private static final int MODE_METADATA_BASE_URL = 3;
-
-  // EXC_CLOB represents that DB Connector is running for indexing CLOB
-  // data
-  private static final int MODE_BLOB_CLOB = 4;
 
   public TraversalContext getTraversalContext() {
     return traversalContext;
@@ -141,7 +127,6 @@ public class RepositoryHandler {
    */
   public LinkedList<JsonDocument> executeQueryAndAddDocs()
       throws SnapshotRepositoryRuntimeException {
-    LinkedList<JsonDocument> docList = new LinkedList<JsonDocument>();
     List<Map<String, Object>> rows = null;
 
     if (!dbContext.isParameterizedQueryFlag()) {
@@ -197,83 +182,36 @@ public class RepositoryHandler {
       JsonDocument.setTraversalContext(
           traversalContextManager.getTraversalContext());
     }
-    JsonDocument jsonDoc = null;
-    if (rows != null && rows.size() > 0) {
-      currentExcMode = getExecutionScenario(dbContext);
-      String logMessage = getExcLogMessage(currentExcMode);
-      LOG.info(logMessage);
-      switch (currentExcMode) {
-      // execute the connector for metadata-url feed
-      case MODE_METADATA_URL:
 
-        for (Map<String, Object> row : rows) {
-          try {
-            jsonDoc = JsonDocumentUtil.generateMetadataURLFeed(
-                dbContext.getDbName(),
-                dbContext.getPrimaryKeys().split(Util.PRIMARY_KEYS_SEPARATOR),
-                row, dbContext.getHostname(), dbContext, "");
-          } catch (DBException e) {
-            LOG.warning("Cannot convert datbase record to JsonDocument for "
-                + "record "+ row + "\n" + e);
+    return getDocList(rows);
+  }
+
+  private LinkedList<JsonDocument> getDocList(List<Map<String, Object>> rows) {
+    LinkedList<JsonDocument> docList = new LinkedList<JsonDocument>();
+    if (rows != null && rows.size() > 0) {
+      JsonDocumentUtil docBuilder =
+          getDocumentBuilder(dbContext, traversalContext);
+
+      for (Map<String, Object> row : rows) {
+        try {
+          JsonDocument jsonDoc = docBuilder.fromRow(row);
+          if (jsonDoc != null) {
+            docList.add(jsonDoc);
           }
-          docList.add(jsonDoc);
+        } catch (DBException e) {
+          LOG.warning("Cannot convert database record to JsonDocument for "
+              + "record " + row + "\n" + e);
         }
-        break;
-      // execute the connector for BLOB data
-      case MODE_METADATA_BASE_URL:
-        jsonDoc = null;
-        for (Map<String, Object> row : rows) {
-          try {
-            jsonDoc = JsonDocumentUtil.generateMetadataURLFeed(
-                dbContext.getDbName(),
-                dbContext.getPrimaryKeys().split(Util.PRIMARY_KEYS_SEPARATOR),
-                row, dbContext.getHostname(), dbContext,
-                JsonDocumentUtil.WITH_BASE_URL);
-          } catch (DBException e) {
-            LOG.warning("Cannot convert datbase record to JsonDocument for "
-                + "record "+ row + "\n" + e);
-          }
-          docList.add(jsonDoc);
-        }
-        break;
-      // execute the connector for CLOB data
-      case MODE_BLOB_CLOB:
-        jsonDoc = null;
-        for (Map<String, Object> row : rows) {
-          try {
-            jsonDoc = JsonDocumentUtil.largeObjectToDoc(dbContext.getDbName(),
-                dbContext.getPrimaryKeys().split(Util.PRIMARY_KEYS_SEPARATOR),
-                row, dbContext.getHostname(), dbContext, traversalContext);
-            if (jsonDoc != null) {
-              docList.add(jsonDoc);
-            }
-          } catch (DBException e) {
-            LOG.warning("Cannot convert datbase record to JsonDocument for "
-                + "record" + row + "\n" + e);
-          }
-        }
-        break;
-      // execute the connector in normal mode
-      default:
-        for (Map<String, Object> row : rows) {
-          try {
-            jsonDoc = JsonDocumentUtil.rowToDoc(dbContext.getDbName(),
-                dbContext.getPrimaryKeys().split(Util.PRIMARY_KEYS_SEPARATOR),
-                row, dbContext.getHostname(), dbContext.getXslt(), dbContext);
-            if (jsonDoc != null) {
-              docList.add(jsonDoc);
-            }
-          } catch (DBException e) {
-            LOG.warning("Cannot convert datbase record to JsonDocument for "
-                + "record" + row + "\n" + e);
-          }
-        }
-        break;
       }
     }
-    LOG.info(docList.size() + " document(s) to be fed to GSA" + " at time: "
+    LOG.info(docList.size() + " document(s) to be fed to GSA at time: "
         + new Date());
     return docList;
+  }
+
+  /* TODO: Move this method to JsonDocumentUtil or even Util. */
+  private static boolean isNonBlank(String value) {
+    return value != null && value.trim().length() > 0;
   }
 
   /**
@@ -281,67 +219,36 @@ public class RepositoryHandler {
    * CLOB, BLOB or External Metadata) of the DB Connector and returns the
    * integer value representing execution mode
    */
-  private int getExecutionScenario(DBContext dbContext) {
+  /* TODO: Move this method to JsonDocumentUtil. */
+  private static JsonDocumentUtil getDocumentBuilder(DBContext dbContext,
+      TraversalContext traversalContext) {
     String extMetaType = dbContext.getExtMetadataType();
-    String lobField = dbContext.getLobField();
-    String docURLField = dbContext.getDocumentURLField();
-    String docIdField = dbContext.getDocumentIdField();
-    if (extMetaType != null && extMetaType.trim().length() > 0
+    if (isNonBlank(extMetaType)
         && !extMetaType.equals(DBConnectorType.NO_EXT_METADATA)) {
       if (extMetaType.equalsIgnoreCase(DBConnectorType.COMPLETE_URL)
-          && (docURLField != null && docURLField.trim().length() > 0)) {
-        return MODE_METADATA_URL;
+          && isNonBlank(dbContext.getDocumentURLField())) {
+        LOG.info("DB Connector is running in External Metadata feed mode with "
+            + "complete document URL");
+        return new UrlDocumentBuilder(dbContext, "");
       } else if (extMetaType.equalsIgnoreCase(DBConnectorType.DOC_ID)
-          && (docIdField != null && docIdField.trim().length() > 0)) {
-        return MODE_METADATA_BASE_URL;
+          && isNonBlank(dbContext.getDocumentIdField())) {
+        LOG.info("DB Connector is running in External Metadata feed mode with "
+            + "Base URL and document ID");
+        return new UrlDocumentBuilder(dbContext,
+            JsonDocumentUtil.WITH_BASE_URL);
       } else if (extMetaType.equalsIgnoreCase(DBConnectorType.BLOB_CLOB)
-          && (lobField != null && lobField.trim().length() > 0)) {
-        return MODE_BLOB_CLOB;
-      } else {
-        /*
-         * Explicitly change the mode of execution as user may switch from
-         * "External Metadata Feed" mode to "Content Feed(for text data)" mode.
-         */
-        dbContext.setExtMetadataType(DBConnectorType.NO_EXT_METADATA);
-        return MODE_NORMAL;
+          && isNonBlank(dbContext.getLobField())) {
+        LOG.info(
+            "DB Connector is running in Content Feed Mode for BLOB/CLOB data");
+        return new LobDocumentBuilder(dbContext, traversalContext);
       }
-    } else {
-      /*
-       * Explicitly change the mode of execution as user may switch from
-       * "External Metadata Feed" mode to "Content Feed(for text data)" mode.
-       */
-      dbContext.setExtMetadataType(DBConnectorType.NO_EXT_METADATA);
-      return MODE_NORMAL;
     }
-  }
 
-  /**
-   * Return appropriate log message as per current execution mode.
-   *
-   * @param excMode current execution mode
-   * @return appropriate log message as per current execution mode.
-   */
-  private static String getExcLogMessage(int excMode) {
-    switch (excMode) {
-      case MODE_METADATA_URL: {
-        // execution mode: Externam Metadata feed using complete document URL
-        return " DB Connector is running in External Metadata feed mode with "
-            + "complete document URL";
-      }
-      case MODE_METADATA_BASE_URL: {
-        // execution mode: Externam Metadata feed using Base URL and document Id
-        return " DB Connector is running in External Metadata feed mode with "
-            + "Base URL and document ID";
-      }
-      case MODE_BLOB_CLOB: {
-        // execution mode: Content feed mode for BLOB/CLOB data.
-        return
-            " DB Connector is running in Content Feed Mode for BLOB/CLOB data";
-      }
-      default: {
-        // execution mode: Content feed mode for Text data.
-        return " DB Connector is running in content feed mode for text data";
-      }
-    }
+    // No matches found above.
+    // Explicitly change the mode of execution as user may switch from
+    // "External Metadata Feed" mode to "Content Feed(for text data)" mode.
+    dbContext.setExtMetadataType(DBConnectorType.NO_EXT_METADATA);
+    LOG.info("DB Connector is running in content feed mode for text data");
+    return new MetadataDocumentBuilder(dbContext);
   }
 }
