@@ -82,7 +82,7 @@
     GSA) objects
   -->
   <bean id="change-queue"
-    class=" com.google.enterprise.connector.util.diffing.ChangeQueue">
+    class="com.google.enterprise.connector.util.diffing.ChangeQueue">
     <constructor-arg index="0" value="1000" />
     <constructor-arg index="1" value="10000" />
     <constructor-arg index="2" ref="activity-logger" />
@@ -106,9 +106,15 @@
     singleton="true">
   </bean>
 
-  <!-- Bean for Top-level factory for Database Connector objects -->
-  <bean id="db-class-factory"
-    class="com.google.enterprise.connector.db.diffing.DBClassFactory"
+  <!-- Bean for DocumentHandleFactory for documents -->
+  <bean id="db-handle-factory"
+    class="com.google.enterprise.connector.db.diffing.DBHandleFactory"
+    singleton="true">
+  </bean>
+
+  <!-- Bean for DocumentSnapshotFactory -->
+  <bean id="db-snapshot-factory"
+    class="com.google.enterprise.connector.db.diffing.DBSnapshotFactory"
     singleton="true">
   </bean>
 
@@ -120,7 +126,7 @@
     <constructor-arg ref="change-queue" />
     <constructor-arg ref="queue-dir" />
     <constructor-arg ref="internal-document-handle-factory" />
-    <constructor-arg ref="db-class-factory" />
+    <constructor-arg ref="db-handle-factory" />
   </bean>
 
   <!--Bean for implementation of ChecksumGenerator-->
@@ -141,7 +147,7 @@
     class="com.google.enterprise.connector.util.diffing.DocumentSnapshotRepositoryMonitorManagerImpl"
     singleton="true">
     <constructor-arg ref="db-document-snapshot-repository-list" />
-    <constructor-arg ref="db-class-factory" />
+    <constructor-arg ref="db-snapshot-factory" />
     <constructor-arg ref="snapshot-dir" />
     <constructor-arg ref="checksum-generator" />
     <constructor-arg ref="change-queue" />

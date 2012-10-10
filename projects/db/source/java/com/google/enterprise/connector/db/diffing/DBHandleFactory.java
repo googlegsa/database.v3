@@ -14,22 +14,11 @@
 
 package com.google.enterprise.connector.db.diffing;
 
-import java.util.Iterator;
-import java.util.logging.Logger;
+import com.google.enterprise.connector.util.diffing.DocumentHandleFactory;
 
-/** Uses an RepositoryHandlerIterator to implement JsonDocumentFetcher. */
-public class DBJsonDocumentFetcher implements JsonDocumentFetcher {
-  private static Logger LOG =
-      Logger.getLogger(DBJsonDocumentFetcher.class.getName());
-  private RepositoryHandlerIterator repositoryHandlerIterator;
-
-  public DBJsonDocumentFetcher(RepositoryHandler repositoryHandler) {
-    this.repositoryHandlerIterator = new RepositoryHandlerIterator(
-        repositoryHandler);
-  }
-
-  /* @Override */
-  public Iterator<JsonDocument> iterator() {
-    return repositoryHandlerIterator;
+public class DBHandleFactory implements DocumentHandleFactory {
+  @Override
+  public DBHandle fromString(String stringForm) {
+    return new DBHandle(stringForm);
   }
 }

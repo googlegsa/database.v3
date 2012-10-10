@@ -14,9 +14,12 @@
 
 package com.google.enterprise.connector.db.diffing;
 
-/**
- * Building block for diffing-style connectors.
- */
-public interface JsonDocumentFetcher extends Iterable<JsonDocument> {
+import com.google.enterprise.connector.util.diffing.DocumentSnapshot;
+import com.google.enterprise.connector.util.diffing.DocumentSnapshotFactory;
 
+public class DBSnapshotFactory implements DocumentSnapshotFactory {
+  @Override
+  public DocumentSnapshot fromString(String stringForm) {
+    return new DBSnapshot(stringForm);
+  }
 }

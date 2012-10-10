@@ -15,27 +15,20 @@
 package com.google.enterprise.connector.db.diffing;
 
 import java.util.ArrayList;
-import java.util.logging.Logger;
 
 /**
  * Building-block required by the diffing framework. Gives a collection of
- * SnapshotRepository to the diffing framework(@link
+ * SnapshotRepository to the diffing framework ({@link
  * DocumentSnapshotRepositoryMonitorManagerImpl class) for accessing the
- * SnapshotRepository's.Depending upon the number of SnapshotRepository's the
- * Monitor Manager creates number of monitor threads.But in case of Database
- * connector the List consists of only one SnapshotRepository Object(as database
- * cannot be crawled in segments) hence the Monitor Manager creates only one
- * thread to crawl the database.
+ * SnapshotRepository objects. The monitor manager creates a thread for
+ * each entry in the list. In this connector there is only one
+ * SnapshotRepository object (as database cannot be crawled in segments)
+ * hence the Monitor Manager creates only one thread to crawl the
+ * database.
  */
 public class DBDocumentSnapshotRepositoryList extends
-    ArrayList<DBClassRepository> {
-  private static final Logger LOG =
-      Logger.getLogger(DBDocumentSnapshotRepositoryList.class.getName());
-
+    ArrayList<DBSnapshotRepository> {
   public DBDocumentSnapshotRepositoryList(RepositoryHandler repositoryHandler) {
-    JsonDocumentFetcher f = new DBJsonDocumentFetcher(repositoryHandler);
-    DBClassRepository repository = new DBClassRepository(f);
-    LOG.info("Repository Length Is:" + repository);
-    add(repository);
+    add(new DBSnapshotRepository(repositoryHandler));
   }
 }

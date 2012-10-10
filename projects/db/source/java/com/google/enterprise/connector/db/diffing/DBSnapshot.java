@@ -15,10 +15,9 @@
 package com.google.enterprise.connector.db.diffing;
 
 import com.google.common.base.Function;
-import com.google.enterprise.connector.spi.Document;
+import com.google.enterprise.connector.db.DocIdUtil;
 import com.google.enterprise.connector.spi.RepositoryException;
 import com.google.enterprise.connector.spi.SpiConstants;
-import com.google.enterprise.connector.spi.Value;
 import com.google.enterprise.connector.util.diffing.DocumentHandle;
 import com.google.enterprise.connector.util.diffing.DocumentSnapshot;
 
@@ -26,67 +25,57 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.Date;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * This class implements both the {@link DocumentHandle} and
- * {@link DocumentSnapshot} interfaces. It is backed with a {@link JsonDocument}
- * .
+ * Represents both flavors of snapshot, from a snapshot file and from
+ * a {@code SnapshotRepository}.
  */
-public class DBClass implements DocumentHandle, DocumentSnapshot {
-  private static final Logger LOG = Logger.getLogger(DBClass.class.getName());
+public class DBSnapshot implements DocumentSnapshot {
+  private static final Logger LOG =
+      Logger.getLogger(DBSnapshot.class.getName());
+
+  /** An optional document, may be null. */
   private final JsonDocument document;
   private final String documentId;
   private final String jsonString;
 
-  public DBClass(JsonDocument jsonDoc) {
+  /** Constructs a snapshot from a {@code DBSnapshotRepository}. */
+  public DBSnapshot(JsonDocument jsonDoc) {
     document = jsonDoc;
     documentId = document.getDocumentId();
     jsonString = document.toJson();
   }
 
-  public static Function<JsonDocument, DBClass> factoryFunction =
-      new Function<JsonDocument, DBClass>() {
-    /* @Override */
-    public DBClass apply(JsonDocument jsonDoc) {
-      return new DBClass(jsonDoc);
+  public static Function<JsonDocument, DBSnapshot> factoryFunction =
+      new Function<JsonDocument, DBSnapshot>() {
+    @Override
+    public DBSnapshot apply(JsonDocument jsonDoc) {
+      DBSnapshot p = new DBSnapshot(jsonDoc);
+      if (LOG.isLoggable(Level.FINER)) {
+        LOG.finer("DBSnapshotRepository returns document with docID "
+            + DocIdUtil.decodeBase64String(p.getDocumentId().toString()));
+      }
+      return p;
     }
   };
 
-  public DBClass(String jsonString) {
-    // This is implemented by saving the supplied jsonString then making a
-    // JSONObject
-    this.jsonString = jsonString;
-    JSONObject jo;
+  /** Reconstructs a snapshot from a snapshot file. */
+  public DBSnapshot(String jsonString) {
+    this.document = null;
     try {
-      jo = new JSONObject(jsonString);
+      JSONObject jo = new JSONObject(jsonString);
+      this.documentId = jo.getString(SpiConstants.PROPNAME_DOCID);
     } catch (JSONException e) {
-
-      LOG.warning("Exception thrown while creating JSONObject from string"
-          + jsonString + "\n" + e.toString());
+      LOG.log(Level.SEVERE, "Invalid serialized snapshot: " + jsonString, e);
       throw new IllegalArgumentException(
-          "Exception thrown for illegal JsonString" + jsonString + "\n", e);
-
+          "Invalid serialized snapshot: " + jsonString, e);
     }
-    document = new JsonDocument(jo);
-    try {
-      documentId = Value.getSingleValueString(document,
-                                              SpiConstants.PROPNAME_DOCID);
-    } catch (RepositoryException e) {
-      LOG.warning("Exception thrown while extracting docId for Document"
-          + document + "\n" + e.toString());
-      // Thrown to indicate an inappropriate argument has been passed to
-      // Value.getSingleValueString() method.
-      throw new IllegalArgumentException();
-    }
+    this.jsonString = jsonString;
   }
 
-  /* @Override */
-  public Document getDocument() throws RepositoryException {
-    return document;
-  }
-
-  /* @Override */
+  @Override
   public String getDocumentId() {
     return documentId;
   }
@@ -94,42 +83,46 @@ public class DBClass implements DocumentHandle, DocumentSnapshot {
   /**
    * Returns a {@link DocumentHandle} for updating the referenced document on
    * the GSA or null if the document on the GSA does not need updating.
-   *
-   * @throws RepositoryException
    */
-  /* @Override */
+  @Override
   public DocumentHandle getUpdate(DocumentSnapshot onGsa)
       throws RepositoryException {
+    if (document == null) {
+      throw new UnsupportedOperationException(
+          "getUpdate called on deserialized snapshot.");
+    }
+
     // The diffing framework sends in a null to indicate that it has not seen
-    // this snapshot before. So we return the corresponding Handle (in our
-    // case, the same object)
+    // this snapshot before. So we return the corresponding handle.
     if (onGsa == null) {
       this.document.setChanged();
-      return this;
+      return new DBHandle(document);
     }
-    // If the parameter is non-null, then it should be an DBClass
-    // (it was created via an DBClassRepository).
-    if (!(onGsa instanceof DBClass)) {
+
+    // If the parameter is non-null, then it should be an DBSnapshot
+    // (it was created via a DBSnapshotFactory).
+    if (!(onGsa instanceof DBSnapshot)) {
       throw new IllegalArgumentException(
-          "Illegal parameter passed to getUpdate of DocumentSnapshot."
-          + "The paramater passed is not a instance of DBCLass");
+          "Illegal parameter passed to getUpdate. "
+          + "The paramater passed is not an instance of DBSnapshot");
     }
-    DBClass p = DBClass.class.cast(onGsa);
+
     // We just assume that if the serialized form is the same, then nothing
     // has changed.
-    if (this.jsonString.equals(p.toString())) {
+    if (jsonString.equals(onGsa.toString())) {
       // null return tells the diffing framework to do nothing
       return null;
     }
+
     // Something has changed, so return the corresponding handle
     // and set the changed flag of the document.
     this.document.setChanged();
     LOG.info("Change for Document with Id " + getDocumentId() + " at time "
         + new Date());
-
-    return this;
+    return new DBHandle(document);
   }
 
+  @Override
   public String toString() {
     return jsonString;
   }
