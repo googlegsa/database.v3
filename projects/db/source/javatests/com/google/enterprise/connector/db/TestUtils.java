@@ -16,6 +16,7 @@ package com.google.enterprise.connector.db;
 
 import com.google.enterprise.connector.db.diffing.JsonDocument;
 import com.google.enterprise.connector.db.diffing.JsonDocumentUtil;
+import com.google.enterprise.connector.db.diffing.MetadataDocumentBuilder;
 import com.google.enterprise.connector.traversal.ProductionTraversalContext;
 
 import java.util.ArrayList;
@@ -86,10 +87,9 @@ public class TestUtils {
   public static JsonDocument createDBDoc(int id, String firstName,
       String lastName, String email) throws DBException {
     ProductionTraversalContext context = new ProductionTraversalContext();
-    JsonDocument jsonDoc = JsonDocumentUtil.rowToDoc("testdb_",
-        TestUtils.getStandardPrimaryKeys(),
-        getRow(id, firstName, lastName, email),
-        "localhost", null, null);
+    JsonDocument jsonDoc =
+        new MetadataDocumentBuilder(DBTestBase.getMinimalDbContext())
+        .fromRow(getRow(id, firstName, lastName, email));
     return jsonDoc;
   }
 

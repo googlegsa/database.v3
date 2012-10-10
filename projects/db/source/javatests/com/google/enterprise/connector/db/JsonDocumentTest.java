@@ -17,6 +17,7 @@ package com.google.enterprise.connector.db;
 import com.google.enterprise.connector.db.diffing.JsonDocument;
 import com.google.enterprise.connector.db.diffing.JsonDocumentUtil;
 import com.google.enterprise.connector.db.diffing.JsonObjectUtil;
+import com.google.enterprise.connector.db.diffing.MetadataDocumentBuilder;
 import com.google.enterprise.connector.spi.RepositoryException;
 import com.google.enterprise.connector.spi.SpiConstants;
 import com.google.enterprise.connector.spi.Value;
@@ -67,8 +68,9 @@ public class JsonDocumentTest extends TestCase {
     try {
       ProductionTraversalContext context = new ProductionTraversalContext();
       JsonDocument.setTraversalContext(context);
-      JsonDocument doc = JsonDocumentUtil.rowToDoc("testdb_", primaryKeys,
-          rowMap, "localhost", null, null);
+      JsonDocument doc =
+          new MetadataDocumentBuilder(DBTestBase.getMinimalDbContext())
+          .fromRow(rowMap);
 
       assertEquals("MSxsYXN0XzAx", Value.getSingleValueString(doc,
           SpiConstants.PROPNAME_DOCID));

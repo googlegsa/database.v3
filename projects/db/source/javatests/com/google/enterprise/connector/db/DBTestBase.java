@@ -113,6 +113,14 @@ public abstract class DBTestBase extends TestCase {
     }
   }
 
+  public static DBContext getMinimalDbContext() {
+      DBContext dbContext = new DBContext();
+      dbContext.setDbName("testdb_");
+      dbContext.setPrimaryKeys("id,lastname");
+      dbContext.setHostname("localhost");
+      return dbContext;
+  }
+
   protected DBClient getDbClient() {
     return getDbContext().getClient();
   }
