@@ -89,6 +89,10 @@ public abstract class DBTestBase extends TestCase {
   }
 
   protected DBContext getDbContext() {
+    return getDbContext(configMap);
+  }
+
+  protected DBContext getDbContext(Map<String, String> configMap) {
     try {
       DBContext dbContext = new DBContext(configMap.get("connectionUrl"),
           configMap.get("hostname"), configMap.get("driverClassName"),

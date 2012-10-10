@@ -12,12 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.enterprise.connector.db;
+package com.google.enterprise.connector.db.diffing;
 
-import com.google.enterprise.connector.db.diffing.DBClass;
-import com.google.enterprise.connector.db.diffing.JsonDocument;
-import com.google.enterprise.connector.db.diffing.JsonDocumentUtil;
-import com.google.enterprise.connector.db.diffing.JsonObjectUtil;
 import com.google.enterprise.connector.spi.Document;
 import com.google.enterprise.connector.spi.RepositoryException;
 import com.google.enterprise.connector.spi.SpiConstants;
@@ -26,7 +22,7 @@ import com.google.enterprise.connector.util.diffing.DocumentSnapshot;
 
 import junit.framework.TestCase;
 
-public class DBClassTest extends TestCase {
+public class DBSnapshotTest extends TestCase {
 
   JsonDocument jsonDocument;
 
@@ -41,35 +37,31 @@ public class DBClassTest extends TestCase {
   }
 
   public void testFactoryFunction() {
-    DBClass dbClass = DBClass.factoryFunction.apply(jsonDocument);
-    assertNotNull(dbClass);
-  }
-
-  public void testGetDocument() throws Exception {
-    DBClass dbClass = new DBClass(jsonDocument);
-    assertNotNull(dbClass.getDocument());
+    DBSnapshot snapshot = DBSnapshot.factoryFunction.apply(jsonDocument);
+    assertNotNull(snapshot);
   }
 
   public void testGetDocumentId() {
-    DBClass dbClass = new DBClass(jsonDocument);
+    DBSnapshot snapshot = new DBSnapshot(jsonDocument);
     String expected = "1";
-    assertEquals(expected, dbClass.getDocumentId());
+    assertEquals(expected, snapshot.getDocumentId());
   }
 
   public void testGetUpdateNewDocument() throws Exception {
-    DocumentSnapshot documentSnapshot = new DBClass(jsonDocument);
+    DocumentSnapshot documentSnapshot = new DBSnapshot(jsonDocument);
     DocumentHandle actual = documentSnapshot.getUpdate(null);
     // The diffing framework sends in a null to indicate that it has not
-    // seen this snapshot before. So we return the corresponding Handle
-    // (in our case, the same object).
+    // seen this snapshot before. So we return the corresponding handle,
+    // which in our case contains the same document object.
     assertSame(jsonDocument, actual.getDocument());
   }
 
   public void testGetUpdateNoChange() throws Exception {
-    DocumentSnapshot documentSnapshot = new DBClass(jsonDocument);
-    // We just assume that if the serialized form is the same, then
-    // nothing has changed.
-    assertNull(documentSnapshot.getUpdate(documentSnapshot));
+    DocumentSnapshot documentSnapshot = new DBSnapshot(jsonDocument);
+    String serialSnapshot = documentSnapshot.toString();
+    DocumentSnapshot deserialSnapshot =
+        new DBSnapshotFactory().fromString(serialSnapshot);
+    assertNull(documentSnapshot.getUpdate(deserialSnapshot));
   }
 
   public void testGetUpdateChangedDocument() throws Exception {
@@ -81,10 +73,10 @@ public class DBClassTest extends TestCase {
     // Checksum change indicates document changed.
     jsonObjectUtil.setProperty(JsonDocumentUtil.ROW_CHECKSUM, "9999");
     DocumentSnapshot onGsa =
-        new DBClass(new JsonDocument(jsonObjectUtil.getJsonObject()));
+        new DBSnapshot(jsonObjectUtil.getJsonObject().toString());
 
     // This represents the document as found in the repository.
-    DocumentSnapshot documentSnapshot = new DBClass(jsonDocument);
+    DocumentSnapshot documentSnapshot = new DBSnapshot(jsonDocument);
     // Verify whether the changed property of the document has not been set.
     assertFalse(jsonDocument.getChanged());
 
@@ -99,8 +91,8 @@ public class DBClassTest extends TestCase {
    * properties. Only the docid and checksum should be included.
    */
   public void testToString() {
-    DBClass dbClass = new DBClass(jsonDocument);
+    DBSnapshot snapshot = new DBSnapshot(jsonDocument);
     String expected = "{\"google:docid\":\"1\",\"google:sum\":\"1234\"}";
-    assertEquals(expected, dbClass.toString());
+    assertEquals(expected, snapshot.toString());
   }
 }
