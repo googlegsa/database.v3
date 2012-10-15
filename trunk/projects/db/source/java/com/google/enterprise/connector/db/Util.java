@@ -15,7 +15,6 @@
 package com.google.enterprise.connector.db;
 
 import com.google.common.io.ByteStreams;
-import com.google.enterprise.connector.db.diffing.JsonDocumentUtil;
 import com.google.enterprise.connector.db.diffing.JsonObjectUtil;
 import com.google.enterprise.connector.spi.SpiConstants;
 
@@ -27,14 +26,13 @@ import java.io.Reader;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.sql.Timestamp;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.logging.Logger;
 
 /**
- * Utility class for @ {@link JsonDocumentUtil}.
+ * Utility class for {@code DocumentBuilder} and {@code XmlUtils}.
  */
 public class Util {
   public static final String NO_TIMESTAMP = "NO_TIMESTAMP";
@@ -197,25 +195,6 @@ public class Util {
         LOG.info("Skipping metadata indexing of column " + key);
       }
     }
-  }
-
-  /**
-   * Copies all elements from map representing a row except BLOB
-   * column and return the resultant map.
-   *
-   * @param row
-   * @return map representing a database table row.
-   */
-  public static Map<String, Object> getRowForXmlDoc(Map<String, Object> row,
-      DBContext dbContext) {
-    Set<String> keySet = row.keySet();
-    Map<String, Object> map = new HashMap<String, Object>();
-    for (String key : keySet) {
-      if (!dbContext.getLobField().equals(key)) {
-        map.put(key, row.get(key));
-      }
-    }
-    return map;
   }
 
   /**

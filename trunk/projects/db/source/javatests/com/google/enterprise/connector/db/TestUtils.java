@@ -15,7 +15,6 @@
 package com.google.enterprise.connector.db;
 
 import com.google.enterprise.connector.db.diffing.JsonDocument;
-import com.google.enterprise.connector.db.diffing.JsonDocumentUtil;
 import com.google.enterprise.connector.db.diffing.MetadataDocumentBuilder;
 import com.google.enterprise.connector.traversal.ProductionTraversalContext;
 
@@ -26,11 +25,11 @@ import java.util.Map;
 import java.util.logging.Logger;
 
 /**
- * Utility class for unittests.
+ * Utility class for unit tests.
  */
 public class TestUtils {
-
   private static final Logger LOG = Logger.getLogger(TestUtils.class.getName());
+
   public static final String TESTCONFIG_DIR = "config/";
   public static final String TESTCONNECTORCONFIG_DIR = "";
   public static final String CONNECTOR_INSTANCE_XML = "connectorInstance.xml";

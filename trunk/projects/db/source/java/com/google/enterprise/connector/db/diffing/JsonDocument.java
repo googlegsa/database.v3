@@ -62,7 +62,7 @@ public class JsonDocument implements Document {
   }
 
   /**
-   * Constructor used by {@link JsonDocumentUtil} for creating a
+   * Constructor used by the {@link DocumentBuilder} for creating a
    * {@link JsonDocument} object used by {@link RepositoryHandler}
    * for building a collection over JsonDocument.
    */

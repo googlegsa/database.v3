@@ -30,13 +30,15 @@ import java.util.logging.Logger;
 /**
  * Class for transforming database row to JsonDocument.
  */
-public class UrlDocumentBuilder extends JsonDocumentUtil {
+class UrlDocumentBuilder extends DocumentBuilder {
   private static final Logger LOG =
       Logger.getLogger(UrlDocumentBuilder.class.getName());
 
-  private final String type;
+  protected enum UrlType { COMPLETE_URL, BASE_URL };
 
-  public UrlDocumentBuilder(DBContext dbContext, String type) {
+  private final UrlType type;
+
+  protected UrlDocumentBuilder(DBContext dbContext, UrlType type) {
     super(dbContext);
 
     this.type = type;
@@ -52,19 +54,18 @@ public class UrlDocumentBuilder extends JsonDocumentUtil {
    * ID. COnnector admin provides the Base URL and document ID column in DB
    * connector configuration form.
    *
-   * @param dbName Name of database
-   * @param primaryKeys array of primary key columns
    * @param row map representing database row.
-   * @param hostname fully qualified connector hostname.
-   * @param dbContext instance of DBContext.
-   * @param type represent how to get URL of the document. If value is
-   *          "withBaseURL" it means we have to build document URL using base
-   *          URL and document ID.
-   * @return JsOnDocument
-   * @throws DBException
    */
   public JsonDocument fromRow(Map<String, Object> row) throws DBException {
-    boolean isWithBaseURL = type.equalsIgnoreCase(JsonDocumentUtil.WITH_BASE_URL);
+    // Get doc ID from primary key values.
+    String docId = DocIdUtil.generateDocId(primaryKeys, row);
+    JsonObjectUtil jsonObjectUtil = new JsonObjectUtil();
+
+    jsonObjectUtil.setProperty(SpiConstants.PROPNAME_DOCID, docId);
+    String xmlRow =
+        XmlUtils.getXMLRow(dbName, row, primaryKeys, null, dbContext, true);
+    jsonObjectUtil.setProperty(ROW_CHECKSUM,
+                               Util.getChecksum(xmlRow.getBytes()));
 
     /*
      * skipColumns maintain the list of column which needs to skip while
@@ -74,49 +75,50 @@ public class UrlDocumentBuilder extends JsonDocumentUtil {
     List<String> skipColumns = new ArrayList<String>();
 
     String finalURL;
-    if (isWithBaseURL) {
-      String docIdColumn = dbContext.getDocumentIdField();
-      Object docId = row.get(docIdColumn);
+    switch (type) {
+      case BASE_URL: {
+        String docIdColumn = dbContext.getDocumentIdField();
+        Object urlDocId = row.get(docIdColumn);
 
-      // Build final document URL if docId is not null. Send null JsonDocument
-      // if document ID is null.
-      if (docId != null) {
-        String baseURL = dbContext.getBaseURL();
-        finalURL = baseURL.trim() + docId.toString();
-      } else {
-        return null;
+        // Build final document URL if urlDocId is not null. Send null
+        // JsonDocument if document ID is null.
+        if (urlDocId != null) {
+          String baseURL = dbContext.getBaseURL();
+          finalURL = baseURL.trim() + urlDocId.toString();
+        } else {
+          return null;
+        }
+        skipColumns.add(dbContext.getDocumentIdField());
+        break;
       }
-      skipColumns.add(dbContext.getDocumentIdField());
-    } else {
-      Object docURL = row.get(dbContext.getDocumentURLField());
-      if (docURL != null) {
-        finalURL = row.get(dbContext.getDocumentURLField()).toString();
-      } else {
-        return null;
+
+      case COMPLETE_URL: {
+        Object docURL = row.get(dbContext.getDocumentURLField());
+        if (docURL != null) {
+          finalURL = row.get(dbContext.getDocumentURLField()).toString();
+        } else {
+          return null;
+        }
+        skipColumns.add(dbContext.getDocumentURLField());
+        break;
       }
-      skipColumns.add(dbContext.getDocumentURLField());
+
+      default:
+        throw new AssertionError(type.toString());
     }
 
-    // Get doc ID from primary key values.
-    String docId = DocIdUtil.generateDocId(primaryKeys, row);
-    String xmlRow = XmlUtils.getXMLRow(dbName, row, primaryKeys, null,
-                                       dbContext, true);
     // This method adds addition database columns (last modified and doc title)
     // which needs to skip while sending as metadata as they are already
     // considered as metadata.
     Util.skipOtherProperties(skipColumns, dbContext);
 
-    JsonObjectUtil jsonObjectUtil = new JsonObjectUtil();
     jsonObjectUtil.setProperty(SpiConstants.PROPNAME_SEARCHURL, finalURL);
     jsonObjectUtil.setProperty(SpiConstants.PROPNAME_DISPLAYURL, finalURL);
 
     // Set feed type as metadata_url.
     jsonObjectUtil.setProperty(SpiConstants.PROPNAME_FEEDTYPE,
                                SpiConstants.FeedType.WEB.toString());
-    // Set doc ID.
-    jsonObjectUtil.setProperty(SpiConstants.PROPNAME_DOCID, docId);
-    jsonObjectUtil.setProperty(ROW_CHECKSUM,
-                               Util.getChecksum(xmlRow.getBytes()));
+
     // Set action as add. Even when contents are updated the we still we set
     // action as add and GSA overrides the old copy with new updated one.
     // Hence ADD action is applicable to both add and update.

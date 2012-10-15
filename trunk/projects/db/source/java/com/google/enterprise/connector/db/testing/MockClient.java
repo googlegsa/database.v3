@@ -69,6 +69,21 @@ public class MockClient extends DBClient {
     return blob;
   }
 
+  /**
+   * Generates a String of a given size, filled with random ASCII
+   * printable characters.
+   */
+  public static String getClob(int size) {
+    // TODO: Support configurable randomness.
+    // TODO: Add spaces to the string.
+    StringBuilder builder = new StringBuilder(size);
+    Random random = new Random();
+    for (int i = 0; i < size; i++) {
+      builder.append(Character.toChars(32 + random.nextInt(94)));
+    }
+    return builder.toString();
+  }
+
   /** The number of rows to return altogether. */
   private int rowCount = 1000;
 

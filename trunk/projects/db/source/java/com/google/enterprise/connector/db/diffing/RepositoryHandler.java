@@ -15,7 +15,6 @@
 package com.google.enterprise.connector.db.diffing;
 
 import com.google.enterprise.connector.db.DBClient;
-import com.google.enterprise.connector.db.DBConnectorType;
 import com.google.enterprise.connector.db.DBContext;
 import com.google.enterprise.connector.db.DBException;
 import com.google.enterprise.connector.db.Util;
@@ -189,8 +188,8 @@ public class RepositoryHandler {
   private LinkedList<JsonDocument> getDocList(List<Map<String, Object>> rows) {
     LinkedList<JsonDocument> docList = new LinkedList<JsonDocument>();
     if (rows != null && rows.size() > 0) {
-      JsonDocumentUtil docBuilder =
-          getDocumentBuilder(dbContext, traversalContext);
+      DocumentBuilder docBuilder =
+          DocumentBuilder.getInstance(dbContext, traversalContext);
 
       for (Map<String, Object> row : rows) {
         try {
@@ -207,48 +206,5 @@ public class RepositoryHandler {
     LOG.info(docList.size() + " document(s) to be fed to GSA at time: "
         + new Date());
     return docList;
-  }
-
-  /* TODO: Move this method to JsonDocumentUtil or even Util. */
-  private static boolean isNonBlank(String value) {
-    return value != null && value.trim().length() > 0;
-  }
-
-  /**
-   * Detect the execution mode from the column names(Normal,
-   * CLOB, BLOB or External Metadata) of the DB Connector and returns the
-   * integer value representing execution mode
-   */
-  /* TODO: Move this method to JsonDocumentUtil. */
-  private static JsonDocumentUtil getDocumentBuilder(DBContext dbContext,
-      TraversalContext traversalContext) {
-    String extMetaType = dbContext.getExtMetadataType();
-    if (isNonBlank(extMetaType)
-        && !extMetaType.equals(DBConnectorType.NO_EXT_METADATA)) {
-      if (extMetaType.equalsIgnoreCase(DBConnectorType.COMPLETE_URL)
-          && isNonBlank(dbContext.getDocumentURLField())) {
-        LOG.info("DB Connector is running in External Metadata feed mode with "
-            + "complete document URL");
-        return new UrlDocumentBuilder(dbContext, "");
-      } else if (extMetaType.equalsIgnoreCase(DBConnectorType.DOC_ID)
-          && isNonBlank(dbContext.getDocumentIdField())) {
-        LOG.info("DB Connector is running in External Metadata feed mode with "
-            + "Base URL and document ID");
-        return new UrlDocumentBuilder(dbContext,
-            JsonDocumentUtil.WITH_BASE_URL);
-      } else if (extMetaType.equalsIgnoreCase(DBConnectorType.BLOB_CLOB)
-          && isNonBlank(dbContext.getLobField())) {
-        LOG.info(
-            "DB Connector is running in Content Feed Mode for BLOB/CLOB data");
-        return new LobDocumentBuilder(dbContext, traversalContext);
-      }
-    }
-
-    // No matches found above.
-    // Explicitly change the mode of execution as user may switch from
-    // "External Metadata Feed" mode to "Content Feed(for text data)" mode.
-    dbContext.setExtMetadataType(DBConnectorType.NO_EXT_METADATA);
-    LOG.info("DB Connector is running in content feed mode for text data");
-    return new MetadataDocumentBuilder(dbContext);
   }
 }

@@ -31,7 +31,7 @@ public class DBSnapshotTest extends TestCase {
     jsonObjectUtil.setProperty(SpiConstants.PROPNAME_DOCID, "1");
     jsonObjectUtil.setProperty(SpiConstants.PROPNAME_ISPUBLIC, "false");
     jsonObjectUtil.setProperty(SpiConstants.PROPNAME_MIMETYPE, "text/plain");
-    jsonObjectUtil.setProperty(JsonDocumentUtil.ROW_CHECKSUM, "1234");
+    jsonObjectUtil.setProperty(DocumentBuilder.ROW_CHECKSUM, "1234");
     jsonDocument = new JsonDocument(jsonObjectUtil.getProperties(),
                                     jsonObjectUtil.getJsonObject());
   }
@@ -71,7 +71,7 @@ public class DBSnapshotTest extends TestCase {
     jsonObjectUtil.setProperty(SpiConstants.PROPNAME_ISPUBLIC, "false");
     jsonObjectUtil.setProperty(SpiConstants.PROPNAME_MIMETYPE, "text/plain");
     // Checksum change indicates document changed.
-    jsonObjectUtil.setProperty(JsonDocumentUtil.ROW_CHECKSUM, "9999");
+    jsonObjectUtil.setProperty(DocumentBuilder.ROW_CHECKSUM, "9999");
     DocumentSnapshot onGsa =
         new DBSnapshot(jsonObjectUtil.getJsonObject().toString());
 
