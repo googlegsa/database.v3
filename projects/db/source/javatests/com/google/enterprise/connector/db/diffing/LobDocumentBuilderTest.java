@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.enterprise.connector.db;
+package com.google.enterprise.connector.db.diffing;
 
 import static org.easymock.EasyMock.anyInt;
 import static org.easymock.EasyMock.createMock;
@@ -21,11 +21,8 @@ import static org.easymock.EasyMock.replay;
 
 import com.google.common.io.ByteStreams;
 import com.google.common.io.Files;
-import com.google.enterprise.connector.db.diffing.JsonDocument;
-import com.google.enterprise.connector.db.diffing.JsonDocumentUtil;
-import com.google.enterprise.connector.db.diffing.LobDocumentBuilder;
-import com.google.enterprise.connector.db.diffing.MetadataDocumentBuilder;
-import com.google.enterprise.connector.db.diffing.UrlDocumentBuilder;
+import com.google.enterprise.connector.db.DBClient;
+import com.google.enterprise.connector.db.DBException;
 import com.google.enterprise.connector.db.testing.MockClient;
 import com.google.enterprise.connector.spi.Property;
 import com.google.enterprise.connector.spi.RepositoryException;
@@ -35,7 +32,6 @@ import com.google.enterprise.connector.spi.Value;
 import com.google.enterprise.connector.spiimpl.BinaryValue;
 import com.google.enterprise.connector.traversal.FileSizeLimitInfo;
 import com.google.enterprise.connector.traversal.MimeTypeMap;
-import com.google.enterprise.connector.traversal.ProductionTraversalContext;
 import com.google.enterprise.connector.util.MimeTypeDetector;
 
 import java.io.ByteArrayInputStream;
@@ -45,6 +41,7 @@ import java.io.InputStream;
 import java.io.StringReader;
 import java.sql.Blob;
 import java.sql.Clob;
+import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -52,110 +49,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
-import java.util.logging.Logger;
 
-/*
- * TODO: Split this into {Lob,Url,Metadata}DocumentBuilderTest classes
- * in the diffing package when fewer changes are in-flight.
- */
-public class JsonDocumentUtilTest extends DBTestBase {
-  private static final Logger LOG =
-      Logger.getLogger(JsonDocumentUtilTest.class.getName());
-
-  private final ProductionTraversalContext context =
-      new ProductionTraversalContext();
-  private final String primaryKeyColumn = "id";
-
-  private DBContext dbContext;
-
-  @Override
-  protected void setUp() throws Exception {
-    super.setUp();
-    LOG.info("Test " + getName());
-
-    dbContext = super.getDbContext();
-    dbContext.setPrimaryKeys(primaryKeyColumn);
-    dbContext.setHostname("localhost");
-  }
-
-  /**
-   * Test for converting DB row to DB Doc.
-   */
-  public final void testRowToDoc() throws Exception {
-    Map<String, Object> rowMap = TestUtils.getStandardDBRow();
-    JsonDocument doc =
-        new MetadataDocumentBuilder(getMinimalDbContext()).fromRow(rowMap);
-    for (String propName : doc.getPropertyNames()) {
-      LOG.info(propName + ":    " + getProperty(doc, propName));
-    }
-    assertEquals("MSxsYXN0XzAx", getProperty(doc, SpiConstants.PROPNAME_DOCID));
-    String content = getProperty(doc, SpiConstants.PROPNAME_CONTENT);
-    assertNotNull(content);
-    assertTrue(content.contains("id=1"));
-    assertTrue(content.contains("lastName=last_01"));
-    assertEquals("text/html", getProperty(doc, SpiConstants.PROPNAME_MIMETYPE));
-
-    // Checksum should be hidden as a public property.
-    assertNull(doc.findProperty(JsonDocumentUtil.ROW_CHECKSUM));
-      
-    // But the checksum should be included in the snapshot string.
-    String expected = "{\"google:docid\":\"MSxsYXN0XzAx\","
-        + "\"google:sum\":\"7ffd1d7efaf0d1ee260c646d827020651519e7b0\"}";
-    assertEquals(expected, doc.toJson());
-  }
-
-  /**
-   * Test case for generateURLMetaFeed().
-   */
-  public final void testUrlDocument() throws Exception {
-    Map<String, Object> rowMap = new HashMap<String, Object>();
-
-    String documentURL = "http://myhost/app/welcome.html";
-    String versionColumn = "version";
-    String versionValue = "2.3.4";
-
-    // add primary key in row
-    rowMap.put(primaryKeyColumn, 1);
-    // add document URL in row
-    rowMap.put(dbContext.getDocumentURLField(), documentURL);
-    // add version column in row
-    rowMap.put(versionColumn, versionValue);
-
-    JsonDocument doc = new UrlDocumentBuilder(dbContext, "").fromRow(rowMap);
-    // Test:- column "version" value as metadata.
-    assertEquals(versionValue, getProperty(doc, versionColumn));
-
-    // Test:- display URL will be same as the actual URL of the document.
-    assertEquals("http://myhost/app/welcome.html", getProperty(doc, 
-        SpiConstants.PROPNAME_DISPLAYURL));
-  }
-
-  public final void testDocIdDocument() throws Exception {
-    Map<String, Object> rowMapWithBaseURL = new HashMap<String, Object>();
-
-    String baseURL = "http://myhost/app/";
-    String docId = "index123.html";
-    String versionColumn = "version";
-    String versionValue = "2.3.4";
-
-    // Test scenario: when base URL is not empty, the display URL is
-    // generated by concatenating document id with base URL.
-    rowMapWithBaseURL.put(primaryKeyColumn, 2);
-    rowMapWithBaseURL.put(dbContext.getDocumentIdField(), docId);
-    rowMapWithBaseURL.put(versionColumn, versionValue);
-
-    JsonDocument docWithBaseURL =
-        new UrlDocumentBuilder(dbContext, JsonDocumentUtil.WITH_BASE_URL)
-        .fromRow(rowMapWithBaseURL);
-
-    // Test:- column "version" value as metadata.
-    assertEquals(versionValue, getProperty(docWithBaseURL, versionColumn));
-
-    // Test: display URL of the document.
-    assertEquals(baseURL + docId, getProperty(docWithBaseURL, 
-        SpiConstants.PROPNAME_DISPLAYURL));
-  }
-
+public class LobDocumentBuilderTest extends DocumentBuilderFixture {
   private Map<String, Object> getLargeObjectRow() {
     Map<String, Object> rowMap = new HashMap<String, Object>();
     // Define common test data.
@@ -189,16 +84,10 @@ public class JsonDocumentUtilTest extends DBTestBase {
     testCLOBDataScenarios(clob, clobContent);
   }
 
-  /* TODO: Move this to MockClient and generalize it like MockClient.getBlob. */
   private String getClobContent() {
     // Define CLOB data larger than the FileBackedOutputStream will
     // hold in memory for this test case.
-    StringBuilder builder = new StringBuilder(100000);
-    Random random = new Random();
-    for (int i = 0; i < 100000; i++) {
-      builder.append(Character.toChars(32 + random.nextInt(94)));
-    }
-    return builder.toString();
+    return MockClient.getClob(100000);
   }
 
   /**
@@ -218,7 +107,9 @@ public class JsonDocumentUtilTest extends DBTestBase {
         new LobDocumentBuilder(dbContext, context).fromRow(rowMap);
     // As the size of the document is more than supported, clobDoc should have
     // null value.
-    assertNull(clobDoc);
+    assertNotNull(clobDoc);
+    assertNull(Value.getSingleValue(clobDoc, SpiConstants.PROPNAME_CONTENT));
+
     // Increase the maximum supported size of the document.
     fileSizeLimitInfo.setMaxDocumentSize(1024 * 1024);
     context.setFileSizeLimitInfo(fileSizeLimitInfo);
@@ -262,7 +153,6 @@ public class JsonDocumentUtilTest extends DBTestBase {
   public void testSqlBlobDocument() throws Exception {
     byte[] blobContent = getBlobContent();
     long blobLength = blobContent.length;
-    InputStream blobStream = new ByteArrayInputStream(blobContent);
 
     Blob blob = createMock(Blob.class);
     expect(blob.length()).andReturn(blobLength).anyTimes();
@@ -282,13 +172,23 @@ public class JsonDocumentUtilTest extends DBTestBase {
     // Define for fetching BLOB content
     String fetchURL = "http://myhost:8030/app?dpc_id=120";
     rowMap.put(dbContext.getFetchURLField(), fetchURL);
+
     MimeTypeDetector.setTraversalContext(context);
     FileSizeLimitInfo fileSizeLimitInfo = new FileSizeLimitInfo();
-    fileSizeLimitInfo.setMaxDocumentSize(1024);
+    fileSizeLimitInfo.setMaxDocumentSize(5);
     context.setFileSizeLimitInfo(fileSizeLimitInfo);
 
     JsonDocument blobDoc =
         new LobDocumentBuilder(dbContext, context).fromRow(rowMap);
+
+    // The BLOB to too large.
+    assertNotNull(blobDoc);
+    assertNull(Value.getSingleValue(blobDoc, SpiConstants.PROPNAME_CONTENT));
+
+    // Increase the maximum supported size of the document.
+    fileSizeLimitInfo.setMaxDocumentSize(1024 * 1024);
+    context.setFileSizeLimitInfo(fileSizeLimitInfo);
+    blobDoc = new LobDocumentBuilder(dbContext, context).fromRow(rowMap);
 
     assertNotNull(blobDoc);
     // Test scenario:- this doc will have column name "version" as
@@ -328,9 +228,9 @@ public class JsonDocumentUtilTest extends DBTestBase {
     Property docContent = blobDoc.findProperty(SpiConstants.PROPNAME_CONTENT);
     // Document content should have null value.
     assertNull(docContent);
-    }
+  }
 
-   public void testExcludedBlob() throws Exception {
+  public void testExcludedBlob() throws Exception {
     Map<String, Object> rowMap = getBlobRow(getBlobContent());
 
     // Set "application/pdf" MIME type in ignore list. Now we should get null
@@ -347,8 +247,56 @@ public class JsonDocumentUtilTest extends DBTestBase {
     try {
       blobDoc.findProperty(SpiConstants.PROPNAME_CONTENT);
       fail("Expected SkippedDocumentException, but got none.");
-    } catch (SkippedDocumentException e) {
-      LOG.info("Skipped Document Exception thrown for ignored mimetype");
+    } catch (SkippedDocumentException expected) {
+    }
+  }
+
+  /**
+   * Tests a failure in getBytes, which falls back to calling getBinaryStream.
+   */
+  public void testSqlBlobOneExceptionDocument() throws Exception {
+    byte[] blobContent = getBlobContent();
+    long blobLength = blobContent.length;
+    InputStream blobStream = new ByteArrayInputStream(blobContent);
+
+    Blob blob = createMock(Blob.class);
+    expect(blob.length()).andReturn(blobLength).anyTimes();
+    expect(blob.getBytes(anyInt(), anyInt()))
+        .andThrow(new SQLException()).atLeastOnce();
+    expect(blob.getBinaryStream()).andReturn(blobStream).atLeastOnce();
+    replay(blob);
+
+    // We can't use testBLOBDataScenarios in
+    // testSqlBlobTwoExceptionsDocument, so don't use it here so we
+    // know we get a non-null document without the MimeTypeDetector
+    // and TraversalContext configuration.
+    Map<String, Object> rowMap = getBlobRow(blob);
+    JsonDocument blobDoc =
+        new LobDocumentBuilder(dbContext, context).fromRow(rowMap);
+    assertNotNull(blobDoc);
+    assertTrue(Arrays.equals(blobContent, readBlobContent(blobDoc)));
+  }
+
+  /**
+   * Tests a failure in both getBytes and getBinaryStream, which
+   * returns a null JsonDocument.
+   */
+  public void testSqlBlobTwoExceptionsDocument() throws Exception {
+    byte[] blobContent = getBlobContent();
+    long blobLength = blobContent.length;
+
+    Blob blob = createMock(Blob.class);
+    expect(blob.length()).andReturn(blobLength).anyTimes();
+    expect(blob.getBytes(anyInt(), anyInt()))
+        .andThrow(new SQLException()).atLeastOnce();
+    expect(blob.getBinaryStream()).andThrow(new SQLException()).atLeastOnce();
+    replay(blob);
+
+    Map<String, Object> rowMap = getBlobRow(blob);
+    JsonDocument blobDoc =
+        new LobDocumentBuilder(dbContext, context).fromRow(rowMap);
+    if (blobDoc != null) {
+      fail("Expected null document but got " + blobDoc.getDocumentId());
     }
   }
 
@@ -387,9 +335,4 @@ public class JsonDocumentUtilTest extends DBTestBase {
     is.close();
     return blobContent;
   }    
-
-  private String getProperty(JsonDocument doc, String propName) 
-      throws RepositoryException {
-    return Value.getSingleValueString(doc, propName);
-  }
 }

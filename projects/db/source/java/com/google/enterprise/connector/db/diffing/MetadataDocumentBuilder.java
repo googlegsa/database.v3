@@ -14,6 +14,7 @@
 
 package com.google.enterprise.connector.db.diffing;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.enterprise.connector.db.DBContext;
 import com.google.enterprise.connector.db.DBException;
 import com.google.enterprise.connector.db.DocIdUtil;
@@ -27,7 +28,8 @@ import java.util.logging.Logger;
 /**
  * Class for transforming database row to JsonDocument.
  */
-public class MetadataDocumentBuilder extends JsonDocumentUtil {
+@VisibleForTesting
+public class MetadataDocumentBuilder extends DocumentBuilder {
   private static final Logger LOG =
       Logger.getLogger(MetadataDocumentBuilder.class.getName());
 
@@ -35,6 +37,7 @@ public class MetadataDocumentBuilder extends JsonDocumentUtil {
 
   private final String xslt;
 
+  @VisibleForTesting
   public MetadataDocumentBuilder(DBContext dbContext) {
     super(dbContext);
 
@@ -51,21 +54,22 @@ public class MetadataDocumentBuilder extends JsonDocumentUtil {
    * @throws DBException
    */
   public JsonDocument fromRow(Map<String, Object> row) throws DBException {
-    JsonObjectUtil jsonObjectUtil = new JsonObjectUtil();
-    String contentXMLRow =
-        XmlUtils.getXMLRow(dbName, row, primaryKeys, xslt, dbContext, false);
-    jsonObjectUtil.setProperty(SpiConstants.PROPNAME_CONTENT, contentXMLRow);
     String docId = DocIdUtil.generateDocId(primaryKeys, row);
+    JsonObjectUtil jsonObjectUtil = new JsonObjectUtil();
 
     jsonObjectUtil.setProperty(SpiConstants.PROPNAME_DOCID, docId);
-    jsonObjectUtil.setProperty(SpiConstants.PROPNAME_ACTION,
-                               SpiConstants.ActionType.ADD.toString());
-
     // TODO: Look into which encoding/charset to use for getBytes().
     String completeXMLRow =
         XmlUtils.getXMLRow(dbName, row, primaryKeys, xslt, dbContext, true);
     jsonObjectUtil.setProperty(ROW_CHECKSUM,
                                Util.getChecksum(completeXMLRow.getBytes()));
+
+    String contentXMLRow =
+        XmlUtils.getXMLRow(dbName, row, primaryKeys, xslt, dbContext, false);
+    jsonObjectUtil.setProperty(SpiConstants.PROPNAME_CONTENT, contentXMLRow);
+
+    jsonObjectUtil.setProperty(SpiConstants.PROPNAME_ACTION,
+                               SpiConstants.ActionType.ADD.toString());
 
     // Set "ispublic" false if authZ query is provided by the user.
     if (dbContext != null && !dbContext.isPublicFeed()) {

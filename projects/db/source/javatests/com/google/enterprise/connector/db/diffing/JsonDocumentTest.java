@@ -12,12 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.enterprise.connector.db;
+package com.google.enterprise.connector.db.diffing;
 
-import com.google.enterprise.connector.db.diffing.JsonDocument;
-import com.google.enterprise.connector.db.diffing.JsonDocumentUtil;
-import com.google.enterprise.connector.db.diffing.JsonObjectUtil;
-import com.google.enterprise.connector.db.diffing.MetadataDocumentBuilder;
+import com.google.enterprise.connector.db.DBException;
+import com.google.enterprise.connector.db.DBTestBase;
+import com.google.enterprise.connector.db.TestUtils;
 import com.google.enterprise.connector.spi.RepositoryException;
 import com.google.enterprise.connector.spi.SpiConstants;
 import com.google.enterprise.connector.spi.Value;
@@ -85,7 +84,7 @@ public class JsonDocumentTest extends TestCase {
           SpiConstants.PROPNAME_MIMETYPE));
 
       // Checksum should be hidden as a public property.
-      assertNull(doc.findProperty(JsonDocumentUtil.ROW_CHECKSUM));
+      assertNull(doc.findProperty(DocumentBuilder.ROW_CHECKSUM));
       
       // But the checksum should be included in the snapshot string.
       String expected = "{\"google:docid\":\"MSxsYXN0XzAx\","

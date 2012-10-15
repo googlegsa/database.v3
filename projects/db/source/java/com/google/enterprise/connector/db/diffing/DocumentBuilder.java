@@ -14,11 +14,13 @@
 
 package com.google.enterprise.connector.db.diffing;
 
+import com.google.enterprise.connector.db.DBConnectorType;
 import com.google.enterprise.connector.db.DBContext;
 import com.google.enterprise.connector.db.DBException;
 import com.google.enterprise.connector.db.DocIdUtil;
 import com.google.enterprise.connector.db.Util;
 import com.google.enterprise.connector.db.XmlUtils;
+import com.google.enterprise.connector.db.diffing.UrlDocumentBuilder.UrlType;
 import com.google.enterprise.connector.spi.SpiConstants;
 import com.google.enterprise.connector.spi.TraversalContext;
 
@@ -38,10 +40,9 @@ import java.util.logging.Logger;
 /**
  * Class for transforming database row to JsonDocument.
  */
-/* TODO: Rename this to DocumentBuilder when fewer changes are in-flight. */
-public abstract class JsonDocumentUtil {
+abstract class DocumentBuilder {
   private static final Logger LOG =
-      Logger.getLogger(JsonDocumentUtil.class.getName());
+      Logger.getLogger(DocumentBuilder.class.getName());
 
   public static final String NO_TIMESTAMP = "NO_TIMESTAMP";
   public static final String NO_DOCID = "NO_DOCID";
@@ -49,13 +50,54 @@ public abstract class JsonDocumentUtil {
   public static final String ROW_CHECKSUM = "google:sum";
   public static final String WITH_BASE_URL = "withBaseURL";
 
+  /* TODO: Move this method to Util? */
+  private static boolean isNonBlank(String value) {
+    return value != null && value.trim().length() > 0;
+  }
+
+  /**
+   * Detect the execution mode from the column names(Normal,
+   * CLOB, BLOB or External Metadata) of the DB Connector and returns the
+   * integer value representing execution mode
+   */
+  public static DocumentBuilder getInstance(DBContext dbContext,
+      TraversalContext traversalContext) {
+    String extMetaType = dbContext.getExtMetadataType();
+    if (isNonBlank(extMetaType)
+        && !extMetaType.equals(DBConnectorType.NO_EXT_METADATA)) {
+      if (extMetaType.equalsIgnoreCase(DBConnectorType.COMPLETE_URL)
+          && isNonBlank(dbContext.getDocumentURLField())) {
+        LOG.info("DB Connector is running in External Metadata feed mode with "
+            + "complete document URL");
+        return new UrlDocumentBuilder(dbContext, UrlType.COMPLETE_URL);
+      } else if (extMetaType.equalsIgnoreCase(DBConnectorType.DOC_ID)
+          && isNonBlank(dbContext.getDocumentIdField())) {
+        LOG.info("DB Connector is running in External Metadata feed mode with "
+            + "Base URL and document ID");
+        return new UrlDocumentBuilder(dbContext, UrlType.BASE_URL);
+      } else if (extMetaType.equalsIgnoreCase(DBConnectorType.BLOB_CLOB)
+          && isNonBlank(dbContext.getLobField())) {
+        LOG.info(
+            "DB Connector is running in Content Feed Mode for BLOB/CLOB data");
+        return new LobDocumentBuilder(dbContext, traversalContext);
+      }
+    }
+
+    // No matches found above.
+    // Explicitly change the mode of execution as user may switch from
+    // "External Metadata Feed" mode to "Content Feed(for text data)" mode.
+    dbContext.setExtMetadataType(DBConnectorType.NO_EXT_METADATA);
+    LOG.info("DB Connector is running in content feed mode for text data");
+    return new MetadataDocumentBuilder(dbContext);
+  }
+
   protected final DBContext dbContext;
 
   protected final String dbName;
   protected final String[] primaryKeys;
   protected final String hostname;
 
-  protected JsonDocumentUtil(DBContext dbContext) {
+  protected DocumentBuilder(DBContext dbContext) {
     this.dbContext = dbContext;
 
     this.dbName = dbContext.getDbName();

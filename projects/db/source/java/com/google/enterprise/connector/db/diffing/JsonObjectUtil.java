@@ -43,7 +43,7 @@ import java.util.logging.Logger;
  * contains only a small subset of the JsonDocument's properties, specifically
  * just the DocId and the Checksum used to detect changes.
  */
-// TODO (bmj): The current distinction between JsonDocument, JsonDocumentUtil,
+// TODO (bmj): The current distinction between JsonDocument, DocumentBuilder,
 // and JsonObjectUtil seems twisted. These should be refactored, separating the
 // SPI Document/Property/Value functionality into DBDocument/DBDocumentUtil,
 // and the Diffing snapshot functionality into the JsonObject/JsonObjectUtil.
@@ -54,7 +54,7 @@ public class JsonObjectUtil {
 
   /** The fields included only in the JSON snapshot object. */
   private static final Set<String> SNAPSHOT_ONLY_FIELDS = 
-      ImmutableSet.of(JsonDocumentUtil.ROW_CHECKSUM);
+      ImmutableSet.of(DocumentBuilder.ROW_CHECKSUM);
 
   /** The fields included in the JSON snapshot object. */
   private static final Set<String> SNAPSHOT_FIELDS = 

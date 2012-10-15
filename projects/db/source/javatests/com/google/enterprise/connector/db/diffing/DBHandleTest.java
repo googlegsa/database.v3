@@ -39,7 +39,7 @@ public class DBHandleTest extends TestCase {
     for (Map.Entry<String, String> entry : properties.entrySet()) {
       jsonObjectUtil.setProperty(entry.getKey(), entry.getValue());
     }
-    jsonObjectUtil.setProperty(JsonDocumentUtil.ROW_CHECKSUM, "1234");
+    jsonObjectUtil.setProperty(DocumentBuilder.ROW_CHECKSUM, "1234");
     jsonDocument = new JsonDocument(jsonObjectUtil.getProperties(),
                                     jsonObjectUtil.getJsonObject());
   }
