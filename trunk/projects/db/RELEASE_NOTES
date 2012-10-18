@@ -10,6 +10,42 @@ issues and workarounds.
 
 Web Site: http://code.google.com/p/google-enterprise-connector-database/
 
+
+Release 3.0.0, 17 October 2012
+==============================
+
+Introduction
+------------
+This is a maintenance release that improves quality, reliability,
+and performance without adding any new functionality.
+Users of previous releases should check the "Version Compatibility" section
+below for instructions on how to use existing data with this new release.
+
+Version Compatibility
+---------------------
+Connector instances created with versions earlier than 2.8.0 will not work with
+this version.
+Connector Manager version earlier than 3.0.0 will not work correctly with this
+version of the connector.
+
+Platform Support
+------------------
+The connector can be installed and run on both 32-bit & 64-bit Windows and Linux
+environments.
+
+Issues fixed from last release:
+-------------------------------
+Issue 7051418: Reduce the memory footprint of LOBs in the change queue.
+               This also fixes a problem where the MIME type of LOBs would
+               not be determined correctly.
+
+Issue 6513826: Add less verbose logging level for MBean messages.
+               Also less verbose logging for the MimeUtil third party library.
+
+Issue 6948912: Connector sends many small feeds which slow down the GSA.
+
+
+
 Release 2.8.4, January 12, 2012
 =====================================
 
