@@ -54,15 +54,15 @@ public class JsonDocument implements Document {
   }
 
   /**
-   * Constructor used by {@link DBHandle} when deserializing a
-   * {@code DocumentHandle} from the recovery file.
+   * Constructor used by {@link DBClass} for creating {@link JsonDocument}
+   * for change detection purposes.
    */
   public JsonDocument(JSONObject jsonObject) {
     this(buildJsonProperties(jsonObject), jsonObject);
   }
 
   /**
-   * Constructor used by the {@link DocumentBuilder} for creating a
+   * Constructor used by {@link JsonDocumentUtil} for creating a
    * {@link JsonDocument} object used by {@link RepositoryHandler}
    * for building a collection over JsonDocument.
    */

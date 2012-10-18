@@ -12,14 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.enterprise.connector.db.diffing;
+package com.google.enterprise.connector.db;
 
-import com.google.enterprise.connector.db.DBException;
-import com.google.enterprise.connector.db.DBTestBase;
-import com.google.enterprise.connector.db.TestUtils;
+import com.google.enterprise.connector.db.diffing.JsonDocument;
+import com.google.enterprise.connector.db.diffing.JsonDocumentUtil;
+import com.google.enterprise.connector.db.diffing.JsonObjectUtil;
 import com.google.enterprise.connector.spi.RepositoryException;
 import com.google.enterprise.connector.spi.SpiConstants;
-import com.google.enterprise.connector.spi.Value;
 import com.google.enterprise.connector.traversal.ProductionTraversalContext;
 
 import java.util.Map;
@@ -49,15 +48,11 @@ public class JsonDocumentTest extends TestCase {
     assertEquals("1", jsonDocument.getDocumentId());
   }
 
-  /**
-   * Test that the JSON obect snapshot string is a limited subset of all the
-   * properties.
-   */
   public void testToJson() {
-    String expected = "{\"google:docid\":\"1\"}";
+    String expected = "{\"google:ispublic\":\"false\",\"google:docid\":\"1\","
+        + "\"google:mimetype\":\"text/plain\"}";
     JsonDocument jsonDocument =
-        new JsonDocument(jsonObjectUtil.getProperties(),
-                         jsonObjectUtil.getJsonObject());
+        new JsonDocument(jsonObjectUtil.getJsonObject());
     assertEquals(expected, jsonDocument.toJson());
   }
 
@@ -66,34 +61,18 @@ public class JsonDocumentTest extends TestCase {
     String[] primaryKeys = TestUtils.getStandardPrimaryKeys();
     try {
       ProductionTraversalContext context = new ProductionTraversalContext();
+      JsonDocument doc = JsonDocumentUtil.rowToDoc("testdb_", primaryKeys,
+          rowMap, "localhost", null, null);
       JsonDocument.setTraversalContext(context);
-      JsonDocument doc =
-          new MetadataDocumentBuilder(DBTestBase.getMinimalDbContext())
-          .fromRow(rowMap);
-
-      assertEquals("MSxsYXN0XzAx", Value.getSingleValueString(doc,
-          SpiConstants.PROPNAME_DOCID));
-    
-      String content = Value.getSingleValueString(doc, 
-          SpiConstants.PROPNAME_CONTENT);
-      assertNotNull(content);
-      assertTrue(content.contains("id=1"));
-      assertTrue(content.contains("lastName=last_01"));
-
-      assertEquals("text/html", Value.getSingleValueString(doc,
-          SpiConstants.PROPNAME_MIMETYPE));
-
-      // Checksum should be hidden as a public property.
-      assertNull(doc.findProperty(DocumentBuilder.ROW_CHECKSUM));
-      
-      // But the checksum should be included in the snapshot string.
-      String expected = "{\"google:docid\":\"MSxsYXN0XzAx\","
-          + "\"google:sum\":\"7ffd1d7efaf0d1ee260c646d827020651519e7b0\"}";
-      assertEquals(expected, doc.toJson());
+      assertEquals("MSxsYXN0XzAx", doc.findProperty(
+          SpiConstants.PROPNAME_DOCID).nextValue().toString());
+      assertEquals("7ffd1d7efaf0d1ee260c646d827020651519e7b0", doc.findProperty(
+          JsonDocumentUtil.ROW_CHECKSUM).nextValue().toString());
     } catch (DBException e) {
       fail("Could not generate Json document from row.");
     } catch (RepositoryException e) {
       fail("Could not generate Json document from row.");
     }
   }
+
 }

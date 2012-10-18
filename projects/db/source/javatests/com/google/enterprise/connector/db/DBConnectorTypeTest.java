@@ -37,6 +37,12 @@ public class DBConnectorTypeTest extends DBTestBase {
       Logger.getLogger(DBConnectorTypeTest.class.getName());
 
   private DBConnectorType connectorType;
+  private Set<String> configKeys;
+  private String[] keys = new String[] { "login", "password", "connectionUrl",
+      "dbName", "hostname", "driverClassName", "sqlQuery", "primaryKeysString",
+      "xslt", "authZQuery", "lastModifiedDate", "externalMetadata",
+      "externalMetadata", "documentURLField", "documentIdField", "baseURL",
+      "lobField", "fetchURLField", "extMetadataType" };
 
   protected void setUp() throws Exception {
     super.setUp();
@@ -51,7 +57,8 @@ public class DBConnectorTypeTest extends DBTestBase {
     configMap.put("fetchURLField", "");
     configMap.put("lobField", "");
 
-    connectorType = new DBConnectorType();
+    configKeys = new HashSet<String>(Arrays.asList(keys));
+    connectorType = new DBConnectorType(configKeys);
   }
 
   /**

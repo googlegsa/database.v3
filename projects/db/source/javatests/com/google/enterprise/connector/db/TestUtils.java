@@ -15,7 +15,7 @@
 package com.google.enterprise.connector.db;
 
 import com.google.enterprise.connector.db.diffing.JsonDocument;
-import com.google.enterprise.connector.db.diffing.MetadataDocumentBuilder;
+import com.google.enterprise.connector.db.diffing.JsonDocumentUtil;
 import com.google.enterprise.connector.traversal.ProductionTraversalContext;
 
 import java.util.ArrayList;
@@ -25,11 +25,11 @@ import java.util.Map;
 import java.util.logging.Logger;
 
 /**
- * Utility class for unit tests.
+ * Utility class for unittests.
  */
 public class TestUtils {
-  private static final Logger LOG = Logger.getLogger(TestUtils.class.getName());
 
+  private static final Logger LOG = Logger.getLogger(TestUtils.class.getName());
   public static final String TESTCONFIG_DIR = "config/";
   public static final String TESTCONNECTORCONFIG_DIR = "";
   public static final String CONNECTOR_INSTANCE_XML = "connectorInstance.xml";
@@ -86,9 +86,10 @@ public class TestUtils {
   public static JsonDocument createDBDoc(int id, String firstName,
       String lastName, String email) throws DBException {
     ProductionTraversalContext context = new ProductionTraversalContext();
-    JsonDocument jsonDoc =
-        new MetadataDocumentBuilder(DBTestBase.getMinimalDbContext())
-        .fromRow(getRow(id, firstName, lastName, email));
+    JsonDocument jsonDoc = JsonDocumentUtil.rowToDoc("testdb_",
+        TestUtils.getStandardPrimaryKeys(),
+        getRow(id, firstName, lastName, email),
+        "localhost", null, null);
     return jsonDoc;
   }
 

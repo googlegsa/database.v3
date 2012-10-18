@@ -36,8 +36,8 @@ public class DBConnectorAuthorizationManager implements AuthorizationManager {
       Logger.getLogger(DBConnectorAuthorizationManager.class.getName());
   private final DBClient dbClient;
 
-  public DBConnectorAuthorizationManager(DBContext dbContext) throws DBException {
-    this.dbClient = dbContext.getClient();
+  public DBConnectorAuthorizationManager(DBClient dbClient) {
+    this.dbClient = dbClient;
   }
 
   public Collection<AuthorizationResponse> authorizeDocids(

@@ -14,33 +14,38 @@
 
 package com.google.enterprise.connector.db.diffing;
 
-import com.google.common.collect.Iterators;
 import com.google.enterprise.connector.util.diffing.SnapshotRepositoryRuntimeException;
 
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.logging.Logger;
 
 /**
  * Custom Iterator class over collection of @link JsonDocument objects.
  */
 public class RepositoryHandlerIterator implements Iterator<JsonDocument> {
+
   private static final Logger LOG =
       Logger.getLogger(RepositoryHandlerIterator.class.getName());
-
   private Iterator<JsonDocument> recordList;
-  private final RepositoryHandler repositoryHandler;
+  private RepositoryHandler repositoryHandler;
+
+  public Iterator<JsonDocument> getRecordList() {
+    return recordList;
+  }
 
   public void setRecordList(Iterator<JsonDocument> recordList) {
     this.recordList = recordList;
   }
 
   /**
+   * @param recordList collection for holding JsonDocuments.
    * @param repositoryHandler RepositoryHandler object for fetching DB rows in
    *        JsonDocument form.
    */
   public RepositoryHandlerIterator(RepositoryHandler repositoryHandler) {
     this.repositoryHandler = repositoryHandler;
-    this.recordList = Iterators.emptyIterator();
+    this.recordList = new LinkedList<JsonDocument>().iterator();
   }
 
   /**
@@ -55,7 +60,10 @@ public class RepositoryHandlerIterator implements Iterator<JsonDocument> {
     } else {
       try {
         recordList = repositoryHandler.executeQueryAndAddDocs().iterator();
-        return recordList.hasNext();
+        if (!recordList.hasNext()) {
+          return false;
+        }
+        return true;
       } catch (SnapshotRepositoryRuntimeException e) {
         LOG.warning("Exception in hasNext of RepositoryHandlerIterator\n"
             + e.toString());

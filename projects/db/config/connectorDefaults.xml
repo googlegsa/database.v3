@@ -6,10 +6,7 @@
     Bean for encapsulation of all the configuration parameter needed for a
     working Database Connector instance.
   -->
-  <bean id="database-connector-defaults" init-method="init">
-    <property name="client">
-      <bean class="com.google.enterprise.connector.db.DBClient"/>
-    </property>
+  <bean id="database-connector-defaults">
     <property name="connectionUrl" value="${connectionUrl}"></property>
     <property name="hostname" value="${hostname}"></property>
     <property name="driverClassName" value="${driverClassName}"></property>
@@ -46,6 +43,11 @@
 
   </bean>
 
+  <!-- Bean for interacting with the database -->
+  <bean id="db-client" class="com.google.enterprise.connector.db.DBClient">
+    <constructor-arg index="0" ref="db-connector-config" />
+  </bean>
+
   <!-- Bean which is a holder for the TraversalContext object -->
   <bean id="traversal-context-manager"
     class="com.google.enterprise.connector.util.diffing.TraversalContextManager"
@@ -58,7 +60,7 @@
   <bean id="repository-handler"
     class="com.google.enterprise.connector.db.diffing.RepositoryHandler"
     factory-method="makeRepositoryHandlerFromConfig">
-    <constructor-arg index="0" ref="db-connector-config" />
+    <constructor-arg index="0" ref="db-client" />
     <constructor-arg index="1" ref="traversal-context-manager" />
   </bean>
 
@@ -82,7 +84,7 @@
     GSA) objects
   -->
   <bean id="change-queue"
-    class="com.google.enterprise.connector.util.diffing.ChangeQueue">
+    class=" com.google.enterprise.connector.util.diffing.ChangeQueue">
     <constructor-arg index="0" value="1000" />
     <constructor-arg index="1" value="10000" />
     <constructor-arg index="2" ref="activity-logger" />
@@ -106,15 +108,9 @@
     singleton="true">
   </bean>
 
-  <!-- Bean for DocumentHandleFactory for documents -->
-  <bean id="db-handle-factory"
-    class="com.google.enterprise.connector.db.diffing.DBHandleFactory"
-    singleton="true">
-  </bean>
-
-  <!-- Bean for DocumentSnapshotFactory -->
-  <bean id="db-snapshot-factory"
-    class="com.google.enterprise.connector.db.diffing.DBSnapshotFactory"
+  <!-- Bean for Top-level factory for Database Connector objects -->
+  <bean id="db-class-factory"
+    class="com.google.enterprise.connector.db.diffing.DBClassFactory"
     singleton="true">
   </bean>
 
@@ -126,7 +122,7 @@
     <constructor-arg ref="change-queue" />
     <constructor-arg ref="queue-dir" />
     <constructor-arg ref="internal-document-handle-factory" />
-    <constructor-arg ref="db-handle-factory" />
+    <constructor-arg ref="db-class-factory" />
   </bean>
 
   <!--Bean for implementation of ChecksumGenerator-->
@@ -139,7 +135,7 @@
   <bean id="authz"
     class="com.google.enterprise.connector.db.DBConnectorAuthorizationManager"
     singleton="false">
-    <constructor-arg ref="db-connector-config" />
+    <constructor-arg ref="db-client" />
   </bean>
 
   <!-- Bean for Monitor Manager of Diffing Library-->
@@ -147,7 +143,7 @@
     class="com.google.enterprise.connector.util.diffing.DocumentSnapshotRepositoryMonitorManagerImpl"
     singleton="true">
     <constructor-arg ref="db-document-snapshot-repository-list" />
-    <constructor-arg ref="db-snapshot-factory" />
+    <constructor-arg ref="db-class-factory" />
     <constructor-arg ref="snapshot-dir" />
     <constructor-arg ref="checksum-generator" />
     <constructor-arg ref="change-queue" />

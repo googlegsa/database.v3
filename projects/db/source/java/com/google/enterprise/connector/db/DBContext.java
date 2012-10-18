@@ -24,10 +24,7 @@ import java.util.logging.Logger;
  */
 public class DBContext {
   private static final Logger LOG = Logger.getLogger(DBContext.class.getName());
-
   private final MimeTypeDetector mimeTypeDetector = new MimeTypeDetector();
-
-  private DBClient client;
   private String connectionUrl;
   private String hostname;
   private String login;
@@ -54,16 +51,14 @@ public class DBContext {
   public DBContext() {
   }
 
-  /** Constructor for the tests. */
   public DBContext(String connectionUrl, String hostname,
       String driverClassName, String login, String password, String dbName,
       String sqlQuery, String googleConnectorWorkDir, String primaryKeysString,
       String xslt, String authZQuery, String lastModifiedDate,
       String documentTitle, String documentURLField, String documentIdField,
       String baseURL, String lobField, String fetchURLField,
-      String extMetadataType) throws DBException {
+      String extMetadataType) {
 
-    this.client = new DBClient();
     this.connectionUrl = connectionUrl;
     this.hostname = hostname;
     this.driverClassName = driverClassName;
@@ -83,13 +78,6 @@ public class DBContext {
     this.fetchURLField = fetchURLField;
     this.lastModifiedDate = lastModifiedDate;
 
-    // Since we're not Spring-instantiated here, we need to explictly
-    // call the init method.
-    init();
-  }
-
-  public void init() throws DBException {
-    client.setDBContext(this);
   }
 
   public MimeTypeDetector getMimeTypeDetector() {
@@ -106,10 +94,6 @@ public class DBContext {
 
   public static Logger getLog() {
     return LOG;
-  }
-
-  public void setClient(DBClient client) {
-    this.client = client;
   }
 
   public void setConnectionUrl(String connectionUrl) {
@@ -212,10 +196,6 @@ public class DBContext {
 
   public void setExtMetadataType(String extMetadataType) {
     this.extMetadataType = extMetadataType;
-  }
-
-  public DBClient getClient() {
-    return client;
   }
 
   public String getConnectionUrl() {

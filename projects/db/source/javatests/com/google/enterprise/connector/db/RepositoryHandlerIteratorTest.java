@@ -32,9 +32,10 @@ public class RepositoryHandlerIteratorTest extends DBTestBase {
     super.setUp();
     runDBScript(CREATE_TEST_DB_TABLE);
     runDBScript(LOAD_TEST_DATA);
+    DBClient dbClient = getDbClient();
 
     repositoryHandler =
-        RepositoryHandler.makeRepositoryHandlerFromConfig(getDbContext(), null);
+        RepositoryHandler.makeRepositoryHandlerFromConfig(dbClient, null);
     repositoryHandler.setTraversalContext(new ProductionTraversalContext());
     repositoryHandlerIterator =
         new RepositoryHandlerIterator(repositoryHandler);

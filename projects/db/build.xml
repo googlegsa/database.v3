@@ -116,8 +116,6 @@
           <include name="tests/junit.jar" />
         </fileset>
         <fileset dir="${thirdparty-prod-jar.dir}" includes="**/*.jar" />
-        <fileset dir="${connector-thirdparty-tests-jar.dir}"
-                 includes="**/*.jar" />
         <pathelement location="${jar-prod.file}" />
       </classpath>
     </javac>
@@ -150,8 +148,6 @@
         <pathelement location="${classes-tests.dir}" />
         <fileset dir="${spi.jar.dir}" includes="**/*.jar" />
         <fileset dir="${thirdparty-prod-jar.dir}" includes="**/*.jar" />
-        <fileset dir="${connector-thirdparty-tests-jar.dir}"
-                 includes="**/*.jar" />
         <pathelement location="${jar-prod.file}" />
         <fileset dir="${connector-manager-thirdparty-jar.dir}">
           <include name="prod/*.jar" />

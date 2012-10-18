@@ -15,6 +15,7 @@
 package com.google.enterprise.connector.db.diffing;
 
 import com.google.enterprise.connector.db.DBClient;
+import com.google.enterprise.connector.db.DBConnectorType;
 import com.google.enterprise.connector.db.DBContext;
 import com.google.enterprise.connector.db.DBException;
 import com.google.enterprise.connector.db.Util;
@@ -36,13 +37,26 @@ import java.util.logging.Logger;
  */
 public class RepositoryHandler {
   private static final Logger LOG = Logger.getLogger(RepositoryHandler.class.getName());
-  private DBContext dbContext;
   private DBClient dbClient;
   private TraversalContextManager traversalContextManager;
   private static TraversalContext traversalContext;
   private int cursorDB = 0;
   private Integer keyValue = null;
   private String primaryKeyColumn = null;
+  // EXC_NORMAL represents that DB Connector is running in normal mode
+  private static final int MODE_NORMAL = 1;
+
+  // EXC_METADATA_URL represents that DB Connector is running for indexing
+  // External Metadada
+  private static final int MODE_METADATA_URL = 2;
+
+  // EXC_BLOB represents that DB Connector is running for indexing BLOB
+  // data
+  private static final int MODE_METADATA_BASE_URL = 3;
+
+  // EXC_CLOB represents that DB Connector is running for indexing CLOB
+  // data
+  private static final int MODE_BLOB_CLOB = 4;
 
   public TraversalContext getTraversalContext() {
     return traversalContext;
@@ -56,12 +70,12 @@ public class RepositoryHandler {
   private int currentExcMode = -1;
 
   public static RepositoryHandler makeRepositoryHandlerFromConfig(
-      DBContext dbContext, TraversalContextManager traversalContextManager) {
+      DBClient dbClient, TraversalContextManager traversalContextManager) {
+
     RepositoryHandler repositoryHandler = new RepositoryHandler();
     repositoryHandler.traversalContextManager = traversalContextManager;
     repositoryHandler.cursorDB = 0;
-    repositoryHandler.dbContext = dbContext;
-    repositoryHandler.dbClient = dbContext.getClient();
+    repositoryHandler.dbClient = dbClient;
     return repositoryHandler;
   }
 
@@ -89,8 +103,8 @@ public class RepositoryHandler {
    * result set(map).
    */
   private void setPrimaryKeyColumn(Set<String> keySet) {
-    String keys[] =
-        dbContext.getPrimaryKeys().split(Util.PRIMARY_KEYS_SEPARATOR);
+    String keys[] = dbClient.getDBContext().getPrimaryKeys()
+        .split(Util.PRIMARY_KEYS_SEPARATOR);
     String primaryKey = keys[0];
     for (String key : keySet) {
       if (primaryKey.equalsIgnoreCase(key)) {
@@ -126,12 +140,14 @@ public class RepositoryHandler {
    */
   public LinkedList<JsonDocument> executeQueryAndAddDocs()
       throws SnapshotRepositoryRuntimeException {
+    LinkedList<JsonDocument> docList = new LinkedList<JsonDocument>();
     List<Map<String, Object>> rows = null;
 
-    if (!dbContext.isParameterizedQueryFlag()) {
+    if (!dbClient.getDBContext().isParameterizedQueryFlag()) {
+
       try {
         rows = dbClient.executePartialQuery(cursorDB,
-            dbContext.getNumberOfRows());
+            dbClient.getDBContext().getNumberOfRows());
       } catch (SnapshotRepositoryRuntimeException e) {
         LOG.info("Repository Unreachable.  Setting CursorDB value to zero to "
             + "start traversal from begining after recovery.");
@@ -143,7 +159,7 @@ public class RepositoryHandler {
 
       if (rows.size() == 0) {
         LOG.info("Crawl cycle of database "
-            + dbContext.getDbName() + " is completed at: "
+            + dbClient.getDBContext().getDbName() + " is completed at: "
             + new Date() + "\nTotal " + getCursorDB()
             + " records are crawled during this crawl cycle");
         setCursorDB(0);
@@ -155,13 +171,13 @@ public class RepositoryHandler {
         // Replace the keyValue with minValue to retrieve first set of
         // maxRows number of Records
         if (keyValue == null) {
-          keyValue = dbContext.getMinValue();
+          keyValue = dbClient.getDBContext().getMinValue();
         }
         rows = dbClient.executeParameterizePartialQuery(keyValue);
       } catch (SnapshotRepositoryRuntimeException e) {
         LOG.info("Repository Unreachable. Resetting keyValue to minValue for "
             + "starting traversal from begining after recovery.");
-        keyValue = dbContext.getMinValue();
+        keyValue = dbClient.getDBContext().getMinValue();
         LOG.warning("Unable to connect to the database\n" + e.toString());
         throw new SnapshotRepositoryRuntimeException(
             "Unable to connect to the database\n", e);
@@ -170,7 +186,7 @@ public class RepositoryHandler {
         LOG.info("No records returned for keyValue= " + keyValue);
         LOG.info("Crawl cycle completed for ordered Database. Resetting "
             + "keyValue to minValue for starting traversal from begining.");
-        keyValue = dbContext.getMinValue();
+        keyValue = dbClient.getDBContext().getMinValue();
       } else {
         updateKeyValue(rows);
       }
@@ -181,30 +197,156 @@ public class RepositoryHandler {
       JsonDocument.setTraversalContext(
           traversalContextManager.getTraversalContext());
     }
-
-    return getDocList(rows);
-  }
-
-  private LinkedList<JsonDocument> getDocList(List<Map<String, Object>> rows) {
-    LinkedList<JsonDocument> docList = new LinkedList<JsonDocument>();
+    JsonDocument jsonDoc = null;
     if (rows != null && rows.size() > 0) {
-      DocumentBuilder docBuilder =
-          DocumentBuilder.getInstance(dbContext, traversalContext);
+      currentExcMode = getExecutionScenario(dbClient.getDBContext());
+      String logMessage = getExcLogMessage(currentExcMode);
+      LOG.info(logMessage);
+      switch (currentExcMode) {
+      // execute the connector for metadata-url feed
+      case MODE_METADATA_URL:
 
-      for (Map<String, Object> row : rows) {
-        try {
-          JsonDocument jsonDoc = docBuilder.fromRow(row);
-          if (jsonDoc != null) {
-            docList.add(jsonDoc);
+        for (Map<String, Object> row : rows) {
+          try {
+            jsonDoc = JsonDocumentUtil.generateMetadataURLFeed(
+                dbClient.getDBContext().getDbName(), dbClient.getDBContext()
+                .getPrimaryKeys().split(Util.PRIMARY_KEYS_SEPARATOR), row,
+                dbClient.getDBContext().getHostname(), dbClient.getDBContext(),
+                "");
+          } catch (DBException e) {
+            LOG.warning("Cannot convert datbase record to JsonDocument for "
+                + "record "+ row + "\n" + e);
           }
-        } catch (DBException e) {
-          LOG.warning("Cannot convert database record to JsonDocument for "
-              + "record " + row + "\n" + e);
+          docList.add(jsonDoc);
         }
+        break;
+      // execute the connector for BLOB data
+      case MODE_METADATA_BASE_URL:
+        jsonDoc = null;
+        for (Map<String, Object> row : rows) {
+          try {
+            jsonDoc = JsonDocumentUtil.generateMetadataURLFeed(
+                dbClient.getDBContext().getDbName(), dbClient.getDBContext()
+                .getPrimaryKeys().split(Util.PRIMARY_KEYS_SEPARATOR), row,
+                dbClient.getDBContext().getHostname(), dbClient.getDBContext(),
+                JsonDocumentUtil.WITH_BASE_URL);
+          } catch (DBException e) {
+            LOG.warning("Cannot convert datbase record to JsonDocument for "
+                + "record "+ row + "\n" + e);
+          }
+          docList.add(jsonDoc);
+        }
+        break;
+      // execute the connector for CLOB data
+      case MODE_BLOB_CLOB:
+        jsonDoc = null;
+        for (Map<String, Object> row : rows) {
+          try {
+            jsonDoc = JsonDocumentUtil.largeObjectToDoc(
+                dbClient.getDBContext().getDbName(), dbClient.getDBContext()
+                .getPrimaryKeys().split(Util.PRIMARY_KEYS_SEPARATOR), row,
+                dbClient.getDBContext().getHostname(), dbClient.getDBContext(),
+                traversalContext);
+            if (jsonDoc != null) {
+              docList.add(jsonDoc);
+            }
+          } catch (DBException e) {
+            LOG.warning("Cannot convert datbase record to JsonDocument for "
+                + "record" + row + "\n" + e);
+          }
+        }
+        break;
+      // execute the connector in normal mode
+      default:
+        for (Map<String, Object> row : rows) {
+          try {
+            jsonDoc = JsonDocumentUtil.rowToDoc(
+                dbClient.getDBContext().getDbName(), dbClient.getDBContext()
+                .getPrimaryKeys().split(Util.PRIMARY_KEYS_SEPARATOR), row,
+                dbClient.getDBContext().getHostname(), dbClient.getDBContext()
+                .getXslt(), dbClient.getDBContext());
+            if (jsonDoc != null) {
+              docList.add(jsonDoc);
+            }
+          } catch (DBException e) {
+            LOG.warning("Cannot convert datbase record to JsonDocument for "
+                + "record" + row + "\n" + e);
+          }
+        }
+        break;
       }
     }
-    LOG.info(docList.size() + " document(s) to be fed to GSA at time: "
+    LOG.info(docList.size() + " document(s) to be fed to GSA" + " at time: "
         + new Date());
     return docList;
+  }
+
+  /**
+   * Detect the execution mode from the column names(Normal,
+   * CLOB, BLOB or External Metadata) of the DB Connector and returns the
+   * integer value representing execution mode
+   */
+  private int getExecutionScenario(DBContext dbContext) {
+    String extMetaType = dbContext.getExtMetadataType();
+    String lobField = dbContext.getLobField();
+    String docURLField = dbContext.getDocumentURLField();
+    String docIdField = dbContext.getDocumentIdField();
+    if (extMetaType != null && extMetaType.trim().length() > 0
+        && !extMetaType.equals(DBConnectorType.NO_EXT_METADATA)) {
+      if (extMetaType.equalsIgnoreCase(DBConnectorType.COMPLETE_URL)
+          && (docURLField != null && docURLField.trim().length() > 0)) {
+        return MODE_METADATA_URL;
+      } else if (extMetaType.equalsIgnoreCase(DBConnectorType.DOC_ID)
+          && (docIdField != null && docIdField.trim().length() > 0)) {
+        return MODE_METADATA_BASE_URL;
+      } else if (extMetaType.equalsIgnoreCase(DBConnectorType.BLOB_CLOB)
+          && (lobField != null && lobField.trim().length() > 0)) {
+        return MODE_BLOB_CLOB;
+      } else {
+        /*
+         * Explicitly change the mode of execution as user may switch from
+         * "External Metadata Feed" mode to "Content Feed(for text data)" mode.
+         */
+        dbContext.setExtMetadataType(DBConnectorType.NO_EXT_METADATA);
+        return MODE_NORMAL;
+      }
+    } else {
+      /*
+       * Explicitly change the mode of execution as user may switch from
+       * "External Metadata Feed" mode to "Content Feed(for text data)" mode.
+       */
+      dbContext.setExtMetadataType(DBConnectorType.NO_EXT_METADATA);
+      return MODE_NORMAL;
+    }
+  }
+
+  /**
+   * Return appropriate log message as per current execution mode.
+   *
+   * @param excMode current execution mode
+   * @return appropriate log message as per current execution mode.
+   */
+  private static String getExcLogMessage(int excMode) {
+    switch (excMode) {
+      case MODE_METADATA_URL: {
+        // execution mode: Externam Metadata feed using complete document URL
+        return " DB Connector is running in External Metadata feed mode with "
+            + "complete document URL";
+      }
+      case MODE_METADATA_BASE_URL: {
+        // execution mode: Externam Metadata feed using Base URL and document Id
+        return " DB Connector is running in External Metadata feed mode with "
+            + "Base URL and document ID";
+      }
+      case MODE_BLOB_CLOB: {
+        // execution mode: Content feed mode for BLOB/CLOB data.
+        return
+            " DB Connector is running in Content Feed Mode for BLOB/CLOB data";
+      }
+      default: {
+        // execution mode: Content feed mode for Text data.
+        return " DB Connector is running in content feed mode for text data";
+      }
+    }
   }
 }

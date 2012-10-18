@@ -15,6 +15,7 @@
 package com.google.enterprise.connector.db;
 
 import com.google.common.io.ByteStreams;
+import com.google.enterprise.connector.db.diffing.JsonDocumentUtil;
 import com.google.enterprise.connector.db.diffing.JsonObjectUtil;
 import com.google.enterprise.connector.spi.SpiConstants;
 
@@ -26,13 +27,14 @@ import java.io.Reader;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.sql.Timestamp;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.logging.Logger;
 
 /**
- * Utility class for {@code DocumentBuilder} and {@code XmlUtils}.
+ * Utility class for @ {@link JsonDocumentUtil}.
  */
 public class Util {
   public static final String NO_TIMESTAMP = "NO_TIMESTAMP";
@@ -44,6 +46,7 @@ public class Util {
   private static final String DBCONNECTOR_PROTOCOL = "dbconnector://";
   private static final String DATABASE_TITLE_PREFIX =
       "Database Connector Result";
+  public static final String ROW_CHECKSUM = "dbconnector:checksum";
 
   // This class should not be initialized.
   private Util() {
@@ -117,10 +120,10 @@ public class Util {
   /**
    * Generates the SHA1 checksum.
    *
-   * @param bufs arrays of bytes to checksum
+   * @param buf
    * @return checksum string.
    */
-  public static String getChecksum(byte[]... bufs) {
+  public static String getChecksum(byte[] buf) {
     MessageDigest digest;
     try {
       digest = MessageDigest.getInstance(CHECKSUM_ALGO);
@@ -128,9 +131,7 @@ public class Util {
       throw new RuntimeException("Could not get a message digest for "
           + CHECKSUM_ALGO + "\n" + e);
     }
-    for (byte[] buf : bufs) {
-      digest.update(buf);
-    }
+    digest.update(buf);
     return asHex(digest.digest());
   }
 
@@ -198,6 +199,25 @@ public class Util {
   }
 
   /**
+   * Copies all elements from map representing a row except BLOB
+   * column and return the resultant map.
+   *
+   * @param row
+   * @return map representing a database table row.
+   */
+  public static Map<String, Object> getRowForXmlDoc(Map<String, Object> row,
+      DBContext dbContext) {
+    Set<String> keySet = row.keySet();
+    Map<String, Object> map = new HashMap<String, Object>();
+    for (String key : keySet) {
+      if (!dbContext.getLobField().equals(key)) {
+        map.put(key, row.get(key));
+      }
+    }
+    return map;
+  }
+
+  /**
    * Extract the columns for Last Modified date and Document Title
    * and add in list of skip columns.
    *
@@ -259,5 +279,48 @@ public class Util {
       }
     }
     return content.toByteArray();
+  }
+
+  /**
+   * Sets the content of LOB data in JsonDocument.
+   *
+   * @param binaryContent LOB content to be set
+   * @param dbName name of the database
+   * @param row Map representing row in the database table
+   * @param dbContext object of DBContext
+   * @param primaryKeys primary key columns
+   * @return JsonDocument
+   * @throws DBException
+   */
+  public static JsonObjectUtil setBinaryContent(byte[] binaryContent,
+      JsonObjectUtil jsonObjectUtil, String dbName, Map<String, Object> row,
+      DBContext dbContext, String[] primaryKeys, String docId)
+      throws DBException {
+    String mimeType =
+        dbContext.getMimeTypeDetector().getMimeType(null, binaryContent);
+    jsonObjectUtil.setProperty(SpiConstants.PROPNAME_MIMETYPE, mimeType);
+
+    // TODO (bmj): I would really like to skip caching the content if the
+    // mimeTypeSupportLevel is <= 0, but I don't have a TraversalContext here.
+    jsonObjectUtil.setBinaryContent(SpiConstants.PROPNAME_CONTENT, binaryContent);
+
+    // Get XML representation of document (exclude the BLOB column).
+    Map<String, Object> rowForXmlDoc = getRowForXmlDoc(row, dbContext);
+    String xmlRow = XmlUtils.getXMLRow(dbName, rowForXmlDoc, primaryKeys,
+                                       "", dbContext, true);
+    // Get checksum of LOB.
+    String blobCheckSum = Util.getChecksum(binaryContent);
+
+    // Get checksum of other column.
+    String otherColumnCheckSum = Util.getChecksum(xmlRow.getBytes());
+
+    // Get checksum of LOB object and other column.
+    String docCheckSum =
+        Util.getChecksum((otherColumnCheckSum + blobCheckSum).getBytes());
+
+    // Set checksum of this document.
+    jsonObjectUtil.setProperty(ROW_CHECKSUM, docCheckSum);
+
+    return jsonObjectUtil;
   }
 }
