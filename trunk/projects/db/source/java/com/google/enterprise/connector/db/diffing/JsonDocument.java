@@ -46,7 +46,6 @@ public class JsonDocument implements Document {
   private final String jsonString;
   private final String objectId;
   private final Map<String, List<Value>> properties;
-  private boolean changed = false;
   private static TraversalContext traversalContext;
 
   public static void setTraversalContext(TraversalContext traversalContext) {
@@ -75,14 +74,6 @@ public class JsonDocument implements Document {
       throw new IllegalArgumentException(
           "Unable to parse for docID from the JSON string:" + jsonString);
     }
-  }
-
-  public void setChanged() {
-    this.changed = true;
-  }
-
-  public boolean getChanged() {
-    return this.changed;
   }
 
   public String getDocumentId() {
@@ -152,10 +143,8 @@ public class JsonDocument implements Document {
   @Override
   public Property findProperty(String name) throws RepositoryException {
     List<Value> property = properties.get(name);
-    if (this.changed) {
-      if (name.equals(SpiConstants.PROPNAME_CONTENT) && filterMimeType()) {
+    if (name.equals(SpiConstants.PROPNAME_CONTENT) && filterMimeType()) {
         property = null;
-      }
     }
     return (property == null) ? null : new SimpleProperty(property);
   }

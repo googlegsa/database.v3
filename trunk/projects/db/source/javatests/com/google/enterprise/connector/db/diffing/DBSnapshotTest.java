@@ -14,6 +14,12 @@
 
 package com.google.enterprise.connector.db.diffing;
 
+import static org.easymock.EasyMock.createMock;
+import static org.easymock.EasyMock.expect;
+import static org.easymock.EasyMock.replay;
+import static org.easymock.EasyMock.same;
+import static org.easymock.EasyMock.verify;
+
 import com.google.enterprise.connector.spi.Document;
 import com.google.enterprise.connector.spi.RepositoryException;
 import com.google.enterprise.connector.spi.SpiConstants;
@@ -23,41 +29,41 @@ import com.google.enterprise.connector.util.diffing.DocumentSnapshot;
 import junit.framework.TestCase;
 
 public class DBSnapshotTest extends TestCase {
-
-  JsonDocument jsonDocument;
+  private DocumentBuilder builder;
+  private DocumentBuilder.DocumentHolder holder;
+  private DocumentSnapshot documentSnapshot;
 
   protected void setUp() throws Exception {
-    JsonObjectUtil jsonObjectUtil = new JsonObjectUtil();
-    jsonObjectUtil.setProperty(SpiConstants.PROPNAME_DOCID, "1");
-    jsonObjectUtil.setProperty(SpiConstants.PROPNAME_ISPUBLIC, "false");
-    jsonObjectUtil.setProperty(SpiConstants.PROPNAME_MIMETYPE, "text/plain");
-    jsonObjectUtil.setProperty(DocumentBuilder.ROW_CHECKSUM, "1234");
-    jsonDocument = new JsonDocument(jsonObjectUtil.getProperties(),
-                                    jsonObjectUtil.getJsonObject());
-  }
+    // This is a partial mock, only mocking the getDocumentHandle method
+    // (and getDocumentSnapshot, which we're not using here).
+    builder = createMock(DocumentBuilder.class);
 
-  public void testFactoryFunction() {
-    DBSnapshot snapshot = DBSnapshot.factoryFunction.apply(jsonDocument);
-    assertNotNull(snapshot);
+    String docId = "1";
+    String mimeType = "text/plain";
+    String checksum = "1234";
+    String jsonString = builder.getJsonString(docId, checksum);
+    holder = new DocumentBuilder.DocumentHolder(builder, null, docId,
+        new DocumentBuilder.ContentHolder("hello, world", checksum, mimeType));
+
+    documentSnapshot = new DBSnapshot("1", jsonString, holder);
   }
 
   public void testGetDocumentId() {
-    DBSnapshot snapshot = new DBSnapshot(jsonDocument);
-    String expected = "1";
-    assertEquals(expected, snapshot.getDocumentId());
+    DBSnapshot snapshot = new DBSnapshot("1", "", null);
+    assertEquals("1", snapshot.getDocumentId());
   }
 
   public void testGetUpdateNewDocument() throws Exception {
-    DocumentSnapshot documentSnapshot = new DBSnapshot(jsonDocument);
-    DocumentHandle actual = documentSnapshot.getUpdate(null);
     // The diffing framework sends in a null to indicate that it has not
-    // seen this snapshot before. So we return the corresponding handle,
-    // which in our case contains the same document object.
-    assertSame(jsonDocument, actual.getDocument());
+    // seen this snapshot before.
+    // Assert that our DocumentHolder is used to create the DocumentHandle.
+    expect(builder.getDocumentHandle(same(holder))).andReturn(null);
+    replay(builder);
+    DocumentHandle actual = documentSnapshot.getUpdate(null);
+    verify(builder);
   }
 
   public void testGetUpdateNoChange() throws Exception {
-    DocumentSnapshot documentSnapshot = new DBSnapshot(jsonDocument);
     String serialSnapshot = documentSnapshot.toString();
     DocumentSnapshot deserialSnapshot =
         new DBSnapshotFactory().fromString(serialSnapshot);
@@ -65,25 +71,14 @@ public class DBSnapshotTest extends TestCase {
   }
 
   public void testGetUpdateChangedDocument() throws Exception {
-    // This represents the serialized snapshot that the GSA knows about.
-    JsonObjectUtil jsonObjectUtil = new JsonObjectUtil();
-    jsonObjectUtil.setProperty(SpiConstants.PROPNAME_DOCID, "1");
-    jsonObjectUtil.setProperty(SpiConstants.PROPNAME_ISPUBLIC, "false");
-    jsonObjectUtil.setProperty(SpiConstants.PROPNAME_MIMETYPE, "text/plain");
-    // Checksum change indicates document changed.
-    jsonObjectUtil.setProperty(DocumentBuilder.ROW_CHECKSUM, "9999");
-    DocumentSnapshot onGsa =
-        new DBSnapshot(jsonObjectUtil.getJsonObject().toString());
+    DocumentSnapshot onGsa = new DBSnapshot(
+        builder.getJsonString(documentSnapshot.getDocumentId(), "9999"));
 
-    // This represents the document as found in the repository.
-    DocumentSnapshot documentSnapshot = new DBSnapshot(jsonDocument);
-    // Verify whether the changed property of the document has not been set.
-    assertFalse(jsonDocument.getChanged());
-
+    // Assert that our DocumentHolder is used to create the DocumentHandle.
+    expect(builder.getDocumentHandle(same(holder))).andReturn(null);
+    replay(builder);
     DocumentHandle update = documentSnapshot.getUpdate(onGsa);
-    assertSame(update.getDocument(), jsonDocument);
-    // Verify whether the changed property of the document has been set.
-    assertTrue(jsonDocument.getChanged());
+    verify(builder);
   }
 
   /**
@@ -91,8 +86,7 @@ public class DBSnapshotTest extends TestCase {
    * properties. Only the docid and checksum should be included.
    */
   public void testToString() {
-    DBSnapshot snapshot = new DBSnapshot(jsonDocument);
     String expected = "{\"google:docid\":\"1\",\"google:sum\":\"1234\"}";
-    assertEquals(expected, snapshot.toString());
+    assertEquals(expected, documentSnapshot.toString());
   }
 }

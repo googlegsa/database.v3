@@ -15,6 +15,7 @@
 package com.google.enterprise.connector.db.diffing;
 
 import com.google.common.collect.Iterators;
+import com.google.enterprise.connector.util.diffing.DocumentSnapshot;
 import com.google.enterprise.connector.util.diffing.SnapshotRepository;
 import com.google.enterprise.connector.util.diffing.SnapshotRepositoryRuntimeException;
 
@@ -22,19 +23,24 @@ import java.util.Iterator;
 
 /**
  * DBSnapshotRepository Implements the @link SnapshotRepository Interface.
- * Implemented by delegating to an {@link Iterable}<{@link JsonDocument}>
+ * Implemented by delegating to an {@link Iterable}<{@link DocumentSnapshot}>
  */
-public class DBSnapshotRepository implements SnapshotRepository<DBSnapshot> {
-  private final Iterator<JsonDocument> iterator;
+/*
+ * TODO: This implementation isn't really iterable, because we only
+ * get one instance of Iterator.
+ */
+public class DBSnapshotRepository
+    implements SnapshotRepository<DocumentSnapshot> {
+  private final Iterator<DocumentSnapshot> iterator;
 
   public DBSnapshotRepository(RepositoryHandler repositoryHandler) {
     this.iterator = new RepositoryHandlerIterator(repositoryHandler);
   }
 
   /* @Override */
-  public Iterator<DBSnapshot> iterator()
+  public Iterator<DocumentSnapshot> iterator()
       throws SnapshotRepositoryRuntimeException {
-    return Iterators.transform(iterator, DBSnapshot.factoryFunction);
+    return iterator;
   }
 
   /* @Override */

@@ -16,11 +16,11 @@ package com.google.enterprise.connector.db.diffing;
 
 import com.google.enterprise.connector.db.DBContext;
 import com.google.enterprise.connector.db.DBException;
-import com.google.enterprise.connector.db.DocIdUtil;
 import com.google.enterprise.connector.db.Util;
 import com.google.enterprise.connector.db.XmlUtils;
 import com.google.enterprise.connector.spi.SpiConstants;
 import com.google.enterprise.connector.spi.TraversalContext;
+import com.google.enterprise.connector.spi.Value;
 
 import java.io.InputStream;
 import java.io.CharArrayReader;
@@ -138,35 +138,18 @@ class LobDocumentBuilder extends DocumentBuilder {
     return binaryContent;
   }
 
-  private void setChecksum(JsonObjectUtil jsonObjectUtil,
+  private String getChecksum(
       Map<String, Object> row) throws DBException {
     // Get XML representation of document(exclude the LOB column).
     Map<String, Object> rowForXmlDoc = getRowForXmlDoc(row);
-    String xmlRow = XmlUtils.getXMLRow(dbName, rowForXmlDoc, primaryKeys, "",
-                                       dbContext, true);
-    // Get checksum of columns other than LOB.
-    String otherColumnCheckSum = Util.getChecksum(xmlRow.getBytes());
-
-    // Set checksum for this document.
-    jsonObjectUtil.setProperty(ROW_CHECKSUM, otherColumnCheckSum);
+    return super.getChecksum(rowForXmlDoc, "");
   }
 
-  /**
-   * Converts a large Object (BLOB or CLOB) into equivalent JsonDocument.
-   */
   @Override
-  public JsonDocument fromRow(Map<String, Object> row) throws DBException {
-    String docId = DocIdUtil.generateDocId(primaryKeys, row);
-    JsonObjectUtil jsonObjectUtil = new JsonObjectUtil();
-
-    // skipColumns maintain the list of column which needs to skip while
-    // indexing as they are not part of metadata or they already considered for
-    // indexing. For example document_id column, MIME type column, URL columns.
-    List<String> skipColumns = new ArrayList<String>();
-
+  protected ContentHolder getContentHolder(Map<String, Object> row,
+      String docId) throws DBException {
     // Get the value of large object from map representing a row.
     Object largeObject = row.get(dbContext.getLobField());
-    skipColumns.add(dbContext.getLobField());
 
     // Check if large object data value for null.  If large object is null,
     // then do not set content, else handle the content as per LOB type.
@@ -177,24 +160,33 @@ class LobDocumentBuilder extends DocumentBuilder {
       try {
         binaryContent = getBinaryContent(largeObject, docId);
       } catch (SQLException e) {
-        LOG.log(Level.WARNING, "Error retrieving LOB content", e);
-        return null;
+        throw new DBException("Error retrieving LOB content", e);
       }
     }
     if (binaryContent != null) {
-      setBinaryContent(binaryContent, jsonObjectUtil, row);
+      return getContentHolder(binaryContent, row);
     } else {
-      setChecksum(jsonObjectUtil, row);
       LOG.warning("Content of Document " + docId + " has null value.");
+      return new ContentHolder(null, getChecksum(row), null);
     }
+  }
 
-    // Set doc id.
-    jsonObjectUtil.setProperty(SpiConstants.PROPNAME_DOCID, docId);
+  /**
+   * Converts a large Object (BLOB or CLOB) into equivalent JsonDocument.
+   */
+  @Override
+  protected JsonDocument getJsonDocument(DocumentHolder holder)
+      throws DBException {
+    JsonObjectUtil jsonObjectUtil = new JsonObjectUtil();
 
-    // Set feed type as content feed.
+    List<String> skipColumns = new ArrayList<String>();
+
+    skipColumns.add(dbContext.getLobField());
+
+    jsonObjectUtil.setProperty(SpiConstants.PROPNAME_DOCID, holder.docId);
+
     jsonObjectUtil.setProperty(SpiConstants.PROPNAME_FEEDTYPE,
                                SpiConstants.FeedType.CONTENT.toString());
-    // Set action as add.
     jsonObjectUtil.setProperty(SpiConstants.PROPNAME_ACTION,
                                SpiConstants.ActionType.ADD.toString());
 
@@ -203,45 +195,50 @@ class LobDocumentBuilder extends DocumentBuilder {
       jsonObjectUtil.setProperty(SpiConstants.PROPNAME_ISPUBLIC, "false");
     }
 
+    jsonObjectUtil.setBinaryContent(SpiConstants.PROPNAME_CONTENT,
+        (Value) holder.contentHolder.content);
+    jsonObjectUtil.setProperty(SpiConstants.PROPNAME_MIMETYPE,
+        holder.contentHolder.mimeType);
+
     // If connector admin has provided Fetch URL column then use the value of
     // that column as a "Display URL". Else construct the display URL.
-    Object displayURL = row.get(dbContext.getFetchURLField());
+    // TODO(jlacey): What happens if getFetchURLField returns empty or null?
+    Object displayURL = holder.row.get(dbContext.getFetchURLField());
     if (displayURL != null && displayURL.toString().trim().length() > 0) {
       jsonObjectUtil.setProperty(SpiConstants.PROPNAME_DISPLAYURL,
                                  displayURL.toString().trim());
+      // TODO(jlacey): This is broken, isn't it, confusing the field
+      // to skip with the displayURL value?
       skipColumns.add(displayURL.toString());
     } else {
       jsonObjectUtil.setProperty(SpiConstants.PROPNAME_DISPLAYURL,
-                                 Util.getDisplayUrl(hostname, dbName, docId));
+                                 getDisplayUrl(hostname, dbName, holder.docId));
     }
 
-    Util.skipOtherProperties(skipColumns, dbContext);
+    skipLastModified(skipColumns, dbContext);
     skipColumns.addAll(Arrays.asList(primaryKeys));
-    Util.setOptionalProperties(row, jsonObjectUtil, dbContext);
-    Util.setMetaInfo(jsonObjectUtil, row, skipColumns);
+    setLastModified(holder.row, jsonObjectUtil, dbContext);
+    setMetaInfo(jsonObjectUtil, holder.row, skipColumns);
 
-    // Set other doc properties.
     return new JsonDocument(jsonObjectUtil.getProperties(),
-        jsonObjectUtil.getJsonObject());
+     jsonObjectUtil.getJsonObject());
   }
 
-  /**
-   * Sets the content of LOB data in JsonDocument.
-   *
-   * @param binaryContent LOB content to be set
-   * @param row Map representing row in the database table
-   */
-  private void setBinaryContent(byte[] binaryContent,
-      JsonObjectUtil jsonObjectUtil, Map<String, Object> row)
-      throws DBException {
+  private ContentHolder getContentHolder(byte[] binaryContent,
+      Map<String, Object> row) throws DBException {
     String mimeType =
         dbContext.getMimeTypeDetector().getMimeType(null, binaryContent);
-    jsonObjectUtil.setProperty(SpiConstants.PROPNAME_MIMETYPE, mimeType);
 
     // TODO (bmj): I would really like to skip caching the content if the
     // mimeTypeSupportLevel is <= 0, but I don't have a TraversalContext here.
-    jsonObjectUtil.setBinaryContent(SpiConstants.PROPNAME_CONTENT, binaryContent);
 
+    Value content = JsonObjectUtil.getBinaryValue(binaryContent);
+    return new ContentHolder(content, getChecksum(binaryContent, row),
+        mimeType);
+  }
+
+  private String getChecksum(byte[] binaryContent, Map<String, Object> row)
+      throws DBException {
     // Get XML representation of document (exclude the LOB column).
     Map<String, Object> rowForXmlDoc = getRowForXmlDoc(row);
     String xmlRow = XmlUtils.getXMLRow(dbName, rowForXmlDoc, primaryKeys,
@@ -249,9 +246,7 @@ class LobDocumentBuilder extends DocumentBuilder {
 
     // Get checksum of LOB object and other columns.
     String docCheckSum = Util.getChecksum(xmlRow.getBytes(), binaryContent);
-
-    // Set checksum of this document.
-    jsonObjectUtil.setProperty(ROW_CHECKSUM, docCheckSum);
+    return docCheckSum;
   }
 
   /**

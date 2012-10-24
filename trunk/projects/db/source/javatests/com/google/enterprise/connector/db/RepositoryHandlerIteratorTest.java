@@ -18,6 +18,7 @@ import com.google.enterprise.connector.db.diffing.JsonDocument;
 import com.google.enterprise.connector.db.diffing.RepositoryHandler;
 import com.google.enterprise.connector.db.diffing.RepositoryHandlerIterator;
 import com.google.enterprise.connector.traversal.ProductionTraversalContext;
+import com.google.enterprise.connector.util.diffing.DocumentSnapshot;
 import com.google.enterprise.connector.util.diffing.SnapshotRepositoryRuntimeException;
 
 import java.util.Iterator;
@@ -43,7 +44,7 @@ public class RepositoryHandlerIteratorTest extends DBTestBase {
   }
 
   public void testNext() {
-    JsonDocument jsonDocument = repositoryHandlerIterator.next();
+    DocumentSnapshot jsonDocument = repositoryHandlerIterator.next();
     assertNotNull(jsonDocument);
   }
 
@@ -55,8 +56,8 @@ public class RepositoryHandlerIteratorTest extends DBTestBase {
   // Scenario when the recordList does not contain more records but the
   // database result set does.
   public void testhasnext2() {
-    Iterator<JsonDocument> recordList;
-    recordList = new LinkedList<JsonDocument>().iterator();
+    Iterator<DocumentSnapshot> recordList;
+    recordList = new LinkedList<DocumentSnapshot>().iterator();
     repositoryHandlerIterator.setRecordList(recordList);
     assertEquals(true, repositoryHandlerIterator.hasNext());
   }
@@ -64,13 +65,13 @@ public class RepositoryHandlerIteratorTest extends DBTestBase {
   // Scenario when the recordList as well as database resulset does not
   // contain any more records.
   public void testhasnext3() {
-    Iterator<JsonDocument> recordList;
+    Iterator<DocumentSnapshot> recordList;
     try {
       // Retrieve all the rows from the database.
       recordList = repositoryHandler.executeQueryAndAddDocs().iterator();
       // Make the recordList contain no records.
       repositoryHandlerIterator.setRecordList(
-          new LinkedList<JsonDocument>().iterator());
+          new LinkedList<DocumentSnapshot>().iterator());
       assertEquals(false, repositoryHandlerIterator.hasNext());
 
     } catch (SnapshotRepositoryRuntimeException e) {

@@ -54,7 +54,8 @@ public class JsonDocumentTest extends TestCase {
    * properties.
    */
   public void testToJson() {
-    String expected = "{\"google:docid\":\"1\"}";
+    String expected = "{\"google:ispublic\":\"false\",\"google:docid\":\"1\","
+        + "\"google:mimetype\":\"text/plain\"}";
     JsonDocument jsonDocument =
         new JsonDocument(jsonObjectUtil.getProperties(),
                          jsonObjectUtil.getJsonObject());
@@ -67,9 +68,9 @@ public class JsonDocumentTest extends TestCase {
     try {
       ProductionTraversalContext context = new ProductionTraversalContext();
       JsonDocument.setTraversalContext(context);
-      JsonDocument doc =
-          new MetadataDocumentBuilder(DBTestBase.getMinimalDbContext())
-          .fromRow(rowMap);
+      JsonDocument doc = DocumentBuilderFixture.getJsonDocument(
+          new MetadataDocumentBuilder(DBTestBase.getMinimalDbContext()),
+          rowMap);
 
       assertEquals("MSxsYXN0XzAx", Value.getSingleValueString(doc,
           SpiConstants.PROPNAME_DOCID));
@@ -83,13 +84,9 @@ public class JsonDocumentTest extends TestCase {
       assertEquals("text/html", Value.getSingleValueString(doc,
           SpiConstants.PROPNAME_MIMETYPE));
 
-      // Checksum should be hidden as a public property.
+      // Checksum should be hidden as a public property and in the JSON string.
       assertNull(doc.findProperty(DocumentBuilder.ROW_CHECKSUM));
-      
-      // But the checksum should be included in the snapshot string.
-      String expected = "{\"google:docid\":\"MSxsYXN0XzAx\","
-          + "\"google:sum\":\"7ffd1d7efaf0d1ee260c646d827020651519e7b0\"}";
-      assertEquals(expected, doc.toJson());
+      assertEquals(doc.toJson(), -1, doc.toJson().indexOf("google:sum"));
     } catch (DBException e) {
       fail("Could not generate Json document from row.");
     } catch (RepositoryException e) {

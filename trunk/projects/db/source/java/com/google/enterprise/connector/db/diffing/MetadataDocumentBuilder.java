@@ -14,11 +14,8 @@
 
 package com.google.enterprise.connector.db.diffing;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.google.enterprise.connector.db.DBContext;
 import com.google.enterprise.connector.db.DBException;
-import com.google.enterprise.connector.db.DocIdUtil;
-import com.google.enterprise.connector.db.Util;
 import com.google.enterprise.connector.db.XmlUtils;
 import com.google.enterprise.connector.spi.SpiConstants;
 
@@ -28,8 +25,7 @@ import java.util.logging.Logger;
 /**
  * Class for transforming database row to JsonDocument.
  */
-@VisibleForTesting
-public class MetadataDocumentBuilder extends DocumentBuilder {
+class MetadataDocumentBuilder extends DocumentBuilder {
   private static final Logger LOG =
       Logger.getLogger(MetadataDocumentBuilder.class.getName());
 
@@ -37,11 +33,22 @@ public class MetadataDocumentBuilder extends DocumentBuilder {
 
   private final String xslt;
 
-  @VisibleForTesting
-  public MetadataDocumentBuilder(DBContext dbContext) {
+  protected MetadataDocumentBuilder(DBContext dbContext) {
     super(dbContext);
 
     this.xslt = dbContext.getXslt();
+  }
+
+  @Override
+  protected ContentHolder getContentHolder(Map<String, Object> row,
+      String docId) throws DBException {
+    return new ContentHolder(row, getChecksum(row, xslt), MIMETYPE);
+  }
+
+  private String getContent(ContentHolder holder) throws DBException {
+    @SuppressWarnings("unchecked") Map<String, Object> row =
+        (Map<String, Object>) holder.content;
+    return XmlUtils.getXMLRow(dbName, row, primaryKeys, xslt, dbContext, false);
   }
 
   /**
@@ -53,20 +60,15 @@ public class MetadataDocumentBuilder extends DocumentBuilder {
    * @return doc
    * @throws DBException
    */
-  public JsonDocument fromRow(Map<String, Object> row) throws DBException {
-    String docId = DocIdUtil.generateDocId(primaryKeys, row);
+  @Override
+  protected JsonDocument getJsonDocument(DocumentHolder holder)
+      throws DBException {
     JsonObjectUtil jsonObjectUtil = new JsonObjectUtil();
 
-    jsonObjectUtil.setProperty(SpiConstants.PROPNAME_DOCID, docId);
-    // TODO: Look into which encoding/charset to use for getBytes().
-    String completeXMLRow =
-        XmlUtils.getXMLRow(dbName, row, primaryKeys, xslt, dbContext, true);
-    jsonObjectUtil.setProperty(ROW_CHECKSUM,
-                               Util.getChecksum(completeXMLRow.getBytes()));
+    jsonObjectUtil.setProperty(SpiConstants.PROPNAME_DOCID, holder.docId);
 
-    String contentXMLRow =
-        XmlUtils.getXMLRow(dbName, row, primaryKeys, xslt, dbContext, false);
-    jsonObjectUtil.setProperty(SpiConstants.PROPNAME_CONTENT, contentXMLRow);
+    jsonObjectUtil.setProperty(SpiConstants.PROPNAME_CONTENT,
+        getContent(holder.contentHolder));
 
     jsonObjectUtil.setProperty(SpiConstants.PROPNAME_ACTION,
                                SpiConstants.ActionType.ADD.toString());
@@ -76,16 +78,17 @@ public class MetadataDocumentBuilder extends DocumentBuilder {
       jsonObjectUtil.setProperty(SpiConstants.PROPNAME_ISPUBLIC, "false");
     }
 
-    jsonObjectUtil.setProperty(SpiConstants.PROPNAME_MIMETYPE, MIMETYPE);
-    jsonObjectUtil.setProperty(SpiConstants.PROPNAME_DISPLAYURL,
-                               Util.getDisplayUrl(hostname, dbName, docId));
+    jsonObjectUtil.setProperty(SpiConstants.PROPNAME_MIMETYPE,
+        holder.contentHolder.mimeType);
 
-    // Set feed type as content feed.
+    jsonObjectUtil.setProperty(SpiConstants.PROPNAME_DISPLAYURL,
+                               getDisplayUrl(hostname, dbName, holder.docId));
+
     jsonObjectUtil.setProperty(SpiConstants.PROPNAME_FEEDTYPE,
                                SpiConstants.FeedType.CONTENT.toString());
 
-    // Set other doc properties.
-    Util.setOptionalProperties(row, jsonObjectUtil, dbContext);
+    setLastModified(holder.row, jsonObjectUtil, dbContext);
+
     return new JsonDocument(jsonObjectUtil.getProperties(),
         jsonObjectUtil.getJsonObject());
   }

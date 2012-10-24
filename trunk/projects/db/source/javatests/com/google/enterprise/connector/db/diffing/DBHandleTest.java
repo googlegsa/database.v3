@@ -16,6 +16,7 @@ package com.google.enterprise.connector.db.diffing;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.enterprise.connector.spi.Document;
+import com.google.enterprise.connector.spi.Property;
 import com.google.enterprise.connector.spi.RepositoryException;
 import com.google.enterprise.connector.spi.SpiConstants;
 import com.google.enterprise.connector.util.diffing.DocumentHandle;
@@ -39,7 +40,6 @@ public class DBHandleTest extends TestCase {
     for (Map.Entry<String, String> entry : properties.entrySet()) {
       jsonObjectUtil.setProperty(entry.getKey(), entry.getValue());
     }
-    jsonObjectUtil.setProperty(DocumentBuilder.ROW_CHECKSUM, "1234");
     jsonDocument = new JsonDocument(jsonObjectUtil.getProperties(),
                                     jsonObjectUtil.getJsonObject());
   }
@@ -49,6 +49,12 @@ public class DBHandleTest extends TestCase {
     Document doc = handle.getDocument();
     assertNotNull(doc);
     assertEquals(properties.keySet(), doc.getPropertyNames());
+
+    for (Map.Entry<String, String>  entry : properties.entrySet()) {
+      Property property = doc.findProperty(entry.getKey());
+      assertNotNull(property);
+      assertEquals(entry.getValue(), property.nextValue().toString());
+    }
   }
 
   public void testGetDocumentId() {
@@ -63,7 +69,8 @@ public class DBHandleTest extends TestCase {
    */
   public void testToString() {
     DocumentHandle handle = new DBHandle(jsonDocument);
-    String expected = "{\"google:docid\":\"1\",\"google:sum\":\"1234\"}";
+    String expected = "{\"google:ispublic\":\"false\",\"google:docid\":\"1\","
+        + "\"google:mimetype\":\"text/plain\"}";
     assertEquals(expected, handle.toString());
   }
 }

@@ -18,9 +18,10 @@ import com.google.enterprise.connector.db.diffing.JsonDocument;
 import com.google.enterprise.connector.db.diffing.RepositoryHandler;
 import com.google.enterprise.connector.spi.RepositoryException;
 import com.google.enterprise.connector.traversal.ProductionTraversalContext;
+import com.google.enterprise.connector.util.diffing.DocumentSnapshot;
 import com.google.enterprise.connector.util.diffing.SnapshotRepositoryRuntimeException;
 
-import java.util.LinkedList;
+import java.util.List;
 
 public class RepositoryHandlerTest extends DBTestBase {
 
@@ -54,10 +55,10 @@ public class RepositoryHandlerTest extends DBTestBase {
     RepositoryHandler repositoryHandler =
         RepositoryHandler.makeRepositoryHandlerFromConfig(dbContext, null);
     repositoryHandler.setTraversalContext(new ProductionTraversalContext());
-    LinkedList<JsonDocument> jsonDocumenList =
+    List<DocumentSnapshot> snapshotList =
         repositoryHandler.executeQueryAndAddDocs();
-    JsonDocument jsonDocument = jsonDocumenList.iterator().next();
-    assertEquals("MQ", jsonDocument.getDocumentId());
+    DocumentSnapshot snapshot = snapshotList.iterator().next();
+    assertEquals("MQ", snapshot.getDocumentId());
   }
 
   public void testExecuteQueryAndAddDocs() {
@@ -65,7 +66,7 @@ public class RepositoryHandlerTest extends DBTestBase {
       RepositoryHandler repositoryHandler =
           RepositoryHandler.makeRepositoryHandlerFromConfig(getDbContext(), null);
       repositoryHandler.setTraversalContext(new ProductionTraversalContext());
-      LinkedList<JsonDocument> jsonDocumenList =
+      List<DocumentSnapshot> jsonDocumenList =
           repositoryHandler.executeQueryAndAddDocs();
       assertEquals(true, jsonDocumenList.iterator().hasNext());
     } catch (SnapshotRepositoryRuntimeException e) {
