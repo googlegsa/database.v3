@@ -15,6 +15,7 @@
 package com.google.enterprise.connector.db.diffing;
 
 import com.google.enterprise.connector.db.DBContext;
+import com.google.enterprise.connector.db.DBException;
 import com.google.enterprise.connector.db.DBTestBase;
 import com.google.enterprise.connector.spi.RepositoryException;
 import com.google.enterprise.connector.spi.Value;
@@ -23,6 +24,7 @@ import com.google.enterprise.connector.traversal.ProductionTraversalContext;
 import junit.framework.Test;
 import junit.framework.TestSuite;
 
+import java.util.Map;
 import java.util.logging.Logger;
 
 public abstract class DocumentBuilderFixture extends DBTestBase {
@@ -40,13 +42,23 @@ public abstract class DocumentBuilderFixture extends DBTestBase {
     super.setUp();
     LOG.info("Test " + getName());
 
+    // This is usually done by RepositoryHandler.
+    JsonDocument.setTraversalContext(context);
+
     dbContext = super.getDbContext();
     dbContext.setPrimaryKeys(primaryKeyColumn);
     dbContext.setHostname("localhost");
   }
 
-  protected String getProperty(JsonDocument doc, String propName)
+  public static String getProperty(JsonDocument doc, String propName)
       throws RepositoryException {
     return Value.getSingleValueString(doc, propName);
+  }
+
+  /** Uses a builder to create a new document from the given database row. */
+  public static JsonDocument getJsonDocument(DocumentBuilder builder,
+      Map<String, Object> row) throws DBException, RepositoryException {
+    return (JsonDocument) builder.getDocumentSnapshot(row).getUpdate(null)
+        .getDocument();
   }
 }

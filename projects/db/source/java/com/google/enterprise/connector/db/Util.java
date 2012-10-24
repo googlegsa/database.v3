@@ -15,18 +15,13 @@
 package com.google.enterprise.connector.db;
 
 import com.google.common.io.ByteStreams;
-import com.google.enterprise.connector.db.diffing.JsonObjectUtil;
-import com.google.enterprise.connector.spi.SpiConstants;
 
 import java.io.ByteArrayOutputStream;
-import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.sql.Timestamp;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.logging.Logger;
@@ -35,27 +30,16 @@ import java.util.logging.Logger;
  * Utility class for {@code DocumentBuilder} and {@code XmlUtils}.
  */
 public class Util {
-  public static final String NO_TIMESTAMP = "NO_TIMESTAMP";
-  public static final String NO_DOCID = "NO_DOCID";
   private static final Logger LOG = Logger.getLogger(Util.class.getName());
+
   public static final String PRIMARY_KEYS_SEPARATOR = ",";
   private static final char[] HEX_CHARS = "0123456789abcdef".toCharArray();
   private static final String CHECKSUM_ALGO = "SHA1";
-  private static final String DBCONNECTOR_PROTOCOL = "dbconnector://";
   private static final String DATABASE_TITLE_PREFIX =
       "Database Connector Result";
 
   // This class should not be initialized.
   private Util() {
-  }
-
-  public static String getDisplayUrl(String hostname, String dbName,
-      String docId) {
-    // displayurl is of the form -
-    // dbconnector://example.com/mysql/2a61639c96ed45ec8f6e3d4e1ab79944cd1d1923
-    String displayUrl = String.format("%s%s/%s/%s", DBCONNECTOR_PROTOCOL,
-                                      hostname, dbName, docId);
-    return displayUrl;
   }
 
   /**
@@ -147,69 +131,6 @@ public class Util {
       chars[2 * i + 1] = HEX_CHARS[buf[i] & 0x0F];
     }
     return new String(chars);
-  }
-
-  /**
-   * Sets the values for predefined Document properties. For example
-   * PROPNAME_DISPLAYURL, PROPNAME_TITLE, PROPNAME_LASTMODIFIED.
-   *
-   * @param row Map representing database row
-   * @param hostname connector host name
-   * @param dbName database name
-   * @param docId document id of DB doc
-   * @param isContentFeed true if Feed type is content feed
-   */
-  public static void setOptionalProperties(Map<String, Object> row,
-      JsonObjectUtil jsonObjectUtil, DBContext dbContext) {
-    if (dbContext == null) {
-      return;
-    }
-    // set last modified date
-    Object lastModified = row.get(dbContext.getLastModifiedDate());
-    if (lastModified != null && (lastModified instanceof Timestamp)) {
-      jsonObjectUtil.setLastModifiedDate(SpiConstants.PROPNAME_LASTMODIFIED,
-                                         (Timestamp) lastModified);
-    }
-  }
-
-  /**
-   * Adds the value of each column as metadata to Database document
-   * except the values of columns in skipColumns list.
-   *
-   * @param doc
-   * @param row
-   * @param skipColumns list of columns needs to ignore while indexing
-   */
-  public static void setMetaInfo(JsonObjectUtil jsonObjectUtil,
-      Map<String, Object> row, List<String> skipColumns) {
-    // get all column names as key set
-    Set<String> keySet = row.keySet();
-    for (String key : keySet) {
-      // set column value as metadata and column name as meta-name.
-      if (!skipColumns.contains(key)) {
-        Object value = row.get(key);
-        if (value != null)
-          jsonObjectUtil.setProperty(key, value.toString());
-
-      } else {
-        LOG.info("Skipping metadata indexing of column " + key);
-      }
-    }
-  }
-
-  /**
-   * Extract the columns for Last Modified date and Document Title
-   * and add in list of skip columns.
-   *
-   * @param skipColumns list of columns to be skipped as metadata
-   * @param dbContext
-   */
-  public static void skipOtherProperties(List<String> skipColumns,
-      DBContext dbContext) {
-    String lastModColumn = dbContext.getLastModifiedDate();
-    if (lastModColumn != null && lastModColumn.trim().length() > 0) {
-      skipColumns.add(lastModColumn);
-    }
   }
 
   /**

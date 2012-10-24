@@ -14,6 +14,7 @@
 
 package com.google.enterprise.connector.db.diffing;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.enterprise.connector.db.DBConnectorType;
 import com.google.enterprise.connector.db.DBContext;
 import com.google.enterprise.connector.db.DBException;
@@ -23,32 +24,34 @@ import com.google.enterprise.connector.db.XmlUtils;
 import com.google.enterprise.connector.db.diffing.UrlDocumentBuilder.UrlType;
 import com.google.enterprise.connector.spi.SpiConstants;
 import com.google.enterprise.connector.spi.TraversalContext;
+import com.google.enterprise.connector.util.diffing.DocumentHandle;
+import com.google.enterprise.connector.util.diffing.DocumentSnapshot;
 
-import java.io.InputStream;
-import java.io.CharArrayReader;
-import java.io.Reader;
-import java.io.StringReader;
-import java.sql.Blob;
-import java.sql.Clob;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Arrays;
+import org.json.JSONObject;
+import org.json.JSONException;
+
+import java.sql.Timestamp;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.logging.Logger;
 
 /**
- * Class for transforming database row to JsonDocument.
+ * Class for constructing a {@code DocumentSnapshot} and
+ * {@code DocumentHandle} from a database row. This class combines the
+ * Director and Builder classes of the Builder pattern using the
+ * Template Method pattern. This class has two template methods,
+ * {@code getDocumentSnapshot} and {@code getDocumentHandle}, that
+ * construct the corresponding objects in a consistent fashion,
+ * delegating pieces of the construction to the subclasses. Subclasses
+ * must implement the {@code getContentHolder} and
+ * {@code getJsonDocument} methods.
  */
 abstract class DocumentBuilder {
   private static final Logger LOG =
       Logger.getLogger(DocumentBuilder.class.getName());
 
-  public static final String NO_TIMESTAMP = "NO_TIMESTAMP";
-  public static final String NO_DOCID = "NO_DOCID";
-  public static final String PRIMARY_KEYS_SEPARATOR = ",";
   public static final String ROW_CHECKSUM = "google:sum";
-  public static final String WITH_BASE_URL = "withBaseURL";
 
   /* TODO: Move this method to Util? */
   private static boolean isNonBlank(String value) {
@@ -107,13 +110,199 @@ abstract class DocumentBuilder {
     this.hostname = dbContext.getHostname();
   }
 
+  // PUBLIC TEMPLATE METHODS
+  //
+  // These methods are not final so that they can be mocked.
+
   /**
-   * Converts a database row to a document.
+   * Constructs a {@code DocumentSnapshot} for the given database row.
    *
-   * @param row row of a table.
-   * @return a {@code JsonDocument} representation of the row
-   * @throws DBException
+   * @return a snapshot representing the database row
+   * @throw DBException if an error occurs retrieving or processing the row
    */
-  public abstract JsonDocument fromRow(Map<String, Object> row)
+  public DocumentSnapshot getDocumentSnapshot(Map<String, Object> row)
+      throws DBException {
+    String docId = getDocId(row);
+    ContentHolder contentHolder = getContentHolder(row, docId);
+    DocumentHolder docHolder = getDocumentHolder(row, docId, contentHolder);
+    String jsonString = getJsonString(docId, contentHolder.checksum);
+    return new DBSnapshot(docId, jsonString, docHolder);
+  }
+
+  /**
+   * Constructs a {@code DocumentHandle} for the given {@code DocumentHolder},
+   * which maintains the partially constructed document state.
+   */
+  public DocumentHandle getDocumentHandle(DocumentHolder docHolder)
+      throws DBException {
+    return new DBHandle(getJsonDocument(docHolder));
+  }
+
+  // ABSTRACT CONSTRUCTION METHODS IMPLEMENTED BY THE SUBCLASSES
+
+  /**
+   * Gets the content and associated content metadata. This will be passed
+   * back to the subclass in the {@code DocumentHolder} to produce the
+   * content properties for the {@code Document}.
+   *
+   * @return a non-null holder for the document content
+   */
+  protected abstract ContentHolder getContentHolder(Map<String, Object> row,
+      String docId) throws DBException;
+
+  /** Constructs the SPI document with its required properties. */
+  /*
+   * TODO(jlacey): getJsonDocument could be further refactored, moving
+   * more of the steps into the DocumentBuilder.getDocumentHandle method.
+   */
+  protected abstract JsonDocument getJsonDocument(DocumentHolder docHolder)
       throws DBException;
+
+  // PUBLIC CONSTRUCTION HELPER CLASSES
+
+  /**
+   * Links the DBSnapshot and DBHandle, by providing access to the builder
+   * and the data it had, in order to produce the SPI {@code Document} in
+   * the {@code DocumentHandle}.
+   */
+  /*
+   * TODO(jlacey): An alternative design would be to have a parallel
+   * hierarchy of factories and builders, and hold this data in the
+   * builder itself. That is more code but possibly cleaner. It would be
+   * nice to avoid introducing state in the builder (e.g., requiring
+   * getDocumentSnapshot to be called before getDocumentHandle).
+   */
+  public static class DocumentHolder {
+    private final DocumentBuilder builder;
+
+    public final Map<String, Object> row;
+    public final String docId;
+    public final ContentHolder contentHolder;
+
+    public DocumentHolder(DocumentBuilder builder, Map<String, Object> row,
+        String docId, ContentHolder contentHolder) {
+      this.builder = builder;
+
+      this.row = row;
+      this.docId = docId;
+      this.contentHolder = contentHolder;
+    }
+
+    public DocumentHandle getDocumentHandle() throws DBException {
+      return builder.getDocumentHandle(this);
+    }
+  }
+
+  /**
+   * Holds the content in some form, along with the derived content
+   * metadata. This is used to delegate to the subclasses how and when
+   * they materialize the content, and allowing them to produce the
+   * metadata whenever it is most expedient.
+   */
+  /*
+   * TODO(jlacey): Should the content type be genericized (Object -> T) or
+   * refined to a particular concrete type?
+   */
+  public static class ContentHolder {
+    public final Object content;
+    public final String checksum;
+    public final String mimeType;
+
+    public ContentHolder(Object content, String checksum, String mimeType) {
+      this.content = content;
+      this.checksum = checksum;
+      this.mimeType = mimeType;
+    }
+  }
+
+  // UTILITY METHODS FOR THE SUBCLASSES
+
+  protected final String getChecksum(Map<String, Object> row, String xslt)
+      throws DBException {
+    // TODO: Look into which encoding/charset to use for getBytes().
+    String contentXml =
+        XmlUtils.getXMLRow(dbName, row, primaryKeys, xslt, dbContext, true);
+    return Util.getChecksum(contentXml.getBytes());
+  }
+
+  protected final String getDisplayUrl(String hostname, String dbName,
+      String docId) {
+    return String.format("dbconnector://%s/%s/%s", hostname, dbName, docId);
+  }
+
+  /**
+   * Extract the columns for Last Modified date
+   * and add in list of skip columns.
+   *
+   * @param skipColumns list of columns to be skipped as metadata
+   * @param dbContext
+   */
+  protected final void skipLastModified(List<String> skipColumns,
+      DBContext dbContext) {
+    String lastModColumn = dbContext.getLastModifiedDate();
+    if (lastModColumn != null && lastModColumn.trim().length() > 0) {
+      skipColumns.add(lastModColumn);
+    }
+  }
+
+  /**
+   * Sets the value for last modified date.
+   *
+   * @param row Map representing database row
+   */
+  protected final void setLastModified(Map<String, Object> row,
+      JsonObjectUtil jsonObjectUtil, DBContext dbContext) {
+    if (dbContext == null) {
+      return;
+    }
+    // set last modified date
+    Object lastModified = row.get(dbContext.getLastModifiedDate());
+    if (lastModified != null && (lastModified instanceof Timestamp)) {
+      jsonObjectUtil.setLastModifiedDate(SpiConstants.PROPNAME_LASTMODIFIED,
+                                         (Timestamp) lastModified);
+    }
+  }
+
+  /**
+   * Adds the value of each column as metadata to Database document
+   * except the values of columns in skipColumns list.
+   */
+  protected final void setMetaInfo(JsonObjectUtil jsonObjectUtil,
+      Map<String, Object> row, List<String> skipColumns) {
+    Set<String> keySet = row.keySet();
+    for (String key : keySet) {
+      if (!skipColumns.contains(key)) {
+        Object value = row.get(key);
+        if (value != null) {
+          jsonObjectUtil.setProperty(key, value.toString());
+        }
+      } else {
+        LOG.info("Skipping metadata indexing of column " + key);
+      }
+    }
+  }
+
+  // CONCRETE CONSTRUCTION METHODS USED BY THIS CLASS
+
+  private final String getDocId(Map<String, Object> row) throws DBException {
+    return DocIdUtil.generateDocId(primaryKeys, row);
+  }
+
+  @VisibleForTesting
+  final String getJsonString(String docId, String checksum) {
+    JSONObject jsonObject = new JSONObject();
+    try {
+      jsonObject.put(SpiConstants.PROPNAME_DOCID, docId);
+      jsonObject.put(ROW_CHECKSUM, checksum);
+    } catch (JSONException impossible) {
+      // This exception is thrown on null keys and out-of-range numbers.
+      throw new AssertionError(impossible);
+    }
+    return jsonObject.toString();
+  }
+
+  private DocumentHolder getDocumentHolder(Map<String, Object> row,
+      String docId, ContentHolder contentHolder) {
+    return new DocumentHolder(this, row, docId, contentHolder);
+  }
 }

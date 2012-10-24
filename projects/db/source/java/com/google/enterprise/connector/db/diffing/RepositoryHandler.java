@@ -14,28 +14,29 @@
 
 package com.google.enterprise.connector.db.diffing;
 
+import com.google.common.collect.Lists;
 import com.google.enterprise.connector.db.DBClient;
 import com.google.enterprise.connector.db.DBContext;
 import com.google.enterprise.connector.db.DBException;
 import com.google.enterprise.connector.db.Util;
 import com.google.enterprise.connector.spi.TraversalContext;
+import com.google.enterprise.connector.util.diffing.DocumentSnapshot;
 import com.google.enterprise.connector.util.diffing.SnapshotRepositoryRuntimeException;
 import com.google.enterprise.connector.util.diffing.TraversalContextManager;
 
 import java.util.Date;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.logging.Logger;
 
 /**
- * A class which gets rows from Database using (@link DBClient) and converts
- * them to (@link JsonDocument) using (@link Util). Provides a collection over
- * the JsonDocument.
+ * A class which gets rows from a database using (@link DBClient) and
+ * converts them to {@link DocumentSnaphot}s using {@link DocumentBuilder).
  */
 public class RepositoryHandler {
   private static final Logger LOG = Logger.getLogger(RepositoryHandler.class.getName());
+
   private DBContext dbContext;
   private DBClient dbClient;
   private TraversalContextManager traversalContextManager;
@@ -121,10 +122,10 @@ public class RepositoryHandler {
   }
 
   /**
-   * Function for fetching Database rows and providing a collection over
-   * JsonDocument.
+   * Function for fetching database rows and providing a collection of
+   * snapshots.
    */
-  public LinkedList<JsonDocument> executeQueryAndAddDocs()
+  public List<DocumentSnapshot> executeQueryAndAddDocs()
       throws SnapshotRepositoryRuntimeException {
     List<Map<String, Object>> rows = null;
 
@@ -185,20 +186,21 @@ public class RepositoryHandler {
     return getDocList(rows);
   }
 
-  private LinkedList<JsonDocument> getDocList(List<Map<String, Object>> rows) {
-    LinkedList<JsonDocument> docList = new LinkedList<JsonDocument>();
+  private List<DocumentSnapshot> getDocList(List<Map<String, Object>> rows) {
+    List<DocumentSnapshot> docList = Lists.newArrayList();
     if (rows != null && rows.size() > 0) {
       DocumentBuilder docBuilder =
           DocumentBuilder.getInstance(dbContext, traversalContext);
 
       for (Map<String, Object> row : rows) {
         try {
-          JsonDocument jsonDoc = docBuilder.fromRow(row);
-          if (jsonDoc != null) {
-            docList.add(jsonDoc);
+          DocumentSnapshot snapshot = docBuilder.getDocumentSnapshot(row);
+          if (snapshot != null) {
+            docList.add(snapshot);
           }
         } catch (DBException e) {
-          LOG.warning("Cannot convert database record to JsonDocument for "
+          // See the similar log message in DBSnapshot.getDocumentHandle.
+          LOG.warning("Cannot convert database record to snapshot for "
               + "record " + row + "\n" + e);
         }
       }

@@ -15,7 +15,7 @@
 package com.google.enterprise.connector.db.diffing;
 
 import com.google.common.base.Function;
-import com.google.enterprise.connector.db.DocIdUtil;
+import com.google.enterprise.connector.db.DBException;
 import com.google.enterprise.connector.spi.RepositoryException;
 import com.google.enterprise.connector.spi.SpiConstants;
 import com.google.enterprise.connector.util.diffing.DocumentHandle;
@@ -36,34 +36,22 @@ public class DBSnapshot implements DocumentSnapshot {
   private static final Logger LOG =
       Logger.getLogger(DBSnapshot.class.getName());
 
-  /** An optional document, may be null. */
-  private final JsonDocument document;
+  /** An optional document holder, may be null. */
+  private final DocumentBuilder.DocumentHolder docHolder;
   private final String documentId;
   private final String jsonString;
 
   /** Constructs a snapshot from a {@code DBSnapshotRepository}. */
-  public DBSnapshot(JsonDocument jsonDoc) {
-    document = jsonDoc;
-    documentId = document.getDocumentId();
-    jsonString = document.toJson();
+  public DBSnapshot(String documentId, String jsonString,
+      DocumentBuilder.DocumentHolder docHolder) {
+    this.docHolder = docHolder;
+    this.documentId = documentId;
+    this.jsonString = jsonString;
   }
-
-  public static Function<JsonDocument, DBSnapshot> factoryFunction =
-      new Function<JsonDocument, DBSnapshot>() {
-    @Override
-    public DBSnapshot apply(JsonDocument jsonDoc) {
-      DBSnapshot p = new DBSnapshot(jsonDoc);
-      if (LOG.isLoggable(Level.FINER)) {
-        LOG.finer("DBSnapshotRepository returns document with docID "
-            + DocIdUtil.decodeBase64String(p.getDocumentId().toString()));
-      }
-      return p;
-    }
-  };
 
   /** Reconstructs a snapshot from a snapshot file. */
   public DBSnapshot(String jsonString) {
-    this.document = null;
+    this.docHolder = null;
     try {
       JSONObject jo = new JSONObject(jsonString);
       this.documentId = jo.getString(SpiConstants.PROPNAME_DOCID);
@@ -87,7 +75,7 @@ public class DBSnapshot implements DocumentSnapshot {
   @Override
   public DocumentHandle getUpdate(DocumentSnapshot onGsa)
       throws RepositoryException {
-    if (document == null) {
+    if (docHolder == null) {
       throw new UnsupportedOperationException(
           "getUpdate called on deserialized snapshot.");
     }
@@ -95,8 +83,7 @@ public class DBSnapshot implements DocumentSnapshot {
     // The diffing framework sends in a null to indicate that it has not seen
     // this snapshot before. So we return the corresponding handle.
     if (onGsa == null) {
-      this.document.setChanged();
-      return new DBHandle(document);
+      return getDocumentHandle();
     }
 
     // If the parameter is non-null, then it should be an DBSnapshot
@@ -116,10 +103,22 @@ public class DBSnapshot implements DocumentSnapshot {
 
     // Something has changed, so return the corresponding handle
     // and set the changed flag of the document.
-    this.document.setChanged();
     LOG.info("Change for Document with Id " + getDocumentId() + " at time "
         + new Date());
-    return new DBHandle(document);
+    return getDocumentHandle();
+  }
+
+  private DocumentHandle getDocumentHandle() {
+    try {
+      return docHolder.getDocumentHandle();
+    } catch (DBException e) {
+      // If we can't get the document handle, return null to indicate no
+      // change. The most likely source of errors is the XSLT transform.
+      // See the similar log message in RepositoryHandler.getDocList.
+      LOG.warning("Cannot convert database record to snapshot for "
+          + "record " + getDocumentId() + "\n" + e);
+      return null;
+    }
   }
 
   @Override

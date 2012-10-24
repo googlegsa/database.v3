@@ -29,8 +29,9 @@ public class MetadataDocumentBuilderTest extends DocumentBuilderFixture {
    */
   public final void testRowToDoc() throws Exception {
     Map<String, Object> rowMap = TestUtils.getStandardDBRow();
-    JsonDocument doc =
-        new MetadataDocumentBuilder(getMinimalDbContext()).fromRow(rowMap);
+    MetadataDocumentBuilder builder =
+        new MetadataDocumentBuilder(getMinimalDbContext());
+    JsonDocument doc = getJsonDocument(builder, rowMap);
     for (String propName : doc.getPropertyNames()) {
       LOG.info(propName + ":    " + getProperty(doc, propName));
     }
@@ -41,12 +42,8 @@ public class MetadataDocumentBuilderTest extends DocumentBuilderFixture {
     assertTrue(content.contains("lastName=last_01"));
     assertEquals("text/html", getProperty(doc, SpiConstants.PROPNAME_MIMETYPE));
 
-    // Checksum should be hidden as a public property.
+    // Checksum should be hidden as a public property and in the JSON string.
     assertNull(doc.findProperty(DocumentBuilder.ROW_CHECKSUM));
-
-    // But the checksum should be included in the snapshot string.
-    String expected = "{\"google:docid\":\"MSxsYXN0XzAx\","
-        + "\"google:sum\":\"7ffd1d7efaf0d1ee260c646d827020651519e7b0\"}";
-    assertEquals(expected, doc.toJson());
+    assertEquals(doc.toJson(), -1, doc.toJson().indexOf("google:sum"));
   }
 }

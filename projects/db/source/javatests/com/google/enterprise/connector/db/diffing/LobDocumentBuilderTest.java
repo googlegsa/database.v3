@@ -104,7 +104,7 @@ public class LobDocumentBuilderTest extends DocumentBuilderFixture {
     context.setFileSizeLimitInfo(fileSizeLimitInfo);
 
     JsonDocument clobDoc =
-        new LobDocumentBuilder(dbContext, context).fromRow(rowMap);
+        getJsonDocument(new LobDocumentBuilder(dbContext, context), rowMap);
     // As the size of the document is more than supported, clobDoc should have
     // null value.
     assertNotNull(clobDoc);
@@ -113,7 +113,8 @@ public class LobDocumentBuilderTest extends DocumentBuilderFixture {
     // Increase the maximum supported size of the document.
     fileSizeLimitInfo.setMaxDocumentSize(1024 * 1024);
     context.setFileSizeLimitInfo(fileSizeLimitInfo);
-    clobDoc = new LobDocumentBuilder(dbContext, context).fromRow(rowMap);
+    clobDoc =
+        getJsonDocument(new LobDocumentBuilder(dbContext, context), rowMap);
     assertNotNull(clobDoc);
 
     // Test scenario:- this doc will have column name "version" as
@@ -179,7 +180,7 @@ public class LobDocumentBuilderTest extends DocumentBuilderFixture {
     context.setFileSizeLimitInfo(fileSizeLimitInfo);
 
     JsonDocument blobDoc =
-        new LobDocumentBuilder(dbContext, context).fromRow(rowMap);
+        getJsonDocument(new LobDocumentBuilder(dbContext, context), rowMap);
 
     // The BLOB to too large.
     assertNotNull(blobDoc);
@@ -188,7 +189,8 @@ public class LobDocumentBuilderTest extends DocumentBuilderFixture {
     // Increase the maximum supported size of the document.
     fileSizeLimitInfo.setMaxDocumentSize(1024 * 1024);
     context.setFileSizeLimitInfo(fileSizeLimitInfo);
-    blobDoc = new LobDocumentBuilder(dbContext, context).fromRow(rowMap);
+    blobDoc =
+        getJsonDocument(new LobDocumentBuilder(dbContext, context), rowMap);
 
     assertNotNull(blobDoc);
     // Test scenario:- this doc will have column name "version" as
@@ -222,9 +224,9 @@ public class LobDocumentBuilderTest extends DocumentBuilderFixture {
     mimeTypeMap.setUnsupportedMimeTypes(unsupportedMime);
     context.setMimeTypeMap(mimeTypeMap);
     JsonDocument.setTraversalContext(context);
+
     JsonDocument blobDoc =
-        new LobDocumentBuilder(dbContext, context).fromRow(rowMap);
-    blobDoc.setChanged();
+        getJsonDocument(new LobDocumentBuilder(dbContext, context), rowMap);
     Property docContent = blobDoc.findProperty(SpiConstants.PROPNAME_CONTENT);
     // Document content should have null value.
     assertNull(docContent);
@@ -241,9 +243,9 @@ public class LobDocumentBuilderTest extends DocumentBuilderFixture {
     mimeTypeMap.setExcludedMimeTypes(unsupportedMime);
     context.setMimeTypeMap(mimeTypeMap);
     JsonDocument.setTraversalContext(context);
+
     JsonDocument blobDoc =
-        new LobDocumentBuilder(dbContext, context).fromRow(rowMap);
-    blobDoc.setChanged();
+        getJsonDocument(new LobDocumentBuilder(dbContext, context), rowMap);
     try {
       blobDoc.findProperty(SpiConstants.PROPNAME_CONTENT);
       fail("Expected SkippedDocumentException, but got none.");
@@ -272,7 +274,7 @@ public class LobDocumentBuilderTest extends DocumentBuilderFixture {
     // and TraversalContext configuration.
     Map<String, Object> rowMap = getBlobRow(blob);
     JsonDocument blobDoc =
-        new LobDocumentBuilder(dbContext, context).fromRow(rowMap);
+        getJsonDocument(new LobDocumentBuilder(dbContext, context), rowMap);
     assertNotNull(blobDoc);
     assertTrue(Arrays.equals(blobContent, readBlobContent(blobDoc)));
   }
@@ -293,10 +295,11 @@ public class LobDocumentBuilderTest extends DocumentBuilderFixture {
     replay(blob);
 
     Map<String, Object> rowMap = getBlobRow(blob);
-    JsonDocument blobDoc =
-        new LobDocumentBuilder(dbContext, context).fromRow(rowMap);
-    if (blobDoc != null) {
-      fail("Expected null document but got " + blobDoc.getDocumentId());
+    try {
+      JsonDocument blobDoc =
+          getJsonDocument(new LobDocumentBuilder(dbContext, context), rowMap);
+      fail("Expected DBException but got " + blobDoc.toJson());
+    } catch (DBException expected) {
     }
   }
 
@@ -317,9 +320,9 @@ public class LobDocumentBuilderTest extends DocumentBuilderFixture {
     for (Map<String, Object> row : rows) {
       // TODO: This used to use "mysql" as the dbName, but now it gets
       // "testdb_" from the dbContext. Fix that or just remove this TODO.
-      jsonDocument = new LobDocumentBuilder(dbContext, context).fromRow(row);
+      jsonDocument =
+          getJsonDocument(new LobDocumentBuilder(dbContext, context), row);
     }
-    jsonDocument.setChanged();
 
     byte[] blobcontent = readBlobContent(jsonDocument);
     File newFile = new File("newreport.pdf");

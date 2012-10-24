@@ -15,10 +15,8 @@
 package com.google.enterprise.connector.db.diffing;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
 import com.google.common.io.FileBackedOutputStream;
 import com.google.common.io.InputSupplier;
-import com.google.enterprise.connector.spi.SpiConstants;
 import com.google.enterprise.connector.spi.Value;
 import com.google.enterprise.connector.util.InputStreamFactory;
 
@@ -32,34 +30,27 @@ import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
  * A utility class for creating JSONObject object and setting its properties for
  * creating JsonDocument objects.
- * Note that the JSON object is used for the Diffing connector snapshot and 
- * contains only a small subset of the JsonDocument's properties, specifically
- * just the DocId and the Checksum used to detect changes.
  */
-// TODO (bmj): The current distinction between JsonDocument, DocumentBuilder,
-// and JsonObjectUtil seems twisted. These should be refactored, separating the
-// SPI Document/Property/Value functionality into DBDocument/DBDocumentUtil,
-// and the Diffing snapshot functionality into the JsonObject/JsonObjectUtil.
+// TODO(bmj): The current distinction between JsonDocument and JsonObjectUtil
+// seems twisted. These should be refactored, separating the SPI
+// Document/Property/Value functionality into DBDocument/DBDocumentUtil, and
+// the Diffing snapshot functionality into the JsonObject/JsonObjectUtil.
+// TODO(jlacey): I think a straightforward approach is to simply implement
+// JsonDocument over a JSONObject, rather than build parallel property sets
+// here. There are issues with the last modified date, which currently gets
+// serialized as an ISO 8601 date and no longer works as an RFC 822 date for
+// the feed lastModified attribute. There may be issues with LOB support as
+// well.
 public class JsonObjectUtil {
 
   private static final Logger LOG =
       Logger.getLogger(JsonObjectUtil.class.getName());
-
-  /** The fields included only in the JSON snapshot object. */
-  private static final Set<String> SNAPSHOT_ONLY_FIELDS = 
-      ImmutableSet.of(DocumentBuilder.ROW_CHECKSUM);
-
-  /** The fields included in the JSON snapshot object. */
-  private static final Set<String> SNAPSHOT_FIELDS = 
-      ImmutableSet.<String>builder().add(SpiConstants.PROPNAME_DOCID)
-          .addAll(SNAPSHOT_ONLY_FIELDS).build();
 
   private final Map<String, List<Value>> properties =
       new HashMap<String, List<Value>>();
@@ -82,17 +73,13 @@ public class JsonObjectUtil {
    */
   public void setProperty(String propertyName, String propertyValue) {
     if (propertyValue != null) {
-      if (!SNAPSHOT_ONLY_FIELDS.contains(propertyName)) {
-        properties.put(propertyName,
-            ImmutableList.of(Value.getStringValue(propertyValue)));
-      }
-      if (SNAPSHOT_FIELDS.contains(propertyName)) {
-        try {
-          jsonObject.put(propertyName, propertyValue);
-        } catch (JSONException e) {
-          LOG.warning("Exception for " + propertyName + " with value "
-                      + propertyValue + "\n" + e.toString());
-        }
+      properties.put(propertyName,
+          ImmutableList.of(Value.getStringValue(propertyValue)));
+      try {
+        jsonObject.put(propertyName, propertyValue);
+      } catch (JSONException e) {
+        LOG.warning("Exception for " + propertyName + " with value "
+            + propertyValue + "\n" + e.toString());
       }
     }
   }
@@ -107,7 +94,14 @@ public class JsonObjectUtil {
     if (propertyValue != null) {
       Calendar cal = Calendar.getInstance();
       cal.setTimeInMillis(propertyValue.getTime());
-      properties.put(propertyName, ImmutableList.of(Value.getDateValue(cal)));
+      Value value = Value.getDateValue(cal);
+      properties.put(propertyName, ImmutableList.of(value));
+      try {
+        jsonObject.put(propertyName, value.toString());
+      } catch (JSONException e) {
+        LOG.warning("Exception for " + propertyName + " with value "
+            + propertyValue + "\n" + e.toString());
+      }
     }
   }
 
@@ -118,24 +112,33 @@ public class JsonObjectUtil {
    * @param propertyName
    * @param propertyValue
    */
-  public void setBinaryContent(String propertyName, byte[] propertyValue) {
+  public void setBinaryContent(String propertyName, Value propertyValue) {
     if (propertyValue == null) {
       return;
     }
+    properties.put(propertyName, ImmutableList.of(propertyValue));
+  }
+
+  /**
+   * This method gets the "binary array" property value.
+   *
+   * @param propertyValue
+   */
+  public static Value getBinaryValue(byte[] propertyValue) {
+    if (propertyValue == null) {
+      return null;
+    }
     try {
       InputStreamFactory isf = new FileBackedInputStreamFactory(propertyValue);
-      properties.put(propertyName, ImmutableList.of(Value.getBinaryValue(isf)));
+      return Value.getBinaryValue(isf);
     } catch (IOException e) {
       if (LOG.isLoggable(Level.FINEST)) {
-        LOG.log(Level.WARNING, "Failed to cache document content for "
-                + propertyName, e);
+        LOG.log(Level.WARNING, "Failed to cache document content.", e);
       } else {
-        LOG.warning("Failed to cache document content for " + propertyName 
-                    + ":\n" + e.toString());
+        LOG.warning("Failed to cache document content:\n" + e.toString());
       }
       // Resort to holding the binary data in memory, rather than on disk.
-      properties.put(propertyName, ImmutableList.of(
-          Value.getBinaryValue(propertyValue)));
+      return Value.getBinaryValue(propertyValue);
     }
   }
 
