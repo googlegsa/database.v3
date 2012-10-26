@@ -14,75 +14,198 @@
 
 package com.google.enterprise.connector.db;
 
-import com.google.enterprise.connector.db.diffing.JsonDocument;
+import static org.easymock.EasyMock.createMock;
+import static org.easymock.EasyMock.expect;
+import static org.easymock.EasyMock.expectLastCall;
+import static org.easymock.EasyMock.replay;
+import static org.easymock.EasyMock.verify;
+
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
 import com.google.enterprise.connector.db.diffing.RepositoryHandler;
 import com.google.enterprise.connector.db.diffing.RepositoryHandlerIterator;
-import com.google.enterprise.connector.traversal.ProductionTraversalContext;
 import com.google.enterprise.connector.util.diffing.DocumentSnapshot;
 import com.google.enterprise.connector.util.diffing.SnapshotRepositoryRuntimeException;
 
-import java.util.Iterator;
-import java.util.LinkedList;
+import junit.framework.TestCase;
 
-public class RepositoryHandlerIteratorTest extends DBTestBase {
+import java.util.List;
+import java.util.NoSuchElementException;
 
-  RepositoryHandlerIterator repositoryHandlerIterator;
-  RepositoryHandler repositoryHandler;
+public class RepositoryHandlerIteratorTest extends TestCase {
+  private DocumentSnapshot expectedSnapshot;
+  private List<DocumentSnapshot> snapshotList;
+  private List<DocumentSnapshot> emptySnapshotList;
+  private RepositoryHandler repositoryHandler;
+  private RepositoryHandlerIterator repositoryHandlerIterator;
 
   protected void setUp() throws Exception {
-    super.setUp();
-    runDBScript(CREATE_TEST_DB_TABLE);
-    runDBScript(LOAD_TEST_DATA);
-
-    repositoryHandler =
-        RepositoryHandler.makeRepositoryHandlerFromConfig(getDbContext(), null);
-    repositoryHandler.setTraversalContext(new ProductionTraversalContext());
+    expectedSnapshot = createMock(DocumentSnapshot.class);
+    // Need at least two elements so we can have one more ready to return.
+    snapshotList = ImmutableList.of(expectedSnapshot, expectedSnapshot);
+    emptySnapshotList = ImmutableList.of();
+    repositoryHandler = createMock(RepositoryHandler.class);
     repositoryHandlerIterator =
         new RepositoryHandlerIterator(repositoryHandler);
-    repositoryHandlerIterator.setRecordList(
-        repositoryHandler.executeQueryAndAddDocs().iterator());
   }
 
-  public void testNext() {
-    DocumentSnapshot jsonDocument = repositoryHandlerIterator.next();
-    assertNotNull(jsonDocument);
+  private void expectExecuteAndReturn(List<DocumentSnapshot> snapshotList) {
+    expect(repositoryHandler.executeQueryAndAddDocs())
+        .andReturn(snapshotList)
+        .once();
+    replay(repositoryHandler);
   }
 
-  // Scenario when the recordlist contains more records.
-  public void testHasNext1() {
-    assertEquals(true, repositoryHandlerIterator.hasNext());
+  private void expectExecuteAndThrow() {
+    expect(repositoryHandler.executeQueryAndAddDocs())
+        .andThrow(new SnapshotRepositoryRuntimeException(
+            "mock exception", new Exception("mock cause")))
+        .once();
+    replay(repositoryHandler);
   }
 
-  // Scenario when the recordList does not contain more records but the
-  // database result set does.
-  public void testhasnext2() {
-    Iterator<DocumentSnapshot> recordList;
-    recordList = new LinkedList<DocumentSnapshot>().iterator();
-    repositoryHandlerIterator.setRecordList(recordList);
-    assertEquals(true, repositoryHandlerIterator.hasNext());
-  }
+  private void readAllRows() {
+    // RepositoryHandler implicitly restarts after an empty list. We
+    // implicitly test that the RepositoryHandlerIterator stops on the
+    // empty list by not expecting additional calls to
+    // executeQueryAndAddDocs.
+    expect(repositoryHandler.executeQueryAndAddDocs())
+        .andReturn(snapshotList)
+        .andReturn(emptySnapshotList);
+    replay(repositoryHandler);
 
-  // Scenario when the recordList as well as database resulset does not
-  // contain any more records.
-  public void testhasnext3() {
-    Iterator<DocumentSnapshot> recordList;
-    try {
-      // Retrieve all the rows from the database.
-      recordList = repositoryHandler.executeQueryAndAddDocs().iterator();
-      // Make the recordList contain no records.
-      repositoryHandlerIterator.setRecordList(
-          new LinkedList<DocumentSnapshot>().iterator());
-      assertEquals(false, repositoryHandlerIterator.hasNext());
-
-    } catch (SnapshotRepositoryRuntimeException e) {
-      fail("Database Exception in testhasnext3");
+    for (DocumentSnapshot expected : snapshotList) {
+      DocumentSnapshot snapshot = repositoryHandlerIterator.next();
+      assertSame(expected, snapshot);
     }
   }
 
-  /* @Override */
-  protected void tearDown() throws Exception {
-    super.tearDown();
-    runDBScript(DROP_TEST_DB_TABLE);
+  public void testNext1() {
+    expectExecuteAndReturn(snapshotList);
+
+    DocumentSnapshot snapshot = repositoryHandlerIterator.next();
+    assertSame(expectedSnapshot, snapshot);
+    verify(repositoryHandler);
   }
 
+  /** Tests exhausting the database and calling next too many times. */
+  public void testNext2() {
+    readAllRows();
+
+    try {
+      repositoryHandlerIterator.next();
+      fail("Expected a NoSuchElementException");
+    } catch (NoSuchElementException expected) {
+    }
+    verify(repositoryHandler);
+  }
+
+  public void testNextThrows() {
+    expectExecuteAndThrow();
+
+    try {
+      repositoryHandlerIterator.next();
+      fail("Expected a SnapshotRepositoryRuntimeException");
+    } catch (SnapshotRepositoryRuntimeException expected) {
+    }
+  }
+
+  /** Scenario when the recordlist contains more records. */
+  public void testHasNext1() {
+    expectExecuteAndReturn(snapshotList);
+
+    repositoryHandlerIterator.next(); // Read a snapshot to prime the list.
+    verify(repositoryHandler); // Make sure the call was already made.
+
+    assertTrue(repositoryHandlerIterator.hasNext());
+  }
+
+  /**
+   * Scenario when the recordList does not contain more records but the
+   * database result set does.
+   */
+  public void testHasNext2() {
+    expectExecuteAndReturn(snapshotList);
+
+    assertTrue(repositoryHandlerIterator.hasNext());
+    verify(repositoryHandler);
+  }
+
+  /**
+   * Scenario when the recordList as well as database resulset does not
+   * contain any more records.
+   */
+  public void testHasNext3() {
+    expectExecuteAndReturn(emptySnapshotList);
+
+    assertFalse(repositoryHandlerIterator.hasNext());
+    verify(repositoryHandler);
+  }
+
+  public void testHasNext4() {
+    readAllRows();
+
+    assertFalse(repositoryHandlerIterator.hasNext());
+    verify(repositoryHandler);
+  }
+
+  public void testHasNextThrows() {
+    expectExecuteAndThrow();
+
+    try {
+      repositoryHandlerIterator.hasNext();
+      fail("Expected a SnapshotRepositoryRuntimeException");
+    } catch (SnapshotRepositoryRuntimeException expected) {
+    }
+  }
+
+  /**
+   * Tests whether the iterator will restart.
+   * RepositoryHandler.executeQueryAndAddDocs will return a non-empty
+   * list after returning an empty one, so we have to make sure the
+   * iterator stops on the empty list. Calling both hasNext and next
+   * on the exhausted iterator should test that.
+   */
+  public void testReadAllRows() {
+    readAllRows();
+
+    assertFalse(repositoryHandlerIterator.hasNext());
+    try {
+      repositoryHandlerIterator.next();
+      fail("Expected a NoSuchElementException");
+    } catch (NoSuchElementException expected) {
+    }
+    verify(repositoryHandler);
+  }
+
+  /**
+   * Tests that iterating over multiple batches returns each item in
+   * the batches in turn.
+   */
+  public void testMultipleBatches() {
+    List<List<DocumentSnapshot>> batches = Lists.newArrayList();
+    List<DocumentSnapshot> snapshotList = Lists.newArrayList();
+    for (int i = 0; i < 3; i++) {
+      List<DocumentSnapshot> batch = Lists.newArrayList();
+      for (int j = 0; j < 3; j++) {
+        DocumentSnapshot snapshot = createMock(DocumentSnapshot.class);
+        batch.add(snapshot);
+        snapshotList.add(snapshot);
+      }
+      batches.add(batch);
+    }
+    expect(repositoryHandler.executeQueryAndAddDocs());
+    for (List<DocumentSnapshot> batch : batches) {
+      expectLastCall().andReturn(batch);
+    }
+    expectLastCall().andReturn(emptySnapshotList);
+    replay(repositoryHandler);
+
+    for (DocumentSnapshot expected : snapshotList) {
+      DocumentSnapshot snapshot = repositoryHandlerIterator.next();
+      assertSame(expected, snapshot);
+    }
+    assertFalse(repositoryHandlerIterator.hasNext());
+    verify(repositoryHandler);
+  }
 }

@@ -93,12 +93,7 @@ public class DBSnapshotRepositoryTest extends DBTestBase {
   }
 
   private DocumentSnapshot getSnapshotUnderTest(Map<String, String> configMap) {
-    DBSnapshotRepository out = getObjectUnderTest(configMap);
-    Iterator<? extends DocumentSnapshot> it = out.iterator();
-    // TODO(jlacey): RepositoryHandlerIterator.next fails unless
-    // setRecordList or hasNext has been called before that.
-    assertTrue(it.hasNext());
-    return it.next();
+    return getObjectUnderTest(configMap).iterator().next();
   }
 
   private DocumentSnapshot getDeserializedSnapshot(DocumentSnapshot snapshot) {
