@@ -14,28 +14,20 @@
 
 package com.google.enterprise.connector.db.diffing;
 
+import com.google.common.collect.AbstractIterator;
 import com.google.common.collect.Iterators;
-import com.google.enterprise.connector.db.DocIdUtil;
 import com.google.enterprise.connector.util.diffing.DocumentSnapshot;
-import com.google.enterprise.connector.util.diffing.SnapshotRepositoryRuntimeException;
 
 import java.util.Iterator;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
- * Custom Iterator class over collection of {@link DocumentSnapshot} objects.
+ * Iterates over the collections of {@link DocumentSnapshot} objects
+ * produced by a {@code RepositoryHandler}.
  */
-public class RepositoryHandlerIterator implements Iterator<DocumentSnapshot> {
-  private static final Logger LOG =
-      Logger.getLogger(RepositoryHandlerIterator.class.getName());
-
-  private Iterator<DocumentSnapshot> recordList;
+public class RepositoryHandlerIterator
+    extends AbstractIterator<DocumentSnapshot> {
   private final RepositoryHandler repositoryHandler;
-
-  public void setRecordList(Iterator<DocumentSnapshot> recordList) {
-    this.recordList = recordList;
-  }
+  private Iterator<DocumentSnapshot> current;
 
   /**
    * @param repositoryHandler RepositoryHandler object for fetching DB rows in
@@ -43,52 +35,20 @@ public class RepositoryHandlerIterator implements Iterator<DocumentSnapshot> {
    */
   public RepositoryHandlerIterator(RepositoryHandler repositoryHandler) {
     this.repositoryHandler = repositoryHandler;
-    this.recordList = Iterators.emptyIterator();
+    this.current = Iterators.emptyIterator();
   }
 
-  /**
-   * Returns true if the recordList has more elements. Else calls the
-   * RepositoryHandler to ping the repositoryHandler for more records. Returns
-   * true if records are found else returns false
-   */
   @Override
-  public boolean hasNext() throws SnapshotRepositoryRuntimeException {
-    if (recordList.hasNext()) {
-      return true;
+  protected DocumentSnapshot computeNext() {
+    if (current.hasNext()) {
+      return current.next();
     } else {
-      try {
-        recordList = repositoryHandler.executeQueryAndAddDocs().iterator();
-        return recordList.hasNext();
-      } catch (SnapshotRepositoryRuntimeException e) {
-        LOG.warning("Exception in hasNext of RepositoryHandlerIterator\n"
-            + e.toString());
-        throw new SnapshotRepositoryRuntimeException(
-            "unable to connect to repository", e);
+      current = repositoryHandler.executeQueryAndAddDocs().iterator();
+      if (current.hasNext()) {
+        return current.next();
+      } else {
+        return endOfData();
       }
     }
-  }
-
-  /**
-   * Returns the next DocumentSnapshot element in the recordList.
-   */
-  @Override
-  public DocumentSnapshot next() {
-    DocumentSnapshot snapshot = recordList.next();
-    if (LOG.isLoggable(Level.FINER)) {
-      LOG.finer("DBSnapshotRepository returns document with docID "
-          + DocIdUtil.decodeBase64String(snapshot.getDocumentId()));
-    }
-    return snapshot;
-  }
-
-  /**
-   * This is a read-only iterator that does not support this method.
-   *
-   * @throws UnsupportedOperationException always
-   */
-  @Override
-  public void remove() {
-    throw new UnsupportedOperationException(
-        "Remove Operation not Supported for RepositoryHandlerIterator");
   }
 }

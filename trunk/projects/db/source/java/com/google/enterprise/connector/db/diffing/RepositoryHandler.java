@@ -18,6 +18,7 @@ import com.google.common.collect.Lists;
 import com.google.enterprise.connector.db.DBClient;
 import com.google.enterprise.connector.db.DBContext;
 import com.google.enterprise.connector.db.DBException;
+import com.google.enterprise.connector.db.DocIdUtil;
 import com.google.enterprise.connector.db.Util;
 import com.google.enterprise.connector.spi.TraversalContext;
 import com.google.enterprise.connector.util.diffing.DocumentSnapshot;
@@ -28,6 +29,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -196,6 +198,10 @@ public class RepositoryHandler {
         try {
           DocumentSnapshot snapshot = docBuilder.getDocumentSnapshot(row);
           if (snapshot != null) {
+            if (LOG.isLoggable(Level.FINER)) {
+              LOG.finer("DBSnapshotRepository returns document with docID "
+                  + DocIdUtil.decodeBase64String(snapshot.getDocumentId()));
+            }
             docList.add(snapshot);
           }
         } catch (DBException e) {
