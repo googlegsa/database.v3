@@ -24,6 +24,7 @@ import com.google.enterprise.connector.spi.TraversalContext;
 import com.google.enterprise.connector.util.MimeTypeDetector;
 import com.google.enterprise.connector.util.diffing.DocumentHandle;
 import com.google.enterprise.connector.util.diffing.DocumentSnapshot;
+import com.google.enterprise.connector.util.diffing.TraversalContextManager;
 
 import java.util.Iterator;
 import java.util.Map;
@@ -55,9 +56,12 @@ public class DBSnapshotRepositoryTest extends DBTestBase {
 
     DBContext dbContext = getDbContext(configMap);
 
+    TraversalContextManager traversalContextManager =
+        new TraversalContextManager();
+    traversalContextManager.setTraversalContext(tc);
     RepositoryHandler repositoryHandler =
-        RepositoryHandler.makeRepositoryHandlerFromConfig(dbContext, null);
-    repositoryHandler.setTraversalContext(tc);
+        RepositoryHandler.makeRepositoryHandlerFromConfig(dbContext,
+            traversalContextManager);
     return new DBSnapshotRepository(repositoryHandler);
   }
 
