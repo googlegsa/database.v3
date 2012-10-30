@@ -17,33 +17,41 @@ package com.google.enterprise.connector.db;
 import com.google.enterprise.connector.db.diffing.JsonDocument;
 import com.google.enterprise.connector.db.diffing.RepositoryHandler;
 import com.google.enterprise.connector.spi.RepositoryException;
-import com.google.enterprise.connector.traversal.ProductionTraversalContext;
+import com.google.enterprise.connector.spi.SimpleTraversalContext;
 import com.google.enterprise.connector.util.diffing.DocumentSnapshot;
 import com.google.enterprise.connector.util.diffing.SnapshotRepositoryRuntimeException;
+import com.google.enterprise.connector.util.diffing.TraversalContextManager;
 
 import java.util.List;
 
 public class RepositoryHandlerTest extends DBTestBase {
-
-  /* @Override */
+  @Override
   protected void setUp() throws Exception {
     super.setUp();
     runDBScript(CREATE_TEST_DB_TABLE);
     runDBScript(LOAD_TEST_DATA);
   }
 
-  public void testMakeRepositoryHandlerFromConfig() {
-    RepositoryHandler repositoryHandler =
-        RepositoryHandler.makeRepositoryHandlerFromConfig(getDbContext(), null);
-    assertNotNull(repositoryHandler);
+  @Override
+  protected void tearDown() throws Exception {
+    try {
+      runDBScript(DROP_TEST_DB_TABLE);
+    } finally {
+      super.tearDown();
+    }
   }
 
-  public void testSetCursorDB() {
-    int cursorDB = 5;
-    RepositoryHandler repositoryHandler =
-        RepositoryHandler.makeRepositoryHandlerFromConfig(getDbContext(), null);
-    repositoryHandler.setCursorDB(cursorDB);
-    assertEquals(5, repositoryHandler.getCursorDB());
+  private RepositoryHandler getObjectUnderTest(DBContext dbContext) {
+    TraversalContextManager traversalContextManager =
+        new TraversalContextManager();
+    traversalContextManager.setTraversalContext(new SimpleTraversalContext());
+    return RepositoryHandler.makeRepositoryHandlerFromConfig(
+        dbContext, traversalContextManager);
+  }
+
+  public void testMakeRepositoryHandlerFromConfig() {
+    RepositoryHandler repositoryHandler = getObjectUnderTest(getDbContext());
+    assertNotNull(repositoryHandler);
   }
 
   public void testExecuteQueryAndAddDocsForParameterizedQuery() {
@@ -52,9 +60,7 @@ public class RepositoryHandlerTest extends DBTestBase {
     DBContext dbContext = getDbContext();
     dbContext.setSqlQuery(sqlQuery);
     dbContext.setParameterizedQueryFlag(true);
-    RepositoryHandler repositoryHandler =
-        RepositoryHandler.makeRepositoryHandlerFromConfig(dbContext, null);
-    repositoryHandler.setTraversalContext(new ProductionTraversalContext());
+    RepositoryHandler repositoryHandler = getObjectUnderTest(dbContext);
     List<DocumentSnapshot> snapshotList =
         repositoryHandler.executeQueryAndAddDocs();
     DocumentSnapshot snapshot = snapshotList.iterator().next();
@@ -62,22 +68,9 @@ public class RepositoryHandlerTest extends DBTestBase {
   }
 
   public void testExecuteQueryAndAddDocs() {
-    try {
-      RepositoryHandler repositoryHandler =
-          RepositoryHandler.makeRepositoryHandlerFromConfig(getDbContext(), null);
-      repositoryHandler.setTraversalContext(new ProductionTraversalContext());
-      List<DocumentSnapshot> jsonDocumenList =
-          repositoryHandler.executeQueryAndAddDocs();
-      assertEquals(true, jsonDocumenList.iterator().hasNext());
-    } catch (SnapshotRepositoryRuntimeException e) {
-      fail("Database Exception in testExecuteQueryAndAddDocs");
-    }
+    RepositoryHandler repositoryHandler = getObjectUnderTest(getDbContext());
+    List<DocumentSnapshot> jsonDocumenList =
+        repositoryHandler.executeQueryAndAddDocs();
+    assertTrue(jsonDocumenList.iterator().hasNext());
   }
-
-  /* @Override */
-  protected void tearDown() throws Exception {
-    super.tearDown();
-    runDBScript(DROP_TEST_DB_TABLE);
-  }
-
 }

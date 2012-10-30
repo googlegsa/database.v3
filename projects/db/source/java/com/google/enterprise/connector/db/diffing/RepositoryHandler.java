@@ -14,6 +14,7 @@
 
 package com.google.enterprise.connector.db.diffing;
 
+import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.enterprise.connector.db.DBClient;
 import com.google.enterprise.connector.db.DBContext;
@@ -25,7 +26,6 @@ import com.google.enterprise.connector.util.diffing.DocumentSnapshot;
 import com.google.enterprise.connector.util.diffing.SnapshotRepositoryRuntimeException;
 import com.google.enterprise.connector.util.diffing.TraversalContextManager;
 
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -39,87 +39,125 @@ import java.util.logging.Logger;
 public class RepositoryHandler {
   private static final Logger LOG = Logger.getLogger(RepositoryHandler.class.getName());
 
-  private DBContext dbContext;
-  private DBClient dbClient;
-  private TraversalContextManager traversalContextManager;
-  private static TraversalContext traversalContext;
-  private int cursorDB = 0;
-  private Integer keyValue = null;
-  private String primaryKeyColumn = null;
+  private final DBContext dbContext;
+  private final DBClient dbClient;
+  private final TraversalContextManager traversalContextManager;
+  private final QueryStrategy queryStrategy;
 
-  public TraversalContext getTraversalContext() {
-    return traversalContext;
-  }
-
-  public void setTraversalContext(TraversalContext traversalContext) {
-    RepositoryHandler.traversalContext = traversalContext;
-  }
-
-  // current execution mode
-  private int currentExcMode = -1;
+  private TraversalContext traversalContext;
 
   public static RepositoryHandler makeRepositoryHandlerFromConfig(
       DBContext dbContext, TraversalContextManager traversalContextManager) {
-    RepositoryHandler repositoryHandler = new RepositoryHandler();
-    repositoryHandler.traversalContextManager = traversalContextManager;
-    repositoryHandler.cursorDB = 0;
-    repositoryHandler.dbContext = dbContext;
-    repositoryHandler.dbClient = dbContext.getClient();
-    return repositoryHandler;
+    return new RepositoryHandler(dbContext, traversalContextManager);
   }
 
-  /**
-   * Returns CursorDB.
-   */
+  private RepositoryHandler(
+      DBContext dbContext, TraversalContextManager traversalContextManager) {
+    this.dbContext = dbContext;
+    this.dbClient = dbContext.getClient();
+    this.traversalContextManager = traversalContextManager;
 
-  public int getCursorDB() {
-    return cursorDB;
+    if (dbContext.isParameterizedQueryFlag()) {
+      queryStrategy = new ParameterizedQueryStrategy();
+    } else {
+      queryStrategy = new PartialQueryStrategy();
+    }
   }
 
-  /**
-   * Sets the CursorDb.
-   */
-
-  public void setCursorDB(int cursorDB) {
-    this.cursorDB = cursorDB;
+  private interface QueryStrategy {
+    List<Map<String, Object>> executeQuery();
+    void resetCursor();
+    void updateCursor(List<Map<String, Object>> rows);
+    void logComplete();
   }
 
-  /**
-   * If user enters primary key column name in different case in database
-   * connector configuration form, we need to map primary key column name
-   * entered by user with actual column name in query. Below block of code map
-   * the primary key column name entered by user with actual column name in
-   * result set(map).
-   */
-  private void setPrimaryKeyColumn(Set<String> keySet) {
-    String keys[] =
-        dbContext.getPrimaryKeys().split(Util.PRIMARY_KEYS_SEPARATOR);
-    String primaryKey = keys[0];
-    for (String key : keySet) {
-      if (primaryKey.equalsIgnoreCase(key)) {
-        primaryKey = key;
-        break;
+  private class PartialQueryStrategy implements QueryStrategy {
+    private int skipRows = 0;
+
+    @Override
+    public List<Map<String, Object>> executeQuery() {
+      return dbClient.executePartialQuery(skipRows,
+            dbContext.getNumberOfRows());
+    }
+
+    @Override
+    public void resetCursor() {
+      skipRows = 0;
+    }
+
+    @Override
+    public void updateCursor(List<Map<String, Object>> rows) {
+      skipRows += rows.size();
+    }
+
+    @Override
+    public void logComplete() {
+      LOG.info("Total " + skipRows
+          + " records are crawled during this crawl cycle");
+    }
+  }
+
+  private class ParameterizedQueryStrategy implements QueryStrategy {
+    private Integer keyValue;
+    private String primaryKeyColumn = null;
+
+    public ParameterizedQueryStrategy() {
+      keyValue = dbContext.getMinValue();
+    }
+
+    @Override
+    public List<Map<String, Object>> executeQuery() {
+      return dbClient.executeParameterizePartialQuery(keyValue);
+    }
+
+    @Override
+    public void resetCursor() {
+      keyValue = dbContext.getMinValue();
+    }
+
+    /**
+     * If user enters primary key column name in different case in database
+     * connector configuration form, we need to map primary key column name
+     * entered by user with actual column name in query. Below block of code map
+     * the primary key column name entered by user with actual column name in
+     * result set(map).
+     */
+    private void setPrimaryKeyColumn(Set<String> keySet) {
+      String[] keys =
+          dbContext.getPrimaryKeys().split(Util.PRIMARY_KEYS_SEPARATOR);
+      String primaryKey = keys[0];
+      for (String key : keySet) {
+        if (primaryKey.equalsIgnoreCase(key)) {
+          primaryKey = key;
+          break;
+        }
+      }
+      primaryKeyColumn = primaryKey;
+    }
+
+    /**
+     *Updates the keyValue with the highest order key.
+     */
+    @Override
+    public void updateCursor(List<Map<String, Object>> rows) {
+      Preconditions.checkArgument(rows.size() > 0);
+      if (primaryKeyColumn == null) {
+        Map<String, Object> singleRow = rows.iterator().next();
+        Set<String> keySet = singleRow.keySet();
+        setPrimaryKeyColumn(keySet);
+      }
+      for (Map<String, Object> row : rows) {
+        String newKeyValueString = row.get(primaryKeyColumn).toString();
+        Integer newKeyValue = Integer.parseInt(newKeyValueString);
+        if (keyValue < newKeyValue) {
+          keyValue = newKeyValue;
+        }
       }
     }
-    primaryKeyColumn = primaryKey;
-  }
 
-  /**
-   *Updates the keyValue with the highest order key.
-   */
-  public void updateKeyValue(List<Map<String, Object>> rows) {
-    if (primaryKeyColumn == null) {
-      Map<String, Object> singleRow = rows.iterator().next();
-      Set<String> keySet = singleRow.keySet();
-      setPrimaryKeyColumn(keySet);
-    }
-    for (Map<String, Object> row : rows) {
-      String newKeyValueString = row.get(primaryKeyColumn).toString();
-      Integer newKeyValue = Integer.parseInt(newKeyValueString);
-      if (keyValue < newKeyValue) {
-        keyValue = newKeyValue;
-      }
-
+    @Override
+    public void logComplete() {
+      LOG.info("No records returned for keyValue= " + keyValue);
     }
   }
 
@@ -131,58 +169,30 @@ public class RepositoryHandler {
       throws SnapshotRepositoryRuntimeException {
     List<Map<String, Object>> rows = null;
 
-    if (!dbContext.isParameterizedQueryFlag()) {
-      try {
-        rows = dbClient.executePartialQuery(cursorDB,
-            dbContext.getNumberOfRows());
-      } catch (SnapshotRepositoryRuntimeException e) {
-        LOG.info("Repository Unreachable.  Setting CursorDB value to zero to "
-            + "start traversal from begining after recovery.");
-        setCursorDB(0);
-        LOG.warning("Unable to connect to the database\n" + e.toString());
-        throw new SnapshotRepositoryRuntimeException(
-            "Unable to connect to the database\n ", e);
-      }
-
-      if (rows.size() == 0) {
-        LOG.info("Crawl cycle of database "
-            + dbContext.getDbName() + " is completed at: "
-            + new Date() + "\nTotal " + getCursorDB()
-            + " records are crawled during this crawl cycle");
-        setCursorDB(0);
-      } else {
-        setCursorDB(getCursorDB() + rows.size());
-      }
-    } else {
-      try {
-        // Replace the keyValue with minValue to retrieve first set of
-        // maxRows number of Records
-        if (keyValue == null) {
-          keyValue = dbContext.getMinValue();
-        }
-        rows = dbClient.executeParameterizePartialQuery(keyValue);
-      } catch (SnapshotRepositoryRuntimeException e) {
-        LOG.info("Repository Unreachable. Resetting keyValue to minValue for "
-            + "starting traversal from begining after recovery.");
-        keyValue = dbContext.getMinValue();
-        LOG.warning("Unable to connect to the database\n" + e.toString());
-        throw new SnapshotRepositoryRuntimeException(
-            "Unable to connect to the database\n", e);
-      }
-      if (rows.size() == 0) {
-        LOG.info("No records returned for keyValue= " + keyValue);
-        LOG.info("Crawl cycle completed for ordered Database. Resetting "
-            + "keyValue to minValue for starting traversal from begining.");
-        keyValue = dbContext.getMinValue();
-      } else {
-        updateKeyValue(rows);
-      }
+    try {
+      rows = queryStrategy.executeQuery();
+    } catch (SnapshotRepositoryRuntimeException e) {
+      LOG.info("Repository Unreachable. Resetting DB cursor to "
+          + "start traversal from begining after recovery.");
+      queryStrategy.resetCursor();
+      LOG.warning("Unable to connect to the database\n" + e.toString());
+      throw new SnapshotRepositoryRuntimeException(
+          "Unable to connect to the database.", e);
     }
+    if (rows.size() == 0) {
+      queryStrategy.logComplete();
+      LOG.info("Crawl cycle of database "
+          + dbContext.getDbName() + " is complete. Resetting DB cursor to "
+          + "start traversal from begining");
+      queryStrategy.resetCursor();
+    } else {
+      queryStrategy.updateCursor(rows);
+    }
+
     if (traversalContext == null) {
       LOG.info("Setting Traversal Context");
-      setTraversalContext(traversalContextManager.getTraversalContext());
-      JsonDocument.setTraversalContext(
-          traversalContextManager.getTraversalContext());
+      traversalContext = traversalContextManager.getTraversalContext();
+      JsonDocument.setTraversalContext(traversalContext);
     }
 
     return getDocList(rows);
@@ -190,7 +200,7 @@ public class RepositoryHandler {
 
   private List<DocumentSnapshot> getDocList(List<Map<String, Object>> rows) {
     List<DocumentSnapshot> docList = Lists.newArrayList();
-    if (rows != null && rows.size() > 0) {
+    if (rows.size() > 0) {
       DocumentBuilder docBuilder =
           DocumentBuilder.getInstance(dbContext, traversalContext);
 
@@ -211,8 +221,7 @@ public class RepositoryHandler {
         }
       }
     }
-    LOG.info(docList.size() + " document(s) to be fed to GSA at time: "
-        + new Date());
+    LOG.info(docList.size() + " document(s) to be fed to GSA");
     return docList;
   }
 }
