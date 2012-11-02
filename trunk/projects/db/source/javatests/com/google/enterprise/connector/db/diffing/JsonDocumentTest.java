@@ -62,7 +62,7 @@ public class JsonDocumentTest extends TestCase {
     assertEquals(expected, jsonDocument.toJson());
   }
 
-  public void testFindProperty() {
+  public void testFindProperty() throws Exception {
     Map<String, Object> rowMap = TestUtils.getStandardDBRow();
     String[] primaryKeys = TestUtils.getStandardPrimaryKeys();
     try {
@@ -74,10 +74,11 @@ public class JsonDocumentTest extends TestCase {
 
       assertEquals("MSxsYXN0XzAx", Value.getSingleValueString(doc,
           SpiConstants.PROPNAME_DOCID));
-    
-      String content = Value.getSingleValueString(doc, 
+
+      Value contentValue = Value.getSingleValue(doc,
           SpiConstants.PROPNAME_CONTENT);
-      assertNotNull(content);
+      assertNotNull(contentValue);
+      String content = InputStreamFactories.toString(contentValue);
       assertTrue(content.contains("id=1"));
       assertTrue(content.contains("lastName=last_01"));
 

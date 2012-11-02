@@ -15,17 +15,28 @@
 package com.google.enterprise.connector.db.diffing;
 
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
+import com.google.common.io.ByteStreams;
 import com.google.enterprise.connector.db.DBConnectorType;
 import com.google.enterprise.connector.db.DBContext;
 import com.google.enterprise.connector.db.DBTestBase;
 import com.google.enterprise.connector.spi.Document;
+import com.google.enterprise.connector.spi.Property;
+import com.google.enterprise.connector.spi.RepositoryException;
 import com.google.enterprise.connector.spi.SimpleTraversalContext;
 import com.google.enterprise.connector.spi.TraversalContext;
+import com.google.enterprise.connector.spi.Value;
+import com.google.enterprise.connector.spiimpl.BinaryValue;
 import com.google.enterprise.connector.util.MimeTypeDetector;
 import com.google.enterprise.connector.util.diffing.DocumentHandle;
 import com.google.enterprise.connector.util.diffing.DocumentSnapshot;
 import com.google.enterprise.connector.util.diffing.TraversalContextManager;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.IOException;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -169,7 +180,7 @@ public class DBSnapshotRepositoryTest extends DBTestBase {
     assertNotNull(deserialHandle);
     assertEquals("document ID",
         handle.getDocumentId(), deserialHandle.getDocumentId());
-    assertEquals("serialization not value preserving",
+    assertJsonEquals("serialization not value preserving",
         serialHandle, deserialHandle.toString());
 
     Document recoveryDoc = deserialHandle.getDocument();
@@ -179,6 +190,10 @@ public class DBSnapshotRepositoryTest extends DBTestBase {
     // SnapshotRepository.
     assertEquals("document from deserialized handle",
         propertyNames, recoveryDoc.getPropertyNames());
+    for (String propertyName : propertyNames) {
+      assertPropertyEquals(propertyName, doc.findProperty(propertyName),
+          recoveryDoc.findProperty(propertyName));
+    }
   }
 
   public void testHandleLifecycle_default() throws Exception {
@@ -187,5 +202,47 @@ public class DBSnapshotRepositoryTest extends DBTestBase {
 
   public void testHandleLifecycle_lob() throws Exception {
     testHandleLifecycle(getLobMap());
+  }
+
+  /**
+   * Compares two JSON strings for equality. The order of the
+   * name/value pairs in the string is not important (and that's why
+   * this method is required, or we would just compare the strings
+   * with each other).
+   */
+  private void assertJsonEquals(String message, String expectedString,
+      String actualString) throws JSONException {
+    JSONObject expected = new JSONObject(expectedString);
+    JSONObject actual = new JSONObject(actualString);
+    Set<String> expectedNames = Sets.newHashSet(JSONObject.getNames(expected));
+    Set<String> actualNames = Sets.newHashSet(JSONObject.getNames(actual));
+    assertEquals(message, expectedNames, actualNames);
+    for (String name : expectedNames) {
+      assertEquals(message, expected.get(name), actual.get(name));
+    }
+  }
+
+  private void assertPropertyEquals(String message, Property expectedProperty,
+      Property actualProperty) throws RepositoryException, IOException {
+    assertNotNull(message, expectedProperty);
+    assertNotNull(message, actualProperty);
+    Value expectedValue = expectedProperty.nextValue();
+    Value actualValue = actualProperty.nextValue();
+    if (expectedValue instanceof BinaryValue) {
+      assertTrue(actualValue.getClass().toString(),
+          actualValue instanceof BinaryValue);
+      assertBinaryValueEquals(message, (BinaryValue) expectedValue,
+          (BinaryValue) actualValue);
+    } else {
+      assertEquals(message, expectedValue.toString(), actualValue.toString());
+    }
+  }
+
+  private void assertBinaryValueEquals(String message,
+      BinaryValue expectedValue, BinaryValue actualValue)
+      throws RepositoryException, IOException {
+    assertTrue(message, Arrays.equals(
+        ByteStreams.toByteArray(expectedValue.getInputStream()),
+        ByteStreams.toByteArray(actualValue.getInputStream())));
   }
 }

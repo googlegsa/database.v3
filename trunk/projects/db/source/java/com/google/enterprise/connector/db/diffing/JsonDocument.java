@@ -26,10 +26,15 @@ import com.google.enterprise.connector.spi.SkippedDocumentException;
 import com.google.enterprise.connector.spi.SpiConstants;
 import com.google.enterprise.connector.spi.TraversalContext;
 import com.google.enterprise.connector.spi.Value;
+import com.google.enterprise.connector.util.InputStreamFactory;
+import com.google.enterprise.connector.util.diffing.SnapshotRepositoryRuntimeException;
 
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.json.JSONWriter;
 
+import java.io.IOException;
+import java.io.StringWriter;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -43,7 +48,7 @@ public class JsonDocument implements Document {
   private static final Logger LOG =
       Logger.getLogger(JsonDocument.class.getName());
 
-  private final String jsonString;
+  private final JSONObject jsonObject;
   private final String objectId;
   private final Map<String, List<Value>> properties;
   private static TraversalContext traversalContext;
@@ -68,11 +73,11 @@ public class JsonDocument implements Document {
   public JsonDocument(Map<String, List<Value>> properties,
                       JSONObject jsonObject) {
     this.properties = properties;
-    jsonString = jsonObject.toString();
+    this.jsonObject = jsonObject;
     objectId = getSingleValueString(SpiConstants.PROPNAME_DOCID);
     if (Strings.isNullOrEmpty(objectId)) {
       throw new IllegalArgumentException(
-          "Unable to parse for docID from the JSON string:" + jsonString);
+          "Unable to parse for docID from the properties:" + properties);
     }
   }
 
@@ -81,7 +86,48 @@ public class JsonDocument implements Document {
   }
 
   public String toJson() {
-    return jsonString;
+    // JSON does not support custom serialization, so we have to find
+    // the InputStreamFactory for the content and serialize it
+    // ourselves. This could be cleaner if we supported toString on the
+    // InputStreamFactory implementations, but that would mean less
+    // control over when the LOB was materialized in memory.
+    try {
+      StringWriter buffer = new StringWriter();
+      JSONWriter writer = new JSONWriter(buffer);
+      writer.object();
+      for (String name : JSONObject.getNames(jsonObject)) {
+        writer.key(name).value(toJson(name, jsonObject.get(name)));
+      }
+      writer.endObject();
+      return buffer.toString();
+    } catch (IOException e) {
+      throw new SnapshotRepositoryRuntimeException(
+          "Error serializing document " + objectId, e);
+    } catch (JSONException e) {
+      throw new SnapshotRepositoryRuntimeException(
+          "Error serializing document " + objectId, e);
+    }
+  }
+
+  /**
+   * Serializes the given value. This always returns the value itself,
+   * unless it is an {@code InputStreamFactory} for the google:content
+   * property, in which case we Base64 encode it.
+   */
+  private Object toJson(String name, Object input) throws IOException {
+    if (name.equals(SpiConstants.PROPNAME_CONTENT)) {
+      if (input instanceof String) {
+        return input;
+      } else if (input instanceof InputStreamFactory) {
+        return InputStreamFactories.toBase64String((InputStreamFactory) input);
+      } else {
+        LOG.warning("Unexpected content object class: "
+            + input.getClass().getName());
+        return input;
+      }
+    } else {
+      return input;
+    }
   }
 
   /**
@@ -89,15 +135,16 @@ public class JsonDocument implements Document {
    * creating a {@code Map<String,List<Value>>} used by the superclass({@link
    * SimpleDocument}) constructor and hence creating a JsonDocument Object.
    */
-  @SuppressWarnings("unchecked")
   private static Map<String, List<Value>> buildJsonProperties(JSONObject jo) {
     ImmutableMap.Builder<String, List<Value>> mapBuilder =
         ImmutableMap.builder();
-    Iterator<String> jsonKeys = jo.keys();
+    @SuppressWarnings("unchecked") Iterator<String> jsonKeys = jo.keys();
     while (jsonKeys.hasNext()) {
       String key = jsonKeys.next();
       if (key.equals(SpiConstants.PROPNAME_DOCID)) {
         extractDocid(jo, mapBuilder);
+      } else if (key.equals(SpiConstants.PROPNAME_CONTENT)) {
+        extractContent(jo, mapBuilder);
       } else {
         extractAttributes(jo, mapBuilder, key);
       }
@@ -133,6 +180,32 @@ public class JsonDocument implements Document {
     }
     mapBuilder.put(SpiConstants.PROPNAME_DOCID,
                    ImmutableList.of(Value.getStringValue(docid)));
+  }
+
+  /**
+   * Extracts Base64-encoded google:content values and puts the
+   * decoded value into an InputStreamFactory that minimizes memory
+   * usage. If the google:content value is not Base64-encoded, it is
+   * converted to bytes using UTF-8. The value in the JSONObject is
+   * also replaced by the new value to save memory.
+   */
+  private static void extractContent(JSONObject jo,
+      ImmutableMap.Builder<String, List<Value>> mapBuilder) {
+    try {
+      String content = jo.getString(SpiConstants.PROPNAME_CONTENT);
+      List<Value> values;
+      if (Strings.isNullOrEmpty(content)) {
+        values = null;
+      } else {
+        InputStreamFactory factory =
+            InputStreamFactories.fromBase64String(content);
+        jo.put(SpiConstants.PROPNAME_CONTENT, factory);
+        values = ImmutableList.of(Value.getBinaryValue(factory));
+      }
+      mapBuilder.put(SpiConstants.PROPNAME_CONTENT, values);
+    } catch (JSONException e) {
+      LOG.warning("Exception thrown while extracting content.\n" + e);
+    }
   }
 
   @Override
