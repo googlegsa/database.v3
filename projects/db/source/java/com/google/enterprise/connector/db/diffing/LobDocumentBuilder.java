@@ -21,9 +21,10 @@ import com.google.enterprise.connector.db.XmlUtils;
 import com.google.enterprise.connector.spi.SpiConstants;
 import com.google.enterprise.connector.spi.TraversalContext;
 import com.google.enterprise.connector.spi.Value;
+import com.google.enterprise.connector.util.InputStreamFactory;
 
-import java.io.InputStream;
 import java.io.CharArrayReader;
+import java.io.InputStream;
 import java.io.Reader;
 import java.io.StringReader;
 import java.sql.Blob;
@@ -35,7 +36,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -196,7 +196,7 @@ class LobDocumentBuilder extends DocumentBuilder {
     }
 
     jsonObjectUtil.setBinaryContent(SpiConstants.PROPNAME_CONTENT,
-        (Value) holder.contentHolder.content);
+        (InputStreamFactory) holder.contentHolder.content);
     jsonObjectUtil.setProperty(SpiConstants.PROPNAME_MIMETYPE,
         holder.contentHolder.mimeType);
 
@@ -232,7 +232,8 @@ class LobDocumentBuilder extends DocumentBuilder {
     // TODO (bmj): I would really like to skip caching the content if the
     // mimeTypeSupportLevel is <= 0, but I don't have a TraversalContext here.
 
-    Value content = JsonObjectUtil.getBinaryValue(binaryContent);
+    InputStreamFactory content =
+        InputStreamFactories.newInstance(binaryContent);
     return new ContentHolder(content, getChecksum(binaryContent, row),
         mimeType);
   }

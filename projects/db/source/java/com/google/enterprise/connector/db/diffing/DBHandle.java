@@ -33,13 +33,11 @@ public class DBHandle implements DocumentHandle {
 
   private final JsonDocument document;
   private final String documentId;
-  private final String jsonString;
 
   /** Constructs a {@code DocumentHandle} wrapper on a {@code Document}. */
   public DBHandle(JsonDocument jsonDoc) {
     document = jsonDoc;
     documentId = document.getDocumentId();
-    jsonString = document.toJson();
   }
 
   /**
@@ -47,7 +45,6 @@ public class DBHandle implements DocumentHandle {
    * representation.
    */
   public DBHandle(String jsonString) {
-    this.jsonString = jsonString;
     JSONObject jo;
     try {
       jo = new JSONObject(jsonString);
@@ -82,6 +79,6 @@ public class DBHandle implements DocumentHandle {
 
   @Override
   public String toString() {
-    return jsonString;
+    return document.toJson();
   }
 }

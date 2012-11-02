@@ -15,22 +15,17 @@
 package com.google.enterprise.connector.db.diffing;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.io.FileBackedOutputStream;
-import com.google.common.io.InputSupplier;
 import com.google.enterprise.connector.spi.Value;
 import com.google.enterprise.connector.util.InputStreamFactory;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.sql.Timestamp;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -48,21 +43,24 @@ import java.util.logging.Logger;
 // the feed lastModified attribute. There may be issues with LOB support as
 // well.
 public class JsonObjectUtil {
-
   private static final Logger LOG =
       Logger.getLogger(JsonObjectUtil.class.getName());
 
   private final Map<String, List<Value>> properties =
       new HashMap<String, List<Value>>();
 
+  private final JSONObject jsonObject;
+
+  public JsonObjectUtil() {
+    jsonObject = new JSONObject();
+  }
+
   public Map<String, List<Value>> getProperties() {
     return properties;
   }
 
-  private JSONObject jsonObject;
-
-  public JsonObjectUtil() {
-    jsonObject = new JSONObject();
+  public JSONObject getJsonObject() {
+    return jsonObject;
   }
 
   /**
@@ -112,62 +110,18 @@ public class JsonObjectUtil {
    * @param propertyName
    * @param propertyValue
    */
-  public void setBinaryContent(String propertyName, Value propertyValue) {
+  public void setBinaryContent(String propertyName,
+      InputStreamFactory propertyValue) {
     if (propertyValue == null) {
       return;
     }
-    properties.put(propertyName, ImmutableList.of(propertyValue));
-  }
-
-  /**
-   * This method gets the "binary array" property value.
-   *
-   * @param propertyValue
-   */
-  public static Value getBinaryValue(byte[] propertyValue) {
-    if (propertyValue == null) {
-      return null;
-    }
+    properties.put(propertyName,
+        ImmutableList.of(Value.getBinaryValue(propertyValue)));
     try {
-      InputStreamFactory isf = new FileBackedInputStreamFactory(propertyValue);
-      return Value.getBinaryValue(isf);
-    } catch (IOException e) {
-      if (LOG.isLoggable(Level.FINEST)) {
-        LOG.log(Level.WARNING, "Failed to cache document content.", e);
-      } else {
-        LOG.warning("Failed to cache document content:\n" + e.toString());
-      }
-      // Resort to holding the binary data in memory, rather than on disk.
-      return Value.getBinaryValue(propertyValue);
-    }
-  }
-
-  public JSONObject getJsonObject() {
-    return jsonObject;
-  }
-
-  /** An InputStreamFactory backed by a FileBackedOutputStream. */
-  private static class FileBackedInputStreamFactory
-      implements InputStreamFactory {
-    private static int IN_MEMORY_THRESHOLD = 32 * 1024;
-
-    /**
-     * We hold onto a single supplier, because when that gets finalized,
-     * the backing file will get deleted.
-     */
-    private InputSupplier<InputStream> supplier;
-
-    FileBackedInputStreamFactory(byte[] data) throws IOException {
-      FileBackedOutputStream out =
-          new FileBackedOutputStream(IN_MEMORY_THRESHOLD, true);
-      out.write(data);
-      out.close();
-      supplier = out.getSupplier();
-    }
-
-    @Override
-    public InputStream getInputStream() throws IOException {
-      return supplier.getInput();
+      jsonObject.put(propertyName, propertyValue);
+    } catch (JSONException e) {
+      LOG.warning("Exception for " + propertyName + " with value "
+          + propertyValue + "\n" + e.toString());
     }
   }
 }

@@ -18,7 +18,9 @@ import com.google.enterprise.connector.db.DBContext;
 import com.google.enterprise.connector.db.DBException;
 import com.google.enterprise.connector.db.XmlUtils;
 import com.google.enterprise.connector.spi.SpiConstants;
+import com.google.enterprise.connector.util.InputStreamFactory;
 
+import java.io.UnsupportedEncodingException;
 import java.util.Map;
 import java.util.logging.Logger;
 
@@ -45,10 +47,17 @@ class MetadataDocumentBuilder extends DocumentBuilder {
     return new ContentHolder(row, getChecksum(row, xslt), MIMETYPE);
   }
 
-  private String getContent(ContentHolder holder) throws DBException {
+  private InputStreamFactory getContent(ContentHolder holder)
+      throws DBException {
     @SuppressWarnings("unchecked") Map<String, Object> row =
         (Map<String, Object>) holder.content;
-    return XmlUtils.getXMLRow(dbName, row, primaryKeys, xslt, dbContext, false);
+    String xml =
+        XmlUtils.getXMLRow(dbName, row, primaryKeys, xslt, dbContext, false);
+    try {
+      return InputStreamFactories.newInstance(xml.getBytes("UTF8"));
+    } catch (UnsupportedEncodingException e) {
+      throw new AssertionError(e);
+    }
   }
 
   /**
@@ -67,7 +76,7 @@ class MetadataDocumentBuilder extends DocumentBuilder {
 
     jsonObjectUtil.setProperty(SpiConstants.PROPNAME_DOCID, holder.docId);
 
-    jsonObjectUtil.setProperty(SpiConstants.PROPNAME_CONTENT,
+    jsonObjectUtil.setBinaryContent(SpiConstants.PROPNAME_CONTENT,
         getContent(holder.contentHolder));
 
     jsonObjectUtil.setProperty(SpiConstants.PROPNAME_ACTION,
