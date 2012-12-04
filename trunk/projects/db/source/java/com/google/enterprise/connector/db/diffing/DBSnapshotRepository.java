@@ -22,28 +22,24 @@ import com.google.enterprise.connector.util.diffing.SnapshotRepositoryRuntimeExc
 import java.util.Iterator;
 
 /**
- * DBSnapshotRepository Implements the @link SnapshotRepository Interface.
- * Implemented by delegating to an {@link Iterable}<{@link DocumentSnapshot}>
- */
-/*
- * TODO: This implementation isn't really iterable, because we only
- * get one instance of Iterator.
+ * An iterable over the database rows. The main building block for
+ * interacting with the diffing package.
  */
 public class DBSnapshotRepository
     implements SnapshotRepository<DocumentSnapshot> {
-  private final Iterator<DocumentSnapshot> iterator;
+  private final RepositoryHandler repositoryHandler;
 
   public DBSnapshotRepository(RepositoryHandler repositoryHandler) {
-    this.iterator = new RepositoryHandlerIterator(repositoryHandler);
+    this.repositoryHandler = repositoryHandler;
   }
 
-  /* @Override */
+  @Override
   public Iterator<DocumentSnapshot> iterator()
       throws SnapshotRepositoryRuntimeException {
-    return iterator;
+    return new RepositoryHandlerIterator(repositoryHandler);
   }
 
-  /* @Override */
+  @Override
   public String getName() {
     return DBSnapshotRepository.class.getName();
   }

@@ -102,6 +102,20 @@ public class DBSnapshotRepositoryTest extends DBTestBase {
     }
   }
 
+  public void testIteratorTwice() {
+    DBSnapshotRepository out = getObjectUnderTest(configMap);
+    int[] counts = { 0, 0 };
+    for (int i = 0; i < 2; i++) {
+      Iterator<? extends DocumentSnapshot> it = out.iterator();
+      assertTrue("Pass " + (i + 1), it.hasNext());
+      do {
+        counts[i]++;
+        it.next();
+      } while (it.hasNext());
+    }
+    assertEquals(counts[0], counts[1]);
+  }
+
   public void testGetName() {
     assertEquals("com.google.enterprise.connector.db.diffing.DBSnapshotRepository",
         getObjectUnderTest(configMap).getName());
