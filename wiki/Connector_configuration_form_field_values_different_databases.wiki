@@ -35,7 +35,7 @@ Driver Jar Used:mysql-connector-java-5.1.6-bin.jar
 *MS SQL server 2005:*
  
 
-Driver Jar Used:sqljdbc.jar
+Driver Jar Used:sqljdbc.jar. If you are using JDK 1.6 and above, use sqljdbc4.jar.
 
 1. JDBC Connection URL:jdbc:sqlserver://*DB_HOST_NAME_OR_IP*:1433;databaseName=*_Database Name_*
 
