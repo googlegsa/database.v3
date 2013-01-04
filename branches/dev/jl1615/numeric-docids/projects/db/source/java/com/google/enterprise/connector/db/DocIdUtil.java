@@ -76,6 +76,12 @@ public class DocIdUtil {
    */
 
   public static String decodeBase64String(String inputString) {
+    // Hack for zero-padded 4-byte integer-value primary keys to work
+    // around ordering problems with the lexicographic string
+    // comparisons and Base64-encoding.
+    if (true) {
+      return inputString.replaceFirst("^0*", "");
+    }
     byte[] docId;
     try {
       docId = Base64.decode(inputString.getBytes());
@@ -133,6 +139,12 @@ public class DocIdUtil {
           throw new DBException(msg);
         }
         Object keyValue = row.get(primaryKey);
+        // Hack for zero-padded 4-byte integer-value primary keys to work
+        // around ordering problems with the lexicographic string
+        // comparisons and Base64-encoding.
+        if (true) {
+          return String.format("%010d", keyValue);
+        }
         if (null != keyValue) {
           docIdString.append(keyValue.toString() + PRIMARY_KEYS_SEPARATOR);
         }

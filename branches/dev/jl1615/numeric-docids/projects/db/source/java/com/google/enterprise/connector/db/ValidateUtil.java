@@ -195,7 +195,7 @@ public class ValidateUtil {
 
           String sqlQuery = config.get(SQL_QUERY);
           if (sqlQuery.contains(KEY_VALUE_PLACEHOLDER)) {
-            sqlQuery = sqlQuery.replace(KEY_VALUE_PLACEHOLDER, "''");
+            sqlQuery = sqlQuery.replace(KEY_VALUE_PLACEHOLDER, "0");
             result = stmt.execute(sqlQuery);
           } else {
             result = stmt.execute(sqlQuery);
