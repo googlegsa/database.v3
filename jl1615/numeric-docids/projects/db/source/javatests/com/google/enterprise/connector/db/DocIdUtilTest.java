@@ -50,8 +50,8 @@ public class DocIdUtilTest extends TestCase {
    *test method decodeBase64String
    */
   public void testDecodeBase64String() {
-    String encodedString = "MSxtYXJjaA==";
-    String expectedString = "1,march";
+    String encodedString = "0000000010";
+    String expectedString = "10";
     String decodedString = null;
     decodedString = DocIdUtil.decodeBase64String(encodedString);
     assertNotNull(decodedString);
@@ -94,16 +94,16 @@ public class DocIdUtilTest extends TestCase {
     /*
      * put "id" and "month" column values in map along with other columns.
      */
-    row.put(pkCol1, 1);
+    row.put(pkCol1, 10);
     row.put(pkCol2, "Jan");
     row.put("col1", "value1");
     row.put("col2", "value2");
     row.put("col3", "value3");
     /*
      * expected doc Id should be Base 64 encoded comma separated values of
-     * primary key columns that is "1,Jan" .
+     * primary key columns that is "10,Jan" .
      */
-    String expectedDocId = "MSxKYW4";
+    String expectedDocId = "0000000010";
     String actualDocId = null;
     try {
       actualDocId = DocIdUtil.generateDocId(primaryKeys, row);
