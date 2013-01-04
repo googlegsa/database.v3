@@ -17,8 +17,9 @@ package com.google.enterprise.connector.db;
 import com.google.enterprise.connector.spi.RepositoryException;
 import com.google.enterprise.connector.traversal.ProductionTraversalContext;
 
-import com.ibatis.common.jdbc.ScriptRunner;
-import com.ibatis.common.resources.Resources;
+import org.apache.ibatis.io.Resources;
+import org.apache.ibatis.jdbc.ScriptRunner;
+import org.apache.ibatis.session.SqlSession;
 
 import java.io.IOException;
 import java.sql.Connection;
@@ -46,6 +47,7 @@ public abstract class DBTestBase extends TestCase {
   public static final String DROP_USER_DOC_MAP_TABLE = "com/google/enterprise/connector/db/config/dropUserDocMapTable.sql";
 
   // Keep an open connection to H2 to prevent in-memory DB from getting deleted.
+  private SqlSession sqlSession = null;
   private Connection dbConnection = null;
 
   @Override
@@ -71,8 +73,8 @@ public abstract class DBTestBase extends TestCase {
     configMap.put("lobField", "lob");
     configMap.put("fetchURLField", "fetchURL");
     configMap.put("extMetadataType", "");
-    dbConnection =
-        getDbClient().getSqlMapClient().getDataSource().getConnection();
+    sqlSession = getDbClient().getSqlSession();
+    dbConnection = sqlSession.getConnection();
   }
 
   @Override
@@ -80,6 +82,10 @@ public abstract class DBTestBase extends TestCase {
     if (dbConnection != null) {
       dbConnection.close();
       dbConnection = null;
+    }
+    if (sqlSession != null) {
+      sqlSession.close();
+      sqlSession = null;
     }
   }
 
@@ -130,28 +136,9 @@ public abstract class DBTestBase extends TestCase {
    *
    * @param scriptPath path of SQL script file
    */
-  protected void runDBScript(String scriptPath) {
-    Connection connection = null;
-    try {
-      connection =
-          getDbClient().getSqlMapClient().getDataSource().getConnection();
-      ScriptRunner runner = new ScriptRunner(connection, false, true);
-      runner.runScript(Resources.getResourceAsReader(scriptPath));
-    } catch (SQLException se) {
-      fail("SQLException is occured while closing database connection"
-          + se.toString());
-    } catch (IOException ioe) {
-      fail("IOException is occured while closing database connection"
-          + ioe.toString());
-    } finally {
-      if (connection != null) {
-        try {
-          connection.close();
-        } catch (SQLException se) {
-          fail("SQLException is occured while closing database connection"
-              + se.toString());
-        }
-      }
-    }
+  protected void runDBScript(String scriptPath) throws Exception {
+    ScriptRunner runner = new ScriptRunner(dbConnection);
+    runner.setStopOnError(true);
+    runner.runScript(Resources.getResourceAsReader(scriptPath));
   }
 }

@@ -26,11 +26,16 @@ import java.sql.SQLException;
 
 public class DBClientTest extends DBTestBase {
 
-  /* @Override */
+  @Override
   protected void setUp() throws Exception {
     super.setUp();
     runDBScript(CREATE_TEST_DB_TABLE);
     runDBScript(LOAD_TEST_DATA);
+  }
+
+  @Override
+  protected void tearDown() throws Exception {
+    super.tearDown();
   }
 
   public void testDBClient() {
@@ -38,20 +43,10 @@ public class DBClientTest extends DBTestBase {
     assertNotNull(dbClient);
   }
 
-  /* @Override */
-  protected void tearDown() throws Exception {
-    super.tearDown();
-  }
-
-  public void testConnectivity() {
-    Connection connection;
-    try {
-      connection =
-          getDbClient().getSqlMapClient().getDataSource().getConnection();
-      assertNotNull(connection);
-    } catch (SQLException e) {
-      fail("SQL Exception in testConnectivity");
-    }
+  public void testConnectivity() throws Exception {
+    Connection connection = getDbClient().getSqlSession().getConnection();
+    assertNotNull(connection);
+    connection.close();
   }
 
   /**
@@ -73,9 +68,9 @@ public class DBClientTest extends DBTestBase {
     String sqlQuery = "SELECT * FROM TestEmpTable where id < 15";
     DBContext dbContext = getDbContext();
     dbContext.setSqlQuery(sqlQuery);
-    String sqlMap = generateIbatisSqlMap(dbContext);
+    generateIbatisSqlMap(dbContext);
     try {
-      new DBClient(dbContext, sqlMap);
+      new DBClient(dbContext);
       fail("Exception expected XML is not well formed");
     } catch (DBException e) {
       fail("Failed to Initialize DBClient" + e);
@@ -87,14 +82,15 @@ public class DBClientTest extends DBTestBase {
   /**
    * Method to generate IbatisSQLMAp without CDATA section.
    */
-  private String generateIbatisSqlMap(DBContext dbContext) {
+  private void generateIbatisSqlMap(DBContext dbContext) {
     String sqlMap = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n"
-        + "<!DOCTYPE sqlMap "
-        + "PUBLIC \"-//ibatis.apache.org//DTD SQL Map 2.0//EN\" "
-        + "\"http://ibatis.apache.org/dtd/sql-map-2.dtd\">\n"
-        + "<sqlMap namespace=\"IbatisDBClient\">\n"
-        + " <select id=\"getAll\" resultClass=\"java.util.HashMap\"> \n"
-        + dbContext.getSqlQuery() + "\n </select> \n" + " </sqlMap> \n";
+        + "<!DOCTYPE mapper "
+        + "PUBLIC \"-//mybatis.org//DTD Mapper 3.0//EN\" "
+        + "\"http://mybatis.org/dtd/mybatis-3-mapper.dtd\">\n"
+        + "<mapper namespace=\"IbatisDBClient\">\n"
+        + "  <select id=\"getAll\" resultType=\"java.util.HashMap\">\n"
+        + dbContext.getSqlQuery() + "\n </select>\n" + "</mapper>/n";
+
     File file = new File(dbContext.getGoogleConnectorWorkDir(),
         "IbatisSqlMap.xml");
     Writer output;
@@ -105,6 +101,5 @@ public class DBClientTest extends DBTestBase {
     } catch (IOException e) {
       System.out.println("Cannot write to IbatisSQLMap.xml \n" + e);
     }
-    return sqlMap;
   }
 }

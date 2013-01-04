@@ -14,18 +14,20 @@
 
 package com.google.enterprise.connector.db;
 
+import com.google.common.annotations.VisibleForTesting;
+import com.google.enterprise.connector.spi.XmlUtils;
 import com.google.enterprise.connector.util.diffing.SnapshotRepositoryRuntimeException;
 
-import com.ibatis.sqlmap.client.SqlMapClient;
-import com.ibatis.sqlmap.client.SqlMapClientBuilder;
+import org.apache.ibatis.session.RowBounds;
+import org.apache.ibatis.session.SqlSession;
+import org.apache.ibatis.session.SqlSessionFactory;
+import org.apache.ibatis.session.SqlSessionFactoryBuilder;
 
 import java.io.BufferedWriter;
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
+import java.io.StringReader;
 import java.io.Writer;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
@@ -34,6 +36,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.sql.DataSource;
@@ -41,17 +44,17 @@ import javax.sql.DataSource;
 /**
  * A client which gets rows from a database corresponding to a given SQL query.
  * <p>
- * It uses IBatis to talk to the database and generates SqlMapConfig and SqlMap
- * required by IBatis.
+ * It uses MyBatis to talk to the database.
  */
 public class DBClient {
   private static final Logger LOG = Logger.getLogger(DBClient.class.getName());
 
   protected DBContext dbContext;
+  protected SqlSessionFactory sqlSessionFactory;
 
-  private SqlMapClient sqlMapClient;
-  private String sqlMapConfig;
-  private String sqlMap;
+  static {
+    org.apache.ibatis.logging.LogFactory.useJdkLogging();
+  }
 
   public DBClient() {
   }
@@ -65,9 +68,8 @@ public class DBClient {
    */
   public void setDBContext(DBContext dbContext) throws DBException {
     this.dbContext = dbContext;
-    generateSqlMapConfig();
     generateSqlMap();
-    this.sqlMapClient = getSqlMapClient(sqlMapConfig);
+    this.sqlSessionFactory = getSqlSessionFactory(generateMyBatisConfig());
     LOG.info("DBClient for database " + getDatabaseInfo() + " is instantiated");
   }
 
@@ -75,55 +77,36 @@ public class DBClient {
    * Constructor used for testing purpose. DBCLient initialized with sqlMap
    * having crawl query without CDATA section.
    */
-  public DBClient(DBContext dbContext, String sqlMap) throws DBException {
+  @VisibleForTesting
+  DBClient(DBContext dbContext) throws DBException {
     this.dbContext = dbContext;
-    generateSqlMapConfig();
-    this.sqlMap = sqlMap;
-    this.sqlMapClient = getSqlMapClient(sqlMapConfig);
+    this.sqlSessionFactory = getSqlSessionFactory(generateMyBatisConfig());
   }
 
-  private SqlMapClient getSqlMapClient(String sqlMapConfig) {
+  private SqlSessionFactory getSqlSessionFactory(String config) {
     try {
-      // TODO: sqlMapConfig.getBytes(Charsets.UTF_8) requires Java 6.
-      InputStream resources =
-          new ByteArrayInputStream(sqlMapConfig.getBytes("UTF-8"));
-      return SqlMapClientBuilder.buildSqlMapClient(resources);
-    } catch (UnsupportedEncodingException e) {
-      throw new AssertionError(e);
+      SqlSessionFactoryBuilder builder = new SqlSessionFactoryBuilder();
+      return builder.build(new StringReader(config));
     } catch (RuntimeException e) {
       throw new RuntimeException("XML is not well formed", e);
     }
   }
 
   /**
-   * getter method for sqlMapClient, so that it can be used outside to perform
-   * database related operation
-   *
-   * @return SqlMapClient that is used to perform database operations like CRUD.
+   * @return a SqlSession
    */
-  public SqlMapClient getSqlMapClient() {
-    return sqlMapClient;
-  }
-
-  /**
-   * @return rows - result of executing the SQL query. E.g., result table with
-   *         columns id and lastName and two rows will be returned as
-   *
-   *         <pre>
-   *        [{id=1, lastName=last_01}, {id=2, lastName=last_02}]
-   * </pre>
-   * @throws DBException
-   */
-  @SuppressWarnings("unchecked")
-  public List<Map<String, Object>> executeQuery() throws DBException {
-    List<Map<String, Object>> rows;
+  @VisibleForTesting
+  SqlSession getSqlSession()
+      throws SnapshotRepositoryRuntimeException {
     try {
-      rows = sqlMapClient.queryForList("IbatisDBClient.getAll", null);
-    } catch (SQLException e) {
-      throw new DBException("Could not execute query on the database.", e);
+      return sqlSessionFactory.openSession();
+    } catch (RuntimeException e) {
+      Throwable cause = (e.getCause() != null &&
+          e.getCause() instanceof SQLException) ? e.getCause() : e;
+      LOG.log(Level.WARNING, "Unable to connect to the database.", cause);
+      throw new SnapshotRepositoryRuntimeException(
+          "Unable to connect to the database.", cause);
     }
-    LOG.info("Rows returned: " + rows);
-    return rows;
   }
 
   /**
@@ -138,20 +121,23 @@ public class DBClient {
    * </pre>
    * @throws DBException
    */
-  @SuppressWarnings("unchecked")
   public List<Map<String, Object>> executePartialQuery(int skipRows, int maxRows)
       throws SnapshotRepositoryRuntimeException {
-    // TODO(meghna): Think about a better way to scroll through the result
-    // set.
+    // TODO(meghna): Think about a better way to scroll through the result set.
     List<Map<String, Object>> rows;
     LOG.info("Executing partial query with skipRows = " + skipRows + " and "
         + "maxRows = " + maxRows);
+    SqlSession session = getSqlSession();
     try {
-      rows = sqlMapClient.queryForList("IbatisDBClient.getAll", skipRows, maxRows);
-      LOG.info("Sucessfully executed partial parametrized query with skipRows = "
+      rows = session.selectList("IbatisDBClient.getAll", null,
+                                new RowBounds(skipRows, maxRows));
+      LOG.info("Sucessfully executed partial query with skipRows = "
           + skipRows + " and maxRows = " + maxRows);
-    } catch (Exception e) {
-      rows = checkDBConnection(e);
+    } catch (RuntimeException e) {
+      checkDBConnection(session, e);
+      rows = new ArrayList<Map<String, Object>>();
+    } finally {
+      session.close();
     }
     LOG.info("Number of rows returned " + rows.size());
     return rows;
@@ -165,99 +151,121 @@ public class DBClient {
    * @param keyValue
    * @return list of documents
    */
-  @SuppressWarnings("unchecked")
   public List<Map<String, Object>> executeParameterizePartialQuery(
       Integer keyValue) throws SnapshotRepositoryRuntimeException {
     List<Map<String, Object>> rows;
     int skipRows = 0;
     int maxRows = dbContext.getNumberOfRows();
-    /*
-     * Create a hashmap as to provide input parameters minvalue and maxvalue to
-     * the query.
-     */
+    // Create a hashmap as to provide input parameters minvalue and maxvalue to
+    // the query.
     Map<String, Object> paramMap = new HashMap<String, Object>();
     paramMap.put("value", keyValue);
     LOG.info("Executing partial parametrized query with keyValue = " + keyValue);
+    SqlSession session = getSqlSession();
     try {
-      rows = sqlMapClient.queryForList("IbatisDBClient.getAll", paramMap, skipRows, maxRows);
+      rows = session.selectList("IbatisDBClient.getAll", paramMap,
+                                new RowBounds(skipRows, maxRows));
       LOG.info("Sucessfully executed partial parametrized query with keyValue = "
           + keyValue);
-    } catch (Exception e) {
-      rows = checkDBConnection(e);
+    } catch (RuntimeException e) {
+      checkDBConnection(session, e);
+      rows = new ArrayList<Map<String, Object>>();
+    } finally {
+      session.close();
     }
     LOG.info("Number of rows returned " + rows.size());
     return rows;
   }
 
-  public List<Map<String, Object>> checkDBConnection(Exception e)
+  private void checkDBConnection(SqlSession session, Exception e)
       throws SnapshotRepositoryRuntimeException {
-    List<Map<String, Object>> rows;
     /*
      * Below code is added to handle scenarios when table is deleted or
      * connectivity with database is lost. In this scenario connector first
-     * check the connectivity with database and if there is connectivity it
-     * returns empty list of rows else throughs RepositoryException.
+     * check the connectivity with database and if there is no connectivity,
+     * throw a SnapshotRepositoryRuntimeException, otherwise 
+     * allow the connector to continue as if there was no data available.
      */
-    DataSource ds = sqlMapClient.getDataSource();
     Connection conn = null;
     try {
-      conn = ds.getConnection();
-      LOG.warning("Could not execute SQL query on the database\n"
-          + e.toString());
-      rows = new ArrayList<Map<String, Object>>();
-    } catch (SQLException e1) {
-      LOG.warning("Unable to connect to the database:\n" + e1.toString());
+      conn = session.getConnection();
+      LOG.log(Level.WARNING, "Could not execute SQL query on the database", e);
+      // Swallow the exception.
+    } catch (RuntimeException e1) {
+      Throwable cause = (e1.getCause() != null &&
+          e1.getCause() instanceof SQLException) ? e1.getCause() : e1;
+      LOG.log(Level.WARNING, "Unable to connect to the database", cause);
       throw new SnapshotRepositoryRuntimeException(
-          "Unable to connect to the database\n", e1);
+          "Unable to connect to the database", cause);
     } finally {
       if (conn != null) {
         try {
           conn.close();
         } catch (SQLException e1) {
-          LOG.warning("Could not close database connection: " + e1.toString());
+          LOG.fine("Could not close database connection: " + e1.toString());
         }
       }
     }
-    return rows;
   }
 
   /**
    * Generates the SqlMapConfig for mysql database. It contains a reference to
    * the SqlMap which should be a url or a file. It assumes that the SqlMap is
    * in IbatisSqlMap.xml in the googleConnectorWorkDir.
+   *
+   * @return MyBatis Configuration XML string.
    */
-  private void generateSqlMapConfig() {
+  private String generateMyBatisConfig() {
     /*
      * TODO(meghna): Look into <properties resource="
      * examples/sqlmap/maps/SqlMapConfigExample.properties " /> Also look into
      * making DTD retrieving local with
-     * "jar:file:<path_to_jar>/dtd.jar!<path_to_dtd>/sql-map-config-2.dtd"
+     * "jar:file:<path_to_jar>/dtd.jar!<path_to_dtd>/mybatis-3-config.dtd"
      */
-    sqlMapConfig = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n"
-        + "<!DOCTYPE sqlMapConfig "
-        + "PUBLIC \"-//ibatis.apache.org//DTD SQL Map Config 2.0//EN\" "
-        + "\"http://ibatis.apache.org/dtd/sql-map-config-2.dtd\">\n"
-        + "<sqlMapConfig>\n" + "<settings useStatementNamespaces=\"true\"/>\n"
-        + "<transactionManager type=\"JDBC\">\n"
-        + " <dataSource type=\"SIMPLE\">\n"
-        + " <property name=\"JDBC.Driver\" value=\""
-        + dbContext.getDriverClassName() + "\" />\n"
-        + " <property name=\"JDBC.ConnectionURL\" value=\""
-        + dbContext.getConnectionUrl() + "\" />\n"
-        + " <property name=\"JDBC.Username\" value=\"" + dbContext.getLogin()
-        + "\" />\n" + " <property name=\"JDBC.Password\" value=\""
-        + dbContext.getPassword() + "\" />\n"
-        + " </dataSource></transactionManager>\n" + " <sqlMap url=\"file:///"
-        + dbContext.getGoogleConnectorWorkDir() + "/IbatisSqlMap.xml\"/>\n"
-        + "</sqlMapConfig>\n";
+    String passwordFormat = "<property name=\"password\" value=\"%s\"/>";
+    String passwordElem = 
+        String.format(passwordFormat, toAttrValue(dbContext.getPassword()));
+    String config = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n"
+        + "<!DOCTYPE configuration "
+        + "PUBLIC \"-//mybatis.org//DTD Config 3.0//EN\" "
+        + "\"http://mybatis.org/dtd/mybatis-3-config.dtd\">\n"
+        + "<configuration>\n"
+        + "  <environments default=\"connector\">\n"
+        + "    <environment id=\"connector\">\n"
+        + "      <transactionManager type=\"JDBC\"/>\n"
+        + "      <dataSource type=\"POOLED\">\n"
+        + "        <property name=\"driver\" value=\""
+        + toAttrValue(dbContext.getDriverClassName()) + "\"/>\n"
+        + "        <property name=\"url\" value=\""
+        + toAttrValue(dbContext.getConnectionUrl()) + "\"/>\n"
+        + "        <property name=\"username\" value=\""
+        + toAttrValue(dbContext.getLogin()) + "\"/>\n"
+        + "        " + passwordElem + "\n"
+        + "      </dataSource>\n"
+        + "    </environment>\n"
+        + "  </environments>\n"
+        + "  <mappers>\n"
+        + "    <mapper url=\"file:///"
+        + toAttrValue(dbContext.getGoogleConnectorWorkDir()
+                      + "/IbatisSqlMap.xml") + "\"/>\n"
+        + "  </mappers>\n"
+        + "</configuration>\n";
 
-    String oldString = " <property name=\"JDBC.Password\" value=\""
-        + dbContext.getPassword() + "\" />";
-    String newString = " <property name=\"JDBC.Password\" value=\"" + "*****"
-        + "\" />";
-
-    LOG.config("Generated sqlMapConfig:\n"
-        + sqlMapConfig.replace(oldString, newString));
+    LOG.config("Generated MyBatis Configuration:\n"
+        + config.replace(passwordElem, String.format(passwordFormat, "*****")));
+    return config;
+  }
+  
+  /** Escapes special characters in value for use in an XML attribute value. */
+  private String toAttrValue(String value) {
+    StringBuilder builder = new StringBuilder();
+    try {
+      XmlUtils.xmlAppendAttrValue(value, builder);
+    } catch (IOException e) {
+      // Can't happen with StringBuilder.
+      throw new AssertionError(e);
+    }
+    return builder.toString();
   }
 
   /**
@@ -269,20 +277,26 @@ public class DBClient {
   private void generateSqlMap() throws DBException {
     /*
      * TODO(meghna): Look into making DTD retrieving local with
-     * "jar:file:<path_to_jar>/dtd.jar!<path_to_dtd>/sql-map-config-2.dtd"
+     * "jar:file:<path_to_jar>/dtd.jar!<path_to_dtd>/mybatis-3-mapper.dtd"
+     */
+    /*
+     * TODO(bmj): Look into making this resource available as
+     * an in-memory resource or Mapper class, to avoid dumping
+     * this into the file system.
      */
 
     /*
      * Use CDATA section for escaping XML reserved symbols as documented on
      * iBatis data mapper developer Guide
      */
-    sqlMap = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n"
-        + "<!DOCTYPE sqlMap "
-        + "PUBLIC \"-//ibatis.apache.org//DTD SQL Map 2.0//EN\" "
-        + "\"http://ibatis.apache.org/dtd/sql-map-2.dtd\">\n"
-        + "<sqlMap namespace=\"IbatisDBClient\">\n"
-        + " <select id=\"getAll\" resultClass=\"java.util.HashMap\"> \n"
-        + "<![CDATA[ " + dbContext.getSqlQuery() + " ]]>" + "\n </select> \n";
+    String sqlMap = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n"
+        + "<!DOCTYPE mapper "
+        + "PUBLIC \"-//mybatis.org//DTD Mapper 3.0//EN\" "
+        + "\"http://mybatis.org/dtd/mybatis-3-mapper.dtd\">\n"
+        + "<mapper namespace=\"IbatisDBClient\">\n"
+        + "  <select id=\"getAll\" resultType=\"java.util.HashMap\">\n"
+        + "    <![CDATA[ " + dbContext.getSqlQuery() + " ]]>\n"
+        + "  </select> \n";
 
     /*
      * check if authZ query is provided. If authZ query is there , add 'select'
@@ -290,15 +304,15 @@ public class DBClient {
      */
     if (dbContext.getAuthZQuery() != null
         && dbContext.getAuthZQuery().trim().length() > 0) {
-      sqlMap = sqlMap + "<select id=\"getAuthorizedDocs\"  parameterClass="
-          + "\"java.util.HashMap\"  resultClass=\"java.lang.String\"> \n "
-          + dbContext.getAuthZQuery() + "</select>";
+      sqlMap += "  <select id=\"getAuthorizedDocs\" parameterType="
+          + "\"java.util.HashMap\" resultType=\"java.lang.String\">\n "
+          + "    <![CDATA[ " + dbContext.getAuthZQuery()  + " ]]>\n"
+          + "  </select>";
       dbContext.setPublicFeed(false);
     } else {
       dbContext.setPublicFeed(true);
     }
-    // close 'sqlMap' element
-    sqlMap = sqlMap + " </sqlMap> \n";
+    sqlMap += "</mapper>\n";
 
     LOG.config("Generated sqlMap : \n" + sqlMap);
     File file = new File(dbContext.getGoogleConnectorWorkDir(),
@@ -322,33 +336,27 @@ public class DBClient {
    */
   public String getDatabaseInfo() {
     String dbDetails = "";
-    Connection conn = null;
-    DatabaseMetaData meta = null;
     try {
-      SqlMapClient sqlClient = getSqlMapClient();
-      if (sqlClient != null) {
-        conn = sqlClient.getDataSource().getConnection();
-        if (conn != null) {
-          meta = conn.getMetaData();
+      SqlSession session = sqlSessionFactory.openSession();
+      try {
+        Connection conn = session.getConnection();
+        try {
+          DatabaseMetaData meta = conn.getMetaData();
           if (meta != null) {
             String productName = meta.getDatabaseProductName();
             String productVersion = meta.getDatabaseProductVersion();
             dbDetails = productName + " " + productVersion;
           }
+        } finally {
+          conn.close();
         }
+      } finally {
+        session.close();
       }
     } catch (SQLException e) {
-      LOG.warning("Caught SQLException while fetching database details: "
-          + e.toString());
-    } finally {
-      if (conn != null) {
-        try {
-          conn.close();
-        } catch (SQLException e) {
-          LOG.warning("Caught SQLException while closing connection: "
-              + e.toString());
-        }
-      }
+      LOG.warning("Caught SQLException while fetching database details: " + e);
+    } catch (Exception e) {
+      LOG.warning("Caught Exception while fetching database details: " + e);
     }
     return dbDetails;
   }
@@ -371,12 +379,15 @@ public class DBClient {
     paramMap.put("docIds", docIds);
 
     // Execute the AuthZ query.
+    SqlSession session = getSqlSession();
     try {
-      authorizedDocs = sqlMapClient.queryForList(
+      authorizedDocs = session.selectList(
           "IbatisDBClient.getAuthorizedDocs", paramMap);
     } catch (Exception e) {
-      LOG.warning("Could not execute AuthZ query on the database.\n"
-          + e.getMessage());
+      LOG.log(Level.WARNING, "Could not execute AuthZ query on the database.",
+              e);
+    } finally {
+      session.close();
     }
     return authorizedDocs;
   }

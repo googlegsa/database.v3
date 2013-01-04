@@ -16,7 +16,7 @@ package com.google.enterprise.connector.db;
 
 import com.google.enterprise.connector.spi.ConnectorType;
 
-import com.ibatis.common.jdbc.SimpleDataSource;
+import org.apache.ibatis.datasource.unpooled.UnpooledDataSource;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.ResourceBundle;
 import java.util.TreeMap;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -76,15 +77,15 @@ public class ValidateUtil {
     private ResourceBundle res;
     List<String> columnNames = new ArrayList<String>();
 
-    private static final String USERNAME_PLACEHOLDER = "#username#";
-    private static final String DOCI_IDS_PLACEHOLDER = "$docIds$";
-    private static final String KEY_VALUE_PLACEHOLDER = "#value#";
+    private static final String USERNAME_PLACEHOLDER = "#{username}";
+    private static final String DOCI_IDS_PLACEHOLDER = "${docIds}";
+    private static final String KEY_VALUE_PLACEHOLDER = "#{value}";
 
     Statement stmt = null;
     Connection conn = null;
     ResultSet resultSet = null;
     boolean result = false;
-    SimpleDataSource sds = null;
+    UnpooledDataSource dataSource = null;
 
     public TestDbFields(Map<String, String> config, ResourceBundle res) {
       this.config = config;
@@ -94,36 +95,31 @@ public class ValidateUtil {
     private boolean testDriverClass() {
       if (driverClassName != null && connectionUrl != null && login != null
           && password != null) {
-        Map<String, String> jdbcProps = new TreeMap<String, String>();
-        jdbcProps.put(JDBC_CONNECTION_URL_STR, connectionUrl);
-        jdbcProps.put(JDBC_DRIVER_STR, driverClassName);
-        jdbcProps.put(JDBC_USERNAME_STR, login);
-        jdbcProps.put(JDBC_PASSWORD_STR, password);
-
         /*
          * to test JDBC driver class
          */
         try {
-          sds = new SimpleDataSource(jdbcProps);
+          dataSource = new UnpooledDataSource(driverClassName, connectionUrl,
+                                              login, password);
         } catch (Exception e) {
-          LOG.warning("Caught Exception while testing driver class name:\n"
-              + e.toString());
+          LOG.log(Level.WARNING,
+                  "Caught Exception while testing driver class name", e);
           message = res.getString(TEST_DRIVER_CLASS);
           problemFields.add(DBConnectorType.DRIVER_CLASS_NAME);
         }
       }
-      result = sds != null;
+      result = dataSource != null;
       return result;
     }
 
     private boolean testDBConnectivity() {
       // Test connection with the database with the given input parameters.
-      if (sds != null) {
+      if (dataSource != null) {
         try {
-          conn = sds.getConnection();
+          conn = dataSource.getConnection();
         } catch (SQLException e) {
-          LOG.warning("Caught SQLException while testing connection:\n"
-              + e.toString());
+          LOG.log(Level.WARNING, "Caught SQLException while testing connection",
+                  e);
           message = res.getString(TEST_CONNECTIVITY);
           problemFields.add(DBConnectorType.DRIVER_CLASS_NAME);
           problemFields.add(DBConnectorType.LOGIN);
@@ -157,8 +153,8 @@ public class ValidateUtil {
             problemFields.add(DBConnectorType.SQL_QUERY);
           }
         } catch (SQLException e) {
-          LOG.warning("Caught SQLException while testing SQL crawl query:\n"
-              + e.toString());
+          LOG.log(Level.WARNING,
+                  "Caught SQLException while testing SQL crawl query", e);
           message = res.getString(TEST_SQL_QUERY);
           problemFields.add(DBConnectorType.SQL_QUERY);
         }
@@ -205,8 +201,8 @@ public class ValidateUtil {
           }
         }
       } catch (SQLException e) {
-        LOG.warning("Caught SQLException while testing primary keys:\n"
-            + e.toString());
+        LOG.log(Level.WARNING, "Caught SQLException while testing primary keys",
+                e);
       }
       return flag;
     }
@@ -230,7 +226,7 @@ public class ValidateUtil {
         authZQuery = authZQuery.replace(USERNAME_PLACEHOLDER, "''");
         authZQuery = authZQuery.replace(DOCI_IDS_PLACEHOLDER, "''");
         try {
-          conn = sds.getConnection();
+          conn = dataSource.getConnection();
           stmt = conn.createStatement();
           // Try to execute authZ query. It will throw an exception if it is not
           // a valid SQL query.
@@ -430,7 +426,7 @@ public class ValidateUtil {
           stmt.close();
         }
       } catch (SQLException e) {
-        LOG.warning("Caught SQLException " + e.toString());
+        LOG.log(Level.WARNING, "Caught SQLException closing connection", e);
       }
 
       return success;
@@ -606,7 +602,7 @@ public class ValidateUtil {
     private String message = "";
     private boolean success = false;
     private List<String> problemFields = new ArrayList<String>();
-    private static final String KEY_VALUE_PLACEHOLDER = "#value#";
+    private static final String KEY_VALUE_PLACEHOLDER = "#{value}";
     String[] primaryKeys;
     String sqlCrawlQuery;
 
