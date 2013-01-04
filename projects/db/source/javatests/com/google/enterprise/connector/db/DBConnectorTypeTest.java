@@ -91,7 +91,7 @@ public class DBConnectorTypeTest extends DBTestBase {
         TestUtils.TESTCONFIG_DIR + TestUtils.CONNECTOR_INSTANCE_XML);
     Map<String, String> newConfigMap = Maps.newHashMap(this.configMap);
     newConfigMap.put("sqlQuery",
-                     "select * from TestEmpTable where id > #value#");
+                     "select * from TestEmpTable where id > #{value}");
     newConfigMap.put("primaryKeysString", "id,fname");
     ConfigureResponse configRes = this.connectorType.validateConfig(
         newConfigMap, Locale.ENGLISH, mdbConnectorFactory);
@@ -107,7 +107,7 @@ public class DBConnectorTypeTest extends DBTestBase {
     MockDBConnectorFactory mdbConnectorFactory = new MockDBConnectorFactory(
         TestUtils.TESTCONFIG_DIR + TestUtils.CONNECTOR_INSTANCE_XML);
     Map<String, String> newConfigMap = Maps.newHashMap(this.configMap);
-    newConfigMap.put("sqlQuery", "select * from TestEmpTable where id > #value#");
+    newConfigMap.put("sqlQuery", "select * from TestEmpTable where id > #{value}");
     ConfigureResponse configRes = this.connectorType.validateConfig(
         newConfigMap, Locale.ENGLISH, mdbConnectorFactory);
     if (configRes != null) {
