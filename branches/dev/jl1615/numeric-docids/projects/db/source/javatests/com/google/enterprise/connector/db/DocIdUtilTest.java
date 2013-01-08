@@ -14,6 +14,7 @@
 
 package com.google.enterprise.connector.db;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -94,7 +95,7 @@ public class DocIdUtilTest extends TestCase {
     /*
      * put "id" and "month" column values in map along with other columns.
      */
-    row.put(pkCol1, 10);
+    row.put(pkCol1, new BigDecimal(10.14159d));
     row.put(pkCol2, "Jan");
     row.put("col1", "value1");
     row.put("col2", "value2");
