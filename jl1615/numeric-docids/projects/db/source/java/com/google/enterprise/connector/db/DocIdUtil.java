@@ -141,9 +141,11 @@ public class DocIdUtil {
         Object keyValue = row.get(primaryKey);
         // Hack for zero-padded 4-byte integer-value primary keys to work
         // around ordering problems with the lexicographic string
-        // comparisons and Base64-encoding.
+        // comparisons and Base64-encoding. Support generic Number values
+        // in order to work with NUMBER(n) SQL types (often represented
+        // by BigDecimal values).
         if (true) {
-          return String.format("%010d", keyValue);
+          return String.format("%010d", ((Number) keyValue).longValue());
         }
         if (null != keyValue) {
           docIdString.append(keyValue.toString() + PRIMARY_KEYS_SEPARATOR);
