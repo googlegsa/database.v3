@@ -64,7 +64,7 @@ public class RepositoryHandlerTest extends DBTestBase {
     List<DocumentSnapshot> snapshotList =
         repositoryHandler.executeQueryAndAddDocs();
     DocumentSnapshot snapshot = snapshotList.iterator().next();
-    assertEquals("MQ", snapshot.getDocumentId());
+    assertEquals("1", snapshot.getDocumentId());
   }
 
   public void testExecuteQueryAndAddDocs() {

@@ -72,7 +72,7 @@ public class JsonDocumentTest extends TestCase {
           new MetadataDocumentBuilder(DBTestBase.getMinimalDbContext()),
           rowMap);
 
-      assertEquals("MSxsYXN0XzAx", Value.getSingleValueString(doc,
+      assertEquals("1/last_01", Value.getSingleValueString(doc,
           SpiConstants.PROPNAME_DOCID));
 
       Value contentValue = Value.getSingleValue(doc,
