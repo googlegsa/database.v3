@@ -36,7 +36,7 @@ public class MetadataDocumentBuilderTest extends DocumentBuilderFixture {
     for (String propName : doc.getPropertyNames()) {
       LOG.info(propName + ":    " + getProperty(doc, propName));
     }
-    assertEquals("MSxsYXN0XzAx", getProperty(doc, SpiConstants.PROPNAME_DOCID));
+    assertEquals("1/last_01", getProperty(doc, SpiConstants.PROPNAME_DOCID));
     Value contentValue = Value.getSingleValue(doc,
         SpiConstants.PROPNAME_CONTENT);
     assertNotNull(contentValue);
