@@ -49,10 +49,7 @@ public class JsonDocumentTest extends TestCase {
     assertEquals("1", jsonDocument.getDocumentId());
   }
 
-  /**
-   * Test that the JSON obect snapshot string is a limited subset of all the
-   * properties.
-   */
+  /** Tests that the JSON object string contains all the properties. */
   public void testToJson() {
     String expected = "{\"google:ispublic\":\"false\",\"google:docid\":\"1\","
         + "\"google:mimetype\":\"text/plain\"}";

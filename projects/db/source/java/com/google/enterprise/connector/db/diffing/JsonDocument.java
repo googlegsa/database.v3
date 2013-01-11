@@ -35,10 +35,13 @@ import org.json.JSONWriter;
 
 import java.io.IOException;
 import java.io.StringWriter;
+import java.util.Calendar;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.text.ParseException;
 import java.util.Set;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -145,18 +148,20 @@ public class JsonDocument implements Document {
         extractDocid(jo, mapBuilder);
       } else if (key.equals(SpiConstants.PROPNAME_CONTENT)) {
         extractContent(jo, mapBuilder);
+      } else if (key.equals(SpiConstants.PROPNAME_LASTMODIFIED)) {
+        extractLastModified(jo, mapBuilder);
       } else {
-        extractAttributes(jo, mapBuilder, key);
+        extractAttribute(jo, mapBuilder, key);
       }
     }
     return mapBuilder.build();
   }
 
   /**
-   * A class level method for extracting attributes from JSONObject object used
-   * by {@link #buildJsonProperties}.
+   * Copies a string-valued attribute from a JSONObject to a map of SPI
+   * Value objects.
    */
-  private static void extractAttributes(JSONObject jo,
+  private static void extractAttribute(JSONObject jo,
       ImmutableMap.Builder<String, List<Value>> mapBuilder, String key) {
     try {
       if (!jo.isNull(key)) {
@@ -164,10 +169,15 @@ public class JsonDocument implements Document {
             ImmutableList.of(Value.getStringValue(jo.getString(key))));
       }
     } catch (JSONException e) {
-      LOG.warning("Exception thrown while extracting key: " + key + "\n" + e);
+      LOG.log(Level.WARNING,
+          "Exception thrown while extracting key: " + key, e);
     }
   }
 
+  /**
+   * Copies a required docid attribute from a JSONObject to a map of
+   * SPI Value objects.
+   */
   private static void extractDocid(JSONObject jo,
       ImmutableMap.Builder<String, List<Value>> mapBuilder) {
     String docid;
@@ -204,7 +214,32 @@ public class JsonDocument implements Document {
       }
       mapBuilder.put(SpiConstants.PROPNAME_CONTENT, values);
     } catch (JSONException e) {
-      LOG.warning("Exception thrown while extracting content.\n" + e);
+      LOG.log(Level.WARNING, "Exception thrown while extracting content.", e);
+    }
+  }
+
+  /**
+   * Copies the last modified date attribute from a JSONObject to a
+   * map of SPI Value objects.
+   */
+  private static void extractLastModified(JSONObject jo,
+      ImmutableMap.Builder<String, List<Value>> mapBuilder) {
+    try {
+      String lastModified = jo.getString(SpiConstants.PROPNAME_LASTMODIFIED);
+
+      try {
+        if (!Strings.isNullOrEmpty(lastModified)) {
+          Calendar cal = Value.iso8601ToCalendar(lastModified);
+          mapBuilder.put(SpiConstants.PROPNAME_LASTMODIFIED,
+              ImmutableList.of(Value.getDateValue(cal)));
+        }
+      } catch (ParseException e) {
+        LOG.log(Level.WARNING,
+            "Exception thrown while handling date: " + lastModified, e);
+      }
+    } catch (JSONException e) {
+      LOG.log(Level.WARNING,
+          "Exception thrown while extracting last modifed date.", e);
     }
   }
 
