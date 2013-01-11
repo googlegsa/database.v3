@@ -82,7 +82,7 @@ public class DBSnapshotTest extends TestCase {
   }
 
   /**
-   * Test that the JSON obect snapshot string is a limited subset of all the
+   * Test that the JSON object snapshot string is a limited subset of all the
    * properties. Only the docid and checksum should be included.
    */
   public void testToString() {

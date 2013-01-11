@@ -19,27 +19,42 @@ import com.google.enterprise.connector.spi.Document;
 import com.google.enterprise.connector.spi.Property;
 import com.google.enterprise.connector.spi.RepositoryException;
 import com.google.enterprise.connector.spi.SpiConstants;
+import com.google.enterprise.connector.spi.Value;
+import com.google.enterprise.connector.spiimpl.DateValue;
 import com.google.enterprise.connector.util.diffing.DocumentHandle;
 
 import junit.framework.TestCase;
 
+import java.sql.Timestamp;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.Map;
 
 public class DBHandleTest extends TestCase {
 
-  Map<String, String> properties;
-  JsonDocument jsonDocument;
+  private String lastModified;
+  private Map<String, String> properties;
+  private JsonDocument jsonDocument;
 
   protected void setUp() throws Exception {
+    long lastModifiedMillis = new Date().getTime();
+    Calendar lastModifiedCalendar = Calendar.getInstance();
+    lastModifiedCalendar.setTimeInMillis(lastModifiedMillis);
+    lastModified = Value.calendarToIso8601(lastModifiedCalendar);
+
     properties = ImmutableMap.of(
         SpiConstants.PROPNAME_DOCID, "1",
         SpiConstants.PROPNAME_ISPUBLIC, "false",
-        SpiConstants.PROPNAME_MIMETYPE, "text/plain");
+        SpiConstants.PROPNAME_MIMETYPE, "text/plain",
+        SpiConstants.PROPNAME_LASTMODIFIED, lastModified);
 
     JsonObjectUtil jsonObjectUtil = new JsonObjectUtil();
     for (Map.Entry<String, String> entry : properties.entrySet()) {
       jsonObjectUtil.setProperty(entry.getKey(), entry.getValue());
     }
+    // Overwrites the string in jsonObjectUtil with a date value.
+    jsonObjectUtil.setLastModifiedDate(SpiConstants.PROPNAME_LASTMODIFIED,
+        new Timestamp(lastModifiedMillis));
     jsonDocument = new JsonDocument(jsonObjectUtil.getProperties(),
                                     jsonObjectUtil.getJsonObject());
   }
@@ -64,13 +79,37 @@ public class DBHandleTest extends TestCase {
   }
 
   /**
-   * Test that the JSON obect snapshot string is a limited subset of all the
-   * properties. Only the docid and checksum should be included.
+   * Tests that the JSON object handle string includes all of the
+   * document properties.
    */
   public void testToString() {
     DocumentHandle handle = new DBHandle(jsonDocument);
-    String expected = "{\"google:ispublic\":\"false\",\"google:docid\":\"1\","
-        + "\"google:mimetype\":\"text/plain\"}";
+    Object expected = "{\"google:ispublic\":\"false\",\"google:docid\":\"1\","
+        + "\"google:mimetype\":\"text/plain\","
+        + "\"google:lastmodified\":\"" + lastModified + "\"}";
     assertEquals(expected, handle.toString());
+  }
+
+  /**
+   * Tests that google:lastmodified is deserialized as a DateValue.
+   * This test could go in DBSnapshotRepositoryTest, where the main
+   * lifecycle tests are, or in JsonDocumentTest, since the date
+   * handling is in JsonDocument at the moment, but we're
+   * fundamentally testing the behavior of the document handle.
+   */
+  public void testDeserializedDate() throws RepositoryException {
+    DocumentHandle handle = new DBHandle(jsonDocument);
+    Document document = handle.getDocument();
+    DocumentHandle deserialHandle = new DBHandle(handle.toString());
+    Document deserialDocument = deserialHandle.getDocument();
+
+    Value value = Value.getSingleValue(document,
+        SpiConstants.PROPNAME_LASTMODIFIED);
+    Value deserialValue = Value.getSingleValue(deserialDocument,
+        SpiConstants.PROPNAME_LASTMODIFIED);
+    assertEquals(lastModified, value.toString());
+    assertEquals(value.toString(), deserialValue.toString());
+    assertTrue(value.getClass().toString(), value instanceof DateValue);
+    assertEquals(value.getClass(), deserialValue.getClass());
   }
 }
