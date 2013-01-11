@@ -11,6 +11,57 @@ issues and workarounds.
 Web Site: http://code.google.com/p/google-enterprise-connector-database/
 
 
+Release 3.0.6, unreleased
+==============================
+
+Introduction
+------------
+This is a maintenance release that improves quality, reliability,
+and performance without adding any new functionality.
+
+Users of previous releases should check the "Version Compatibility" section
+below for instructions on how to use existing connector instances with this
+new release.
+
+Version Compatibility
+---------------------
+This version of the Connector includes an upgrade of its third party
+SQL Mapping Framework from iBatis v2.3.0 to MyBatis v3.1.1.
+As a result of the upgrade, the syntax for parameter substitutions in
+SQL queries changed slightly.  Specifically, the value substitution in
+the Parameterized SQL Query changes from "#value#" to "#{value}";
+and the docids substitution in the Authorization Query changes from
+"$docids$" to "${docids}".
+
+For more information regarding the iBatis to MyBatis migration see:
+http://ibatis.apache.org
+http://code.google.com/p/mybatis
+
+Upgrade Instructions
+--------------------
+Due to the SQL parameter substitution syntax change, users should follow
+these additional steps when upgrading the connector:
+  1) Before upgrading, stop the connector's traversal of the database by
+     selecting Disable Traversal on the Connector's configuration page.
+
+  2) Shut down Tomcat.
+
+  3) Upgrade the connector.  If manually upgrading, you MUST remove the
+     older iBatis jar file from the installation.  Delete the file
+     ${TOMCAT}/webapps/connector-manager/WEB-INF/lib/ibatis-2.3.0-677.jar
+     (where ${TOMCAT} represents the Apache Tomcat directory in your
+     connector installation directory).  You SHOULD also remove these
+     other third party jars which are no longer used: commons-codec-1.4.jar,
+     joda-time.jar, log4j-1.2.9.jar.
+
+  4) Restart Tomcat.
+
+  5) Go to the Connector's configuration page. Modify the parameter
+     substitutions if needed. In the SQL Query, change #value# to #{value}.
+     In the AuthZ Query, change $docids$ to ${docids}.  Finally, 
+     re-enable connector traversal and save the configuration.
+
+
 Release 3.0.0, 17 October 2012
 ==============================
 
