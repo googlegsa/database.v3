@@ -18,6 +18,7 @@ import com.google.enterprise.connector.db.DBContext;
 import com.google.enterprise.connector.db.DBException;
 import com.google.enterprise.connector.db.XmlUtils;
 import com.google.enterprise.connector.spi.SpiConstants;
+import com.google.enterprise.connector.util.Base64;
 import com.google.enterprise.connector.util.InputStreamFactory;
 
 import java.io.UnsupportedEncodingException;
@@ -54,7 +55,10 @@ class MetadataDocumentBuilder extends DocumentBuilder {
     String xml =
         XmlUtils.getXMLRow(dbName, row, primaryKeys, xslt, dbContext, false);
     try {
-      return InputStreamFactories.newInstance(xml.getBytes("UTF8"));
+      byte[] original = xml.getBytes("UTF8");
+      byte[] output = Base64.encode(
+          original, 0, original.length, Base64.ALPHABET, Integer.MAX_VALUE);
+      return InputStreamFactories.newInstance(output);
     } catch (UnsupportedEncodingException e) {
       throw new AssertionError(e);
     }
@@ -78,7 +82,8 @@ class MetadataDocumentBuilder extends DocumentBuilder {
 
     jsonObjectUtil.setBinaryContent(SpiConstants.PROPNAME_CONTENT,
         getContent(holder.contentHolder));
-
+    jsonObjectUtil.setProperty(SpiConstants.PROPNAME_CONTENT_ENCODING,
+        SpiConstants.ContentEncoding.BASE64BINARY.toString());
     jsonObjectUtil.setProperty(SpiConstants.PROPNAME_ACTION,
                                SpiConstants.ActionType.ADD.toString());
 

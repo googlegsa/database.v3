@@ -21,6 +21,7 @@ import com.google.enterprise.connector.spi.RepositoryException;
 import com.google.enterprise.connector.spi.SpiConstants;
 import com.google.enterprise.connector.spi.Value;
 import com.google.enterprise.connector.traversal.ProductionTraversalContext;
+import com.google.enterprise.connector.util.Base64;
 
 import java.util.Map;
 
@@ -75,7 +76,11 @@ public class JsonDocumentTest extends TestCase {
       Value contentValue = Value.getSingleValue(doc,
           SpiConstants.PROPNAME_CONTENT);
       assertNotNull(contentValue);
-      String content = InputStreamFactories.toString(contentValue);
+      String content = new String(
+          Base64.decode(InputStreamFactories.toString(contentValue)), "UTF-8");
+      assertEquals(SpiConstants.ContentEncoding.BASE64BINARY.toString(),
+          Value.getSingleValueString(
+              doc, SpiConstants.PROPNAME_CONTENT_ENCODING));
       assertTrue(content.contains("id=1"));
       assertTrue(content.contains("lastName=last_01"));
 
