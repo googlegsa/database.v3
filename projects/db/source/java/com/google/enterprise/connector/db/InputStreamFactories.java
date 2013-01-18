@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.enterprise.connector.db.diffing;
+package com.google.enterprise.connector.db;
 
 import com.google.common.base.Charsets;
 import com.google.common.io.CharStreams;
@@ -36,7 +36,7 @@ import java.util.logging.Logger;
 
 /** A factory and utility class for {@code InputStreamFactory}. */
 /* TODO(jlacey): Move this to CM util package if another connector wants it. */
-class InputStreamFactories {
+public class InputStreamFactories {
   private static final Logger LOG =
       Logger.getLogger(InputStreamFactories.class.getName());
 
@@ -101,9 +101,18 @@ class InputStreamFactories {
             Charsets.UTF_8));
   }
 
+  public static interface ContentLengthInputStreamFactory
+      extends InputStreamFactory {
+    /**
+     * Returns the number of bytes of content that will be returned by the
+     * InputStream, or -1 if the length is not known.
+     */
+    public long length();
+  }
+
   /** An InputStreamFactory backed by a FileBackedOutputStream. */
   private static class FileBackedInputStreamFactory
-      implements InputStreamFactory {
+      implements ContentLengthInputStreamFactory {
     private static final int IN_MEMORY_THRESHOLD = 32 * 1024;
 
     /**
@@ -111,10 +120,12 @@ class InputStreamFactories {
      * the backing file will get deleted.
      */
     private final InputSupplier<InputStream> supplier;
+    private final long length;
 
     FileBackedInputStreamFactory(byte[] data) throws IOException {
       FileBackedOutputStream out =
           new FileBackedOutputStream(IN_MEMORY_THRESHOLD, true);
+      length = data.length;
       out.write(data);
       out.close();
       supplier = out.getSupplier();
@@ -124,11 +135,16 @@ class InputStreamFactories {
     public InputStream getInputStream() throws IOException {
       return supplier.getInput();
     }
+
+    @Override
+    public long length() {
+      return length;
+    }
   }
 
   /** An InputStreamFactory backed by a byte array. */
   private static class ByteArrayInputStreamFactory
-      implements InputStreamFactory {
+      implements ContentLengthInputStreamFactory {
     private final byte[] data;
 
     ByteArrayInputStreamFactory(byte[] data) {
@@ -139,6 +155,11 @@ class InputStreamFactories {
     @Override
     public InputStream getInputStream() {
       return new ByteArrayInputStream(data);
+    }
+
+    @Override
+    public long length() {
+      return data.length;
     }
   }
 

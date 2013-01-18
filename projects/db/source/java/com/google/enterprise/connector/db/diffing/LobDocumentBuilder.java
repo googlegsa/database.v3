@@ -14,8 +14,12 @@
 
 package com.google.enterprise.connector.db.diffing;
 
+import com.google.common.base.Predicate;
+import com.google.common.collect.Maps;
 import com.google.enterprise.connector.db.DBContext;
 import com.google.enterprise.connector.db.DBException;
+import com.google.enterprise.connector.db.InputStreamFactories;
+import com.google.enterprise.connector.db.InputStreamFactories.ContentLengthInputStreamFactory;
 import com.google.enterprise.connector.db.Util;
 import com.google.enterprise.connector.db.XmlUtils;
 import com.google.enterprise.connector.spi.SpiConstants;
@@ -60,7 +64,8 @@ class LobDocumentBuilder extends DocumentBuilder {
     // object is of type BLOB, else it is CLOB.
     byte[] binaryContent;
     // Maximum document size that connector manager supports.
-    long maxDocSize = context.maxDocumentSize();
+    // We may support less, due to the constraints of Util.getBytes().
+    long maxDocSize = Math.min(context.maxDocumentSize(), Integer.MAX_VALUE);
 
     if (largeObject instanceof byte[]) {
       binaryContent = (byte[]) largeObject;
@@ -75,7 +80,7 @@ class LobDocumentBuilder extends DocumentBuilder {
 
       LOG.info("BLOB Data found");
     } else if (largeObject instanceof Blob) {
-      int length = (int) ((Blob) largeObject).length();
+      long length = ((Blob) largeObject).length();
       // Check if the size of document exceeds Max document size that
       // Connector Manager supports. Skip document if it exceeds.
       if (length > maxDocSize) {
@@ -85,12 +90,12 @@ class LobDocumentBuilder extends DocumentBuilder {
       }
 
       try {
-        binaryContent = ((Blob) largeObject).getBytes(1, length);
+        binaryContent = ((Blob) largeObject).getBytes(1, (int) length);
       } catch (SQLException e) {
         // Try to get byte array of blob content from input stream.
         InputStream contentStream = ((Blob) largeObject).getBinaryStream();
         if (contentStream != null) {
-          binaryContent = Util.getBytes(length, contentStream);
+          binaryContent = Util.getBytes((int) length, contentStream);
         } else {
           binaryContent = null;
         }
@@ -99,7 +104,7 @@ class LobDocumentBuilder extends DocumentBuilder {
     } else {
       // Get the value of CLOB as StringBuilder. iBATIS returns char array or
       // String for CLOB data depending upon Database.
-      int length;
+      long length;
       Reader clobReader;
       if (largeObject instanceof char[]) {
         length = ((char[]) largeObject).length;
@@ -108,7 +113,7 @@ class LobDocumentBuilder extends DocumentBuilder {
         length = ((String) largeObject).length();
         clobReader = new StringReader((String) largeObject);
       } else if (largeObject instanceof Clob) {
-        length = (int) ((Clob) largeObject).length();
+        length = ((Clob) largeObject).length();
         clobReader = ((Clob) largeObject).getCharacterStream();
       } else {
         // It's not a CLOB, but we'll include it anyway.
@@ -118,7 +123,7 @@ class LobDocumentBuilder extends DocumentBuilder {
       }
 
       if (clobReader != null && length <= maxDocSize) {
-        binaryContent = Util.getBytes(length, clobReader);
+        binaryContent = Util.getBytes((int) length, clobReader);
         length = binaryContent.length;
       } else {
         // No content or content obviously too large.
@@ -138,18 +143,20 @@ class LobDocumentBuilder extends DocumentBuilder {
     return binaryContent;
   }
 
-  private String getChecksum(
-      Map<String, Object> row) throws DBException {
-    // Get XML representation of document(exclude the LOB column).
-    Map<String, Object> rowForXmlDoc = getRowForXmlDoc(row);
-    return super.getChecksum(rowForXmlDoc, "");
-  }
-
   @Override
   protected ContentHolder getContentHolder(Map<String, Object> row,
       String docId) throws DBException {
     // Get the value of large object from map representing a row.
     Object largeObject = row.get(dbContext.getLobField());
+
+    // Custom LOB TypeHandler creates a partitial ContentHolder.
+    // Finish up calculating the checksum and return the ContentHolder.
+    if (largeObject instanceof DigestContentHolder) {
+      DigestContentHolder holder = (DigestContentHolder) largeObject;
+      // TODO: Look into which encoding/charset to use for getBytes().
+      holder.updateDigest(getXmlDoc(getRowForXmlDoc(row), "").getBytes());
+      return holder;
+    }
 
     // Check if large object data value for null.  If large object is null,
     // then do not set content, else handle the content as per LOB type.
@@ -164,10 +171,20 @@ class LobDocumentBuilder extends DocumentBuilder {
       }
     }
     if (binaryContent != null) {
-      return getContentHolder(binaryContent, row);
+      // TODO (bmj): We should really skip caching the content if the
+      // mimeTypeSupportLevel is <= 0.
+      InputStreamFactory content = 
+          InputStreamFactories.newInstance(binaryContent);
+      DigestContentHolder holder = new DigestContentHolder(content,
+          dbContext.getMimeTypeDetector().getMimeType(null, binaryContent));
+      holder.updateDigest(binaryContent);
+      // TODO: Look into which encoding/charset to use for getBytes().
+      holder.updateDigest(getXmlDoc(getRowForXmlDoc(row), "").getBytes());
+      return holder;
     } else {
       LOG.warning("Content of Document " + docId + " has null value.");
-      return new ContentHolder(null, getChecksum(row), null);
+      return new ContentHolder(null, getChecksum(getRowForXmlDoc(row), ""),
+                               null);
     }
   }
 
@@ -196,9 +213,9 @@ class LobDocumentBuilder extends DocumentBuilder {
     }
 
     jsonObjectUtil.setBinaryContent(SpiConstants.PROPNAME_CONTENT,
-        (InputStreamFactory) holder.contentHolder.content);
+        (InputStreamFactory) holder.contentHolder.getContent());
     jsonObjectUtil.setProperty(SpiConstants.PROPNAME_MIMETYPE,
-        holder.contentHolder.mimeType);
+        holder.contentHolder.getMimeType());
 
     // If connector admin has provided Fetch URL column then use the value of
     // that column as a "Display URL". Else construct the display URL.
@@ -224,47 +241,17 @@ class LobDocumentBuilder extends DocumentBuilder {
      jsonObjectUtil.getJsonObject());
   }
 
-  private ContentHolder getContentHolder(byte[] binaryContent,
-      Map<String, Object> row) throws DBException {
-    String mimeType =
-        dbContext.getMimeTypeDetector().getMimeType(null, binaryContent);
-
-    // TODO (bmj): I would really like to skip caching the content if the
-    // mimeTypeSupportLevel is <= 0, but I don't have a TraversalContext here.
-
-    InputStreamFactory content =
-        InputStreamFactories.newInstance(binaryContent);
-    return new ContentHolder(content, getChecksum(binaryContent, row),
-        mimeType);
-  }
-
-  private String getChecksum(byte[] binaryContent, Map<String, Object> row)
-      throws DBException {
-    // Get XML representation of document (exclude the LOB column).
-    Map<String, Object> rowForXmlDoc = getRowForXmlDoc(row);
-    String xmlRow = XmlUtils.getXMLRow(dbName, rowForXmlDoc, primaryKeys,
-                                       "", dbContext, true);
-
-    // Get checksum of LOB object and other columns.
-    String docCheckSum = Util.getChecksum(xmlRow.getBytes(), binaryContent);
-    return docCheckSum;
-  }
-
   /**
-   * Copies all elements from map representing a row except BLOB
-   * column and return the resultant map.
+   * Returns a filtered Map of the row with the LOB field filtered out.
    *
    * @param row
    * @return map representing a database table row.
    */
   private Map<String, Object> getRowForXmlDoc(Map<String, Object> row) {
-    Set<String> keySet = row.keySet();
-    Map<String, Object> map = new HashMap<String, Object>();
-    for (String key : keySet) {
-      if (!dbContext.getLobField().equals(key)) {
-        map.put(key, row.get(key));
-      }
-    }
-    return map;
+    return Maps.filterKeys(row, new Predicate<String>() {
+        public boolean apply(String key) {
+          return !dbContext.getLobField().equals(key);
+        }
+      });
   }
 }

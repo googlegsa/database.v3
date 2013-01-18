@@ -15,6 +15,7 @@
 package com.google.enterprise.connector.db;
 
 import com.google.common.io.ByteStreams;
+import com.google.enterprise.connector.util.InputStreamFactory;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -33,8 +34,9 @@ public class Util {
   private static final Logger LOG = Logger.getLogger(Util.class.getName());
 
   public static final String PRIMARY_KEYS_SEPARATOR = ",";
+  public static final String CHECKSUM_ALGO = "SHA1";
+
   private static final char[] HEX_CHARS = "0123456789abcdef".toCharArray();
-  private static final String CHECKSUM_ALGO = "SHA1";
   private static final String DATABASE_TITLE_PREFIX =
       "Database Connector Result";
 
@@ -124,7 +126,7 @@ public class Util {
    * @param buf
    * @return hex string.
    */
-  private static String asHex(byte[] buf) {
+  public static String asHex(byte[] buf) {
     char[] chars = new char[2 * buf.length];
     for (int i = 0; i < buf.length; ++i) {
       chars[2 * i] = HEX_CHARS[(buf[i] & 0xF0) >>> 4];
@@ -134,11 +136,31 @@ public class Util {
   }
 
   /**
+   * Converts the InputStreamFactory into byte array.
+   *
+   * @param length
+   * @param isFactory
+   * @return byte array of Input Stream from factory, or null if there was an
+   *         error
+   */
+  public static byte[] getBytes(int length, InputStreamFactory isFactory) {
+    byte[] content = new byte[length];
+    try {
+      ByteStreams.read(isFactory.getInputStream(), content, 0, length);
+    } catch (IOException e) {
+      LOG.warning("Exception occurred while converting InputStreamFactory into "
+                  + "byte array: " + e.toString());
+      return null;
+    }
+    return content;
+  }
+
+  /**
    * Converts the InputStream into byte array.
    *
    * @param length
    * @param inStream
-   * @return byte array of Input Stream
+   * @return byte array of Input Stream, or null if there was an error
    */
   public static byte[] getBytes(int length, InputStream inStream) {
     byte[] content = new byte[length];
@@ -146,7 +168,7 @@ public class Util {
       ByteStreams.read(inStream, content, 0, length);
     } catch (IOException e) {
       LOG.warning("Exception occurred while converting InputStream into "
-                  + "byte array: "+ e.toString());
+                  + "byte array: " + e.toString());
       return null;
     }
     return content;
@@ -157,7 +179,7 @@ public class Util {
    *
    * @param length the length (in characters) of the content to be read
    * @param reader a character Reader
-   * @return byte array of read data
+   * @return byte array of read data, or null if there was an error
    */
   public static byte[] getBytes(int length, Reader reader) {
     int charsRead = 0;
@@ -175,7 +197,7 @@ public class Util {
         content.write(bytes);
       } catch (IOException e) {
         LOG.warning("Exception occurred while converting character reader into"
-            + " byte array: "+ e.toString());
+            + " byte array: " + e.toString());
         return null;
       }
     }
