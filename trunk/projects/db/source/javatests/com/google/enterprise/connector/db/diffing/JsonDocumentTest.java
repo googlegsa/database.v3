@@ -16,6 +16,7 @@ package com.google.enterprise.connector.db.diffing;
 
 import com.google.enterprise.connector.db.DBException;
 import com.google.enterprise.connector.db.DBTestBase;
+import com.google.enterprise.connector.db.InputStreamFactories;
 import com.google.enterprise.connector.db.TestUtils;
 import com.google.enterprise.connector.spi.RepositoryException;
 import com.google.enterprise.connector.spi.SpiConstants;

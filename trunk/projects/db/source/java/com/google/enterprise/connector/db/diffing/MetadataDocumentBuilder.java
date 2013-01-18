@@ -16,6 +16,7 @@ package com.google.enterprise.connector.db.diffing;
 
 import com.google.enterprise.connector.db.DBContext;
 import com.google.enterprise.connector.db.DBException;
+import com.google.enterprise.connector.db.InputStreamFactories;
 import com.google.enterprise.connector.db.XmlUtils;
 import com.google.enterprise.connector.spi.SpiConstants;
 import com.google.enterprise.connector.util.Base64;
@@ -51,7 +52,7 @@ class MetadataDocumentBuilder extends DocumentBuilder {
   private InputStreamFactory getContent(ContentHolder holder)
       throws DBException {
     @SuppressWarnings("unchecked") Map<String, Object> row =
-        (Map<String, Object>) holder.content;
+        (Map<String, Object>) holder.getContent();
     String xml =
         XmlUtils.getXMLRow(dbName, row, primaryKeys, xslt, dbContext, false);
     try {
@@ -93,7 +94,7 @@ class MetadataDocumentBuilder extends DocumentBuilder {
     }
 
     jsonObjectUtil.setProperty(SpiConstants.PROPNAME_MIMETYPE,
-        holder.contentHolder.mimeType);
+                               holder.contentHolder.getMimeType());
 
     jsonObjectUtil.setProperty(SpiConstants.PROPNAME_DISPLAYURL,
                                getDisplayUrl(hostname, dbName, holder.docId));

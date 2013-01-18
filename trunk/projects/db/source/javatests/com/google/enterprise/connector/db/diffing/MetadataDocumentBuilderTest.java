@@ -14,6 +14,7 @@
 
 package com.google.enterprise.connector.db.diffing;
 
+import com.google.enterprise.connector.db.InputStreamFactories;
 import com.google.enterprise.connector.db.TestUtils;
 import com.google.enterprise.connector.spi.SpiConstants;
 import com.google.enterprise.connector.spi.Value;

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.enterprise.connector.db.diffing;
+package com.google.enterprise.connector.db;
 
 import com.google.common.io.ByteStreams;
 import com.google.enterprise.connector.util.InputStreamFactory;

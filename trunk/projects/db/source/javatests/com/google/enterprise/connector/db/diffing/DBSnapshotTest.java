@@ -43,7 +43,7 @@ public class DBSnapshotTest extends TestCase {
     String checksum = "1234";
     String jsonString = builder.getJsonString(docId, checksum);
     holder = new DocumentBuilder.DocumentHolder(builder, null, docId,
-        new DocumentBuilder.ContentHolder("hello, world", checksum, mimeType));
+        new ContentHolder("hello, world", checksum, mimeType));
 
     documentSnapshot = new DBSnapshot("1", jsonString, holder);
   }

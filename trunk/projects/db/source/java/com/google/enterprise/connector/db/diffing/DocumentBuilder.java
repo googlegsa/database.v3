@@ -125,7 +125,7 @@ abstract class DocumentBuilder {
     String docId = getDocId(row);
     ContentHolder contentHolder = getContentHolder(row, docId);
     DocumentHolder docHolder = getDocumentHolder(row, docId, contentHolder);
-    String jsonString = getJsonString(docId, contentHolder.checksum);
+    String jsonString = getJsonString(docId, contentHolder.getChecksum());
     return new DBSnapshot(docId, jsonString, docHolder);
   }
 
@@ -193,36 +193,18 @@ abstract class DocumentBuilder {
     }
   }
 
-  /**
-   * Holds the content in some form, along with the derived content
-   * metadata. This is used to delegate to the subclasses how and when
-   * they materialize the content, and allowing them to produce the
-   * metadata whenever it is most expedient.
-   */
-  /*
-   * TODO(jlacey): Should the content type be genericized (Object -> T) or
-   * refined to a particular concrete type?
-   */
-  public static class ContentHolder {
-    public final Object content;
-    public final String checksum;
-    public final String mimeType;
-
-    public ContentHolder(Object content, String checksum, String mimeType) {
-      this.content = content;
-      this.checksum = checksum;
-      this.mimeType = mimeType;
-    }
-  }
-
   // UTILITY METHODS FOR THE SUBCLASSES
 
   protected final String getChecksum(Map<String, Object> row, String xslt)
       throws DBException {
     // TODO: Look into which encoding/charset to use for getBytes().
-    String contentXml =
-        XmlUtils.getXMLRow(dbName, row, primaryKeys, xslt, dbContext, true);
-    return Util.getChecksum(contentXml.getBytes());
+    return Util.getChecksum(getXmlDoc(row, xslt).getBytes());
+  }
+
+  /** Get XML representation of document (exclude the LOB column). */
+  protected final String getXmlDoc(Map<String, Object> row, String xslt)
+      throws DBException {
+    return XmlUtils.getXMLRow(dbName, row, primaryKeys, xslt, dbContext, true);
   }
 
   protected final String getDisplayUrl(String hostname, String dbName,
