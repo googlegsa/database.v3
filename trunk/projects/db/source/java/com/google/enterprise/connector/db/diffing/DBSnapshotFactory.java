@@ -14,19 +14,12 @@
 
 package com.google.enterprise.connector.db.diffing;
 
-import com.google.enterprise.connector.db.DBContext;
 import com.google.enterprise.connector.util.diffing.DocumentSnapshot;
 import com.google.enterprise.connector.util.diffing.DocumentSnapshotFactory;
 
 public class DBSnapshotFactory implements DocumentSnapshotFactory {
-  private final DBContext dbContext;
-
-  public DBSnapshotFactory(DBContext dbContext) {
-    this.dbContenxt = dbContext;
-  }
-
   @Override
   public DocumentSnapshot fromString(String stringForm) {
-    return new DBSnapshot(dbContext, stringForm);
+    return new DBSnapshot(stringForm);
   }
 }
