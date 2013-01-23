@@ -67,10 +67,10 @@ public class DBConnectorAuthorizationManagerTest extends DBTestBase {
     Collection<String> docIds = new ArrayList<String>();
 
     // build doc Ids for testing
-    String docId1 = "l/1";
-    String docId2 = "l/2";
-    String docId3 = "l/3";
-    String docId4 = "l/4";
+    String docId1 = "1";
+    String docId2 = "2";
+    String docId3 = "3";
+    String docId4 = "4";
 
     // add doc Ids in the collection of documents to be authorized.
     docIds.add(docId1);
