@@ -114,8 +114,7 @@
   <!-- Bean for DocumentSnapshotFactory -->
   <bean id="db-snapshot-factory"
     class="com.google.enterprise.connector.db.diffing.DBSnapshotFactory"
-    singleton="false">
-    <constructor-arg index="0" ref="db-connector-config" />
+    singleton="true">
   </bean>
 
   <!--
