@@ -34,7 +34,7 @@ public class JsonDocumentTest extends TestCase {
 
   protected void setUp() throws Exception {
     jsonObjectUtil = new JsonObjectUtil();
-    jsonObjectUtil.setProperty(SpiConstants.PROPNAME_DOCID, "1");
+    jsonObjectUtil.setProperty(SpiConstants.PROPNAME_DOCID, "B/1");
     jsonObjectUtil.setProperty(SpiConstants.PROPNAME_ISPUBLIC, "false");
     jsonObjectUtil.setProperty(SpiConstants.PROPNAME_MIMETYPE, "text/plain");
   }
@@ -48,12 +48,12 @@ public class JsonDocumentTest extends TestCase {
   public void testGetDocumentId() {
     JsonDocument jsonDocument =
         new JsonDocument(jsonObjectUtil.getJsonObject());
-    assertEquals("1", jsonDocument.getDocumentId());
+    assertEquals("B/1", jsonDocument.getDocumentId());
   }
 
   /** Tests that the JSON object string contains all the properties. */
   public void testToJson() {
-    String expected = "{\"google:ispublic\":\"false\",\"google:docid\":\"1\","
+    String expected = "{\"google:ispublic\":\"false\",\"google:docid\":\"B/1\","
         + "\"google:mimetype\":\"text/plain\"}";
     JsonDocument jsonDocument =
         new JsonDocument(jsonObjectUtil.getProperties(),
@@ -71,7 +71,7 @@ public class JsonDocumentTest extends TestCase {
           new MetadataDocumentBuilder(DBTestBase.getMinimalDbContext()),
           rowMap);
 
-      assertEquals("1/last_01", Value.getSingleValueString(doc,
+      assertEquals("BF/1/last_01", Value.getSingleValueString(doc,
           SpiConstants.PROPNAME_DOCID));
 
       Value contentValue = Value.getSingleValue(doc,
