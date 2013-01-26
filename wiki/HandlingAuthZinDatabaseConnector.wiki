@@ -1,4 +1,4 @@
-#summary Handling AuthZ in Database Connector.
+#summary Handling AuthZ in Database Connector
 
 = Introduction =
 This document gives an idea of the way Database Connector handles the security related tasks pertaining to the documents it sends out to the GSA.
@@ -7,31 +7,28 @@ When a user fires a search, GSA needs to filter out the search results based on 
 
 
 ===User Authentication ===
-Database Connector does not support Authentication of the user. But GSA admin can use other AuthN schemes(Kerberos, LDAP) for authentication of user. 
+Database connector does not support Authentication of the user. But GSA admin can use other AuthN schemes (Kerberos, LDAP) for authentication of user. 
 
 === Document Authorization===
-Database connector would handle authorization for only those documents which are sent as  "Content Feed" to GSA. If the database connector is configured for metadata-and-URL feed, using either a base URL & docId OR a URL field, the authorization is assumed to be handled by respective mechanism protecting the same..
+Database connector would handle authorization by default only for those documents which are sent as a content feed to GSA. If the database connector is configured for metadata-and-URL feeds, using either a base URL and docId OR a URL field, the authorization would be done by HEAD requests. Both of these defaults can be configured using flexible authorization.
 
-eg: There might be cases where customers have a web-portal to handle authZ of the documents. The link for the documents and related metadata is stored in a database
+For example. there might be cases where customers have a web-portal to handle authorization of the documents. The link for the documents and related metadata is stored in a database.
 
-As per the Connector SPI, the Database Connector will get a collection of DocIDs to be authorized and an AuthenticationIdentity (the user identity) . The document IDs are sufficient enough to identify the document in Database table and do authorization. These IDs are ones which connector sent during the traversal. Database Connector  uses the following pattern for constructing document IDs:
-
+As per the Connector SPI, the Database connector will get a collection of DocIDs to be authorized and an AuthenticationIdentity (the user identity) . The document IDs are sufficient enough to identify the document in Database table and do authorization. These IDs are ones which connector sent during the traversal. Database connector uses the following pattern for constructing document IDs:
 
 * `[`value of primary key column1], `[`value of primary key column2], ...    ,`[`value of primary key columnN]  *
 
-
-Here DocId is BASE64 encoded, comma separated values of primary key column(s). Value of primary key should appear in same order which user has used while configuring Database Connector. For example. if you have configured Database connector with "report_id" and "report_title" as primary key columns then DocId for report_id "23" and report_title "Finance", the DocId will be BASE64 encoded value of "23,Finance".
-
+Here DocId is the BASE64 encoded, comma separated values of primary key column(s). Column values of the primary key should appear in same order which user has used while configuring the database connector. For example. if you have configured the database connector with "report_id" and "report_title" as primary key columns then DocId for report_id "23" and report_title "Finance", the DocId will be the Base64 encoded value of "23,Finance".
 
 While configuring Database Connector, connector Admin should provide valid SQL query for authorizing collection of documents (AuthZ Query). The "AuthZ Query" should have two placeholders , one for user-name and other is for taking collection of DocIds to be authorized. This query must used "IN clause" to take DocIds to be authorized. There should be mapping between user-name and records in Database system.  The authZ query should return result as a comma separated list of primary key column values which are authorized for the given user
 
 
 Below example explain how to write "AuthZ Query" for "USER_REPORT_MAP" table. This table maintain the mapping between user and reports user is allowed to view.
 
-Here ReportId and ReportTitle are primary key columns in REPORT Table.
+Here !ReportId and !ReportTitle are primary key columns in REPORT Table.
 
 
-SELECT CONCAT(ReportId ,",", ReportTitle) FROM USER_REPORT_MAP Where username='#username#'  AND CONCAT(ReportId ,",", ReportTitle) IN($docIds$)
+SELECT CONCAT(ReportId ,",", ReportTitle) FROM USER_REPORT_MAP Where username=#username# AND CONCAT(ReportId ,",", ReportTitle) IN ($docIds$)
 
 
 The above query may produce output for some user "alvin_2" as show below.
@@ -48,11 +45,11 @@ AuthZ Query is optional field on database connector configuration form. If user 
 
 There can be scenarios where documents are accessible by users with a particular role. In this scenario it is assumed that one or more tables maintain the mapping between role and documents to be authorized. Connector user can provide authZ query such that it accept documents to be authorized and  the user-name . AuthZ query should be able to find out the role of the given user and it should return the authorized documents.
 
-The above example can be modified to demonstrate this scenario. Consider RoleMap table maintain the mapping between documents and permitted role .
+The above example can be modified to demonstrate this scenario. Consider !RoleMap table maintain the mapping between documents and permitted role .
 We can get role of user from the Users table and then we can get the list of authorized doc ids from role.
 
 
-SELECT CONCAT(ReportId ,",", ReportTitle) FROM RoleMap WHERE Permited_role = (SELECT role FROM users WHERE username= #username#')  AND CONCAT(ReportId ,",", ReportTitle)  IN($docIds$)
+SELECT CONCAT(ReportId ,",", ReportTitle) FROM RoleMap WHERE Permited_role = (SELECT role FROM users WHERE username= #username#)  AND CONCAT(ReportId ,",", ReportTitle)  IN ($docIds$)
 
 This query will return the list of authorized documents.
 
