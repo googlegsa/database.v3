@@ -17,11 +17,18 @@ package com.google.enterprise.connector.db;
 import com.google.common.collect.Maps;
 import com.google.enterprise.connector.spi.ConfigureResponse;
 
+import org.apache.ibatis.session.SqlSession;
+
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.Statement;
+import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.Map;
+import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -36,7 +43,12 @@ public class DBConnectorTypeTest extends DBTestBase {
   private static final Logger LOG =
       Logger.getLogger(DBConnectorTypeTest.class.getName());
 
+  private static final ResourceBundle BUNDLE =
+        ResourceBundle.getBundle("config/DbConnectorResources");
+
   private DBConnectorType connectorType;
+
+  private MockDBConnectorFactory mdbConnectorFactory;
 
   protected void setUp() throws Exception {
     super.setUp();
@@ -52,34 +64,82 @@ public class DBConnectorTypeTest extends DBTestBase {
     configMap.put("lobField", "");
 
     connectorType = new DBConnectorType();
+
+    mdbConnectorFactory = new MockDBConnectorFactory(
+        TestUtils.TESTCONFIG_DIR + TestUtils.CONNECTOR_INSTANCE_XML);
   }
 
-  /**
-   * Test method for validateConfig method.
-   */
-  public void testValidateConfig() {
-    LOG.info("Testing validateConfig()...");
+  public void testMissingRequiredField() {
     Map<String, String> newConfigMap = Maps.newHashMap(this.configMap);
     // Remove a required field.
     newConfigMap.put("dbName", "");
-    MockDBConnectorFactory mdbConnectorFactory = new MockDBConnectorFactory(
-        TestUtils.TESTCONFIG_DIR + TestUtils.CONNECTOR_INSTANCE_XML);
     ConfigureResponse configRes = this.connectorType.validateConfig(
         newConfigMap, Locale.ENGLISH, mdbConnectorFactory);
+    assertNotNull(configRes);
+    assertTrue(configRes.getMessage(),
+        configRes.getMessage().contains(BUNDLE.getString("REQ_FIELDS")));
+  }
 
-    LOG.info("Checking for Required field Database Name...");
-    String strPattern = ".*Required fields are missing.*";
-    Pattern pattern = Pattern.compile(strPattern);
-    Matcher match = pattern.matcher(configRes.getMessage());
-    assertTrue(match.find());
-
-    LOG.info("Checking when all required fields are provided...");
-    configRes = this.connectorType.validateConfig(configMap,
+  public void testValidConfig() {
+    ConfigureResponse configRes = connectorType.validateConfig(configMap,
         Locale.ENGLISH, mdbConnectorFactory);
     if (configRes != null) {
       fail(configRes.getMessage());
     }
-    LOG.info("[ validateConfig() ] Test Passed.");
+  }
+
+  public void testUpdateQuery() throws Exception {
+    Map<String, String> newConfigMap = Maps.newHashMap(configMap);
+    newConfigMap.put("sqlQuery", "update TestEmpTable set dept = 42");
+    ConfigureResponse configRes = connectorType.validateConfig(
+        newConfigMap, Locale.ENGLISH, mdbConnectorFactory);
+    assertEquals(BUNDLE.getString("TEST_SQL_QUERY"), configRes.getMessage());
+
+    // Verify that the table was not really updated.
+    assertFalse(applyResultSet("select id from TestEmpTable where dept = 42",
+        new SqlFunction<ResultSet, Boolean>() {
+          public Boolean apply(ResultSet resultSet) throws SQLException {
+            return resultSet.next();
+          }
+        }));
+  }
+
+  // TODO(jlacey): Use DBClient.SqlFunction once that is committed.
+  public interface SqlFunction<F, T> {
+    public T apply(F input) throws SQLException;
+  }
+
+  private <T> T applyResultSet(String sqlQuery,
+      SqlFunction<ResultSet, T> function) throws SQLException {
+    SqlSession sqlSession = getDbClient().getSqlSession();
+    try {
+      Connection dbConnection = sqlSession.getConnection();
+      try {
+        Statement stmt = dbConnection.createStatement();
+        try {
+          ResultSet resultSet = stmt.executeQuery(sqlQuery);
+          try {
+            return function.apply(resultSet);
+          } finally {
+            resultSet.close();
+          }
+        } finally {
+          stmt.close();
+        }
+      } finally {
+        dbConnection.close();
+      }
+    } finally {
+      sqlSession.close();
+    }
+  }
+
+  public void testInvalidQuery() {
+    Map<String, String> newConfigMap = Maps.newHashMap(configMap);
+    newConfigMap.put("sqlQuery", "choose the red pill");
+    ConfigureResponse configRes = connectorType.validateConfig(
+        newConfigMap, Locale.ENGLISH, mdbConnectorFactory);
+    assertEquals(BUNDLE.getString("TEST_SQL_QUERY"), configRes.getMessage());
   }
 
   /**
@@ -87,16 +147,15 @@ public class DBConnectorTypeTest extends DBTestBase {
    * configured for using the parameterized crawl query.
    */
   public void testParameterizedQueryAndMutiplePrimaryKeys() {
-    MockDBConnectorFactory mdbConnectorFactory = new MockDBConnectorFactory(
-        TestUtils.TESTCONFIG_DIR + TestUtils.CONNECTOR_INSTANCE_XML);
     Map<String, String> newConfigMap = Maps.newHashMap(this.configMap);
     newConfigMap.put("sqlQuery",
                      "select * from TestEmpTable where id > #{value}");
     newConfigMap.put("primaryKeysString", "id,fname");
     ConfigureResponse configRes = this.connectorType.validateConfig(
         newConfigMap, Locale.ENGLISH, mdbConnectorFactory);
-    assertEquals("Single Primary key should be used when configuring a "
-                 + "parameterized crawl query", configRes.getMessage());
+    assertEquals(
+        BUNDLE.getString("TEST_PRIMARY_KEYS_AND_KEY_VALUE_PLACEHOLDER"),
+        configRes.getMessage());
   }
 
   /**
@@ -104,11 +163,39 @@ public class DBConnectorTypeTest extends DBTestBase {
    * for using the parameterized crawl query.
    */
   public void testParameterizedQueryAndSinglePrimaryKeys() {
-    MockDBConnectorFactory mdbConnectorFactory = new MockDBConnectorFactory(
-        TestUtils.TESTCONFIG_DIR + TestUtils.CONNECTOR_INSTANCE_XML);
     Map<String, String> newConfigMap = Maps.newHashMap(this.configMap);
     newConfigMap.put("sqlQuery", "select * from TestEmpTable where id > #{value}");
     ConfigureResponse configRes = this.connectorType.validateConfig(
+        newConfigMap, Locale.ENGLISH, mdbConnectorFactory);
+    if (configRes != null) {
+      fail(configRes.getMessage());
+    }
+  }
+
+  /** Tests an authZ query with no #{username} placeholder. */
+  public void testInvalidAuthZQuery() throws Exception {
+    Map<String, String> newConfigMap = Maps.newHashMap(configMap);
+    newConfigMap.put("authZQuery", "choose the red pill");
+    ConfigureResponse configRes = connectorType.validateConfig(
+        newConfigMap, Locale.ENGLISH, mdbConnectorFactory);
+    assertEquals(BUNDLE.getString("INVALID_AUTH_QUERY"),
+        configRes.getMessage());
+  }
+
+  /**
+   * Tests an authZ query with a quoted #{username} placeholder. This
+   * should fail, but does not because the validation parameter
+   * replacement is too simple.
+   */
+  public void testQuotedPlaceholdersAuthZQuery() throws Exception {
+    Map<String, String> newConfigMap = Maps.newHashMap(configMap);
+    // TODO(jlacey): This query is mangled so that the broken
+    // string-valued ${docIds} will work with H2. This should be
+    // restored to test ${docIds} against id instead of lname once
+    // that is fixed.
+    newConfigMap.put("authZQuery", "select id from TestEmpTable where "
+        + "lname = '#{username}' and lname IN (${docIds})");
+    ConfigureResponse configRes = connectorType.validateConfig(
         newConfigMap, Locale.ENGLISH, mdbConnectorFactory);
     if (configRes != null) {
       fail(configRes.getMessage());
@@ -122,8 +209,7 @@ public class DBConnectorTypeTest extends DBTestBase {
     final ConfigureResponse configureResponse =
         connectorType.getConfigForm(Locale.ENGLISH);
     final String configForm = configureResponse.getFormSnippet();
-    boolean check = checkForExpectedFields(configForm);
-    assertTrue(check);
+    assertExpectedFields(configForm);
   }
 
   /**
@@ -133,8 +219,7 @@ public class DBConnectorTypeTest extends DBTestBase {
     final ConfigureResponse configureResponse =
         connectorType.getPopulatedConfigForm(configMap, Locale.ENGLISH);
     final String configForm = configureResponse.getFormSnippet();
-    boolean check = checkForExpectedFields(configForm);
-    assertTrue(check);
+    assertExpectedFields(configForm);
   }
 
   /**
@@ -143,7 +228,7 @@ public class DBConnectorTypeTest extends DBTestBase {
    * @param configForm is html string of configuration form for database
    *        connector
    */
-  private boolean checkForExpectedFields(final String configForm) {
+  private void assertExpectedFields(final String configForm) {
     LOG.info("Checking for Sql Query field...");
     String strPattern = "<textarea .*name=\"sqlQuery\".*>";
     Pattern pattern = Pattern.compile(strPattern);
@@ -229,14 +314,5 @@ public class DBConnectorTypeTest extends DBTestBase {
     pattern = Pattern.compile(strPattern);
     match = pattern.matcher(configForm);
     assertTrue(match.find());
-
-    LOG.info("Checking for Document Ttitle Field...");
-    strPattern = "<input.*size=\"40\" name=\"lastModifiedDate\".*"
-        + "id=\"lastModifiedDate\".*/>";
-    pattern = Pattern.compile(strPattern);
-    match = pattern.matcher(configForm);
-    assertTrue(match.find());
-
-    return true;
   }
 }

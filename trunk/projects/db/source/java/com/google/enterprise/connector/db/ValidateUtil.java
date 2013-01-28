@@ -84,7 +84,6 @@ public class ValidateUtil {
     Statement stmt = null;
     Connection conn = null;
     ResultSet resultSet = null;
-    boolean result = false;
     UnpooledDataSource dataSource = null;
 
     public TestDbFields(Map<String, String> config, ResourceBundle res) {
@@ -108,8 +107,7 @@ public class ValidateUtil {
           problemFields.add(DBConnectorType.DRIVER_CLASS_NAME);
         }
       }
-      result = dataSource != null;
-      return result;
+      return dataSource != null;
     }
 
     private boolean testDBConnectivity() {
@@ -127,30 +125,43 @@ public class ValidateUtil {
           problemFields.add(DBConnectorType.CONNECTION_URL);
         }
       }
-      result = conn != null;
-      return result;
+      return conn != null;
     }
 
     private boolean validateSQLCrawlQuery() {
       // Test SQL query. SQL query should be of type SELECT, it should
       // not be DML statement.
+      boolean result = false;
       if (conn != null) {
         try {
-          conn.setAutoCommit(false);
           conn.setReadOnly(true);
+          conn.setAutoCommit(false);
           stmt = conn.createStatement();
           stmt.setMaxRows(1);
-
-          String sqlQuery = config.get(DBConnectorType.SQL_QUERY);
-          if (sqlQuery.contains(KEY_VALUE_PLACEHOLDER)) {
-            sqlQuery = sqlQuery.replace(KEY_VALUE_PLACEHOLDER, "0");
-            result = stmt.execute(sqlQuery);
-          } else {
-            result = stmt.execute(sqlQuery);
-          }
-          if (!result) {
-            message = res.getString(TEST_SQL_QUERY);
-            problemFields.add(DBConnectorType.SQL_QUERY);
+          try {
+            // TODO(jlacey): This and the authZ test should use the
+            // DBClient methods to execute the query, for proper
+            // placeholder replacement. That has to happen after the
+            // ConnectorFactory is used to create a connector instance
+             // and initialize DBClient.
+            String sqlQuery = config.get(DBConnectorType.SQL_QUERY);
+            if (sqlQuery.contains(KEY_VALUE_PLACEHOLDER)) {
+              sqlQuery = sqlQuery.replace(KEY_VALUE_PLACEHOLDER, "0");
+              result = stmt.execute(sqlQuery);
+            } else {
+              result = stmt.execute(sqlQuery);
+            }
+            if (!result) {
+              message = res.getString(TEST_SQL_QUERY);
+              problemFields.add(DBConnectorType.SQL_QUERY);
+            }
+          } finally {
+            try {
+              conn.rollback();
+            } catch (Exception e) {
+              LOG.log(Level.WARNING,
+                  "Caught Exception while rolling back transaction", e);
+            }
           }
         } catch (SQLException e) {
           LOG.log(Level.WARNING,
