@@ -96,6 +96,11 @@ public class DBConnectorTypeTest extends DBTestBase {
     assertEquals(BUNDLE.getString("TEST_SQL_QUERY"), configRes.getMessage());
 
     // Verify that the table was not really updated.
+    assertEmptyResultSet("select id from TestEmpTable where dept = 42");
+  }
+
+  /** Asserts that the ResultSet from the given query has no rows. */
+  private void assertEmptyResultSet(String sqlQuery) throws SQLException {
     assertFalse(applyResultSet("select id from TestEmpTable where dept = 42",
         new SqlFunction<ResultSet, Boolean>() {
           public Boolean apply(ResultSet resultSet) throws SQLException {
@@ -109,6 +114,12 @@ public class DBConnectorTypeTest extends DBTestBase {
     public T apply(F input) throws SQLException;
   }
 
+  /**
+   * Executes the given query and applies the given function to the
+   * result set.
+   *
+   * @return the value of the function applied to the {@code ResultSet}
+   */
   private <T> T applyResultSet(String sqlQuery,
       SqlFunction<ResultSet, T> function) throws SQLException {
     SqlSession sqlSession = getDbClient().getSqlSession();
@@ -200,6 +211,20 @@ public class DBConnectorTypeTest extends DBTestBase {
     if (configRes != null) {
       fail(configRes.getMessage());
     }
+  }
+
+  public void testAuthZUpdateQuery() throws Exception {
+    Map<String, String> newConfigMap = Maps.newHashMap(configMap);
+    // TODO(jlacey): See TODO in testQuotedPlaceholdersAuthZQuery.
+    newConfigMap.put("authZQuery", "update TestEmpTable set dept = 42"
+        + "where lname <> '#{username}' or not lname IN (${docIds})");
+    ConfigureResponse configRes = connectorType.validateConfig(
+        newConfigMap, Locale.ENGLISH, mdbConnectorFactory);
+    assertEquals(BUNDLE.getString("INVALID_AUTH_QUERY"),
+        configRes.getMessage());
+
+    // Verify that the table was not really updated.
+    assertEmptyResultSet("select id from TestEmpTable where dept = 42");
   }
 
   /**

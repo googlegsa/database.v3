@@ -70,11 +70,10 @@ public class ValidateUtil {
     private String login = null;
     private String connectionUrl = null;
     private String password = null;
-    private Map<String, String> config;
+    private final Map<String, String> config;
     private String message = "";
-    private boolean success = false;
     private List<String> problemFields = new ArrayList<String>();
-    private ResourceBundle res;
+    private final ResourceBundle res;
     List<String> columnNames = new ArrayList<String>();
 
     private static final String USERNAME_PLACEHOLDER = "#{username}";
@@ -83,7 +82,6 @@ public class ValidateUtil {
 
     Statement stmt = null;
     Connection conn = null;
-    ResultSet resultSet = null;
     UnpooledDataSource dataSource = null;
 
     public TestDbFields(Map<String, String> config, ResourceBundle res) {
@@ -138,31 +136,18 @@ public class ValidateUtil {
           conn.setAutoCommit(false);
           stmt = conn.createStatement();
           stmt.setMaxRows(1);
-          try {
-            // TODO(jlacey): This and the authZ test should use the
-            // DBClient methods to execute the query, for proper
-            // placeholder replacement. That has to happen after the
-            // ConnectorFactory is used to create a connector instance
-             // and initialize DBClient.
-            String sqlQuery = config.get(DBConnectorType.SQL_QUERY);
-            if (sqlQuery.contains(KEY_VALUE_PLACEHOLDER)) {
-              sqlQuery = sqlQuery.replace(KEY_VALUE_PLACEHOLDER, "0");
-              result = stmt.execute(sqlQuery);
-            } else {
-              result = stmt.execute(sqlQuery);
-            }
-            if (!result) {
-              message = res.getString(TEST_SQL_QUERY);
-              problemFields.add(DBConnectorType.SQL_QUERY);
-            }
-          } finally {
-            try {
-              conn.rollback();
-            } catch (Exception e) {
-              LOG.log(Level.WARNING,
-                  "Caught Exception while rolling back transaction", e);
-            }
+
+          // TODO(jlacey): This and the authZ test should use the
+          // DBClient methods to execute the query, for proper
+          // placeholder replacement. That has to happen after the
+          // ConnectorFactory is used to create a connector instance
+          // and initialize DBClient.
+          String sqlQuery = config.get(DBConnectorType.SQL_QUERY);
+          if (sqlQuery.contains(KEY_VALUE_PLACEHOLDER)) {
+            sqlQuery = sqlQuery.replace(KEY_VALUE_PLACEHOLDER, "0");
           }
+          result = executeQueryAndRollback(stmt, sqlQuery, TEST_SQL_QUERY,
+              DBConnectorType.SQL_QUERY);
         } catch (SQLException e) {
           LOG.log(Level.WARNING,
                   "Caught SQLException while testing SQL crawl query", e);
@@ -174,48 +159,79 @@ public class ValidateUtil {
     }
 
     /**
+     * Executes a query for validation, and rollback the active
+     * transaction at the end (for success or failure).
+     *
+     * @return true if the query returns a ResultSet, or false if the
+     *     query throws an exception or does not return a result set
+     *     (e.g., an UPDATE statement)
+     */
+    private boolean executeQueryAndRollback(Statement stmt, String query,
+        String messageKey, String fieldId) {
+      boolean result = false;
+      try {
+        try {
+          result = stmt.execute(query);
+        } catch (SQLException e) {
+          LOG.log(Level.WARNING, "Caught SQLException while testing "
+              + res.getString(messageKey), e);
+        }
+        if (!result) {
+          message = res.getString(messageKey);
+          problemFields.add(fieldId);
+        }
+      } finally {
+        try {
+          conn.rollback();
+        } catch (Exception e) {
+          LOG.log(Level.WARNING,
+              "Caught Exception while rolling back transaction", e);
+        }
+      }
+      return result;
+    }
+
+    /**
      * @return true if all primary key
      */
     private boolean validatePrimaryKeyColumns() {
-      boolean flag = false;
+      boolean result = false;
       try {
-        resultSet = stmt.getResultSet();
+        ResultSet resultSet = stmt.getResultSet();
         if (resultSet != null) {
-          ResultSetMetaData rsMeta = resultSet.getMetaData();
-          int columnCount = rsMeta.getColumnCount();
-
           // Copy column names.
-          for (int i = 1; i <= columnCount; i++) {
-            String colName = rsMeta.getColumnLabel(i);
-            columnNames.add(colName);
+          try {
+            ResultSetMetaData rsMeta = resultSet.getMetaData();
+            for (int i = 1; i <= rsMeta.getColumnCount(); i++) {
+              columnNames.add(rsMeta.getColumnLabel(i));
+            }
+          } finally {
+            resultSet.close();
           }
 
           String[] primaryKeys = config.get(DBConnectorType.PRIMARY_KEYS_STRING)
               .split(PRIMARY_KEYS_SEPARATOR);
           for (String key : primaryKeys) {
-            flag = false;
-            for (int i = 1; i <= columnCount; i++) {
-              if (key.trim().equalsIgnoreCase(rsMeta.getColumnLabel(i))) {
-                flag = true;
+            result = false;
+            for (String columnName : columnNames) {
+              if (key.trim().equalsIgnoreCase(columnName)) {
+                result = true;
                 break;
               }
             }
-            if (!flag) {
+            if (!result) {
               LOG.info("One or more primary keys are invalid");
               message = res.getString(TEST_PRIMARY_KEYS);
               problemFields.add(DBConnectorType.PRIMARY_KEYS_STRING);
               break;
             }
           }
-          if (flag) {
-            success = true;
-          }
         }
       } catch (SQLException e) {
         LOG.log(Level.WARNING, "Caught SQLException while testing primary keys",
                 e);
       }
-      return flag;
+      return result;
     }
 
     /**
@@ -226,9 +242,7 @@ public class ValidateUtil {
      * @return true if AuthZ query has expected placeholders and valid syntax.
      */
     private boolean validateAuthZQuery(String authZQuery) {
-      Connection conn = null;
-      Statement stmt = null;
-      boolean flag = false;
+      boolean result = false;
 
       // Search for expected placeholders in authZquery.
       if (authZQuery.contains(USERNAME_PLACEHOLDER)
@@ -236,38 +250,14 @@ public class ValidateUtil {
         // Replace placeholders with empty values.
         authZQuery = authZQuery.replace(USERNAME_PLACEHOLDER, "''");
         authZQuery = authZQuery.replace(DOCI_IDS_PLACEHOLDER, "''");
-        try {
-          conn = dataSource.getConnection();
-          stmt = conn.createStatement();
-          // Try to execute authZ query. It will throw an exception if it is not
-          // a valid SQL query.
-          stmt.execute(authZQuery);
-          flag = true;
-        } catch (Exception e) {
-          LOG.warning("Caught SQLException while testing AuthZ query:\n"
-              + e.toString());
-          message = res.getString(INVALID_AUTH_QUERY);
-          problemFields.add(DBConnectorType.AUTHZ_QUERY);
-        }
-
-        // Close database connection and statement.
-        try {
-          if (conn != null) {
-            conn.close();
-          }
-          if (stmt != null) {
-            stmt.close();
-          }
-        } catch (SQLException e) {
-          LOG.warning("Caught SQLException " + e.toString());
-        }
-
+        result = executeQueryAndRollback(stmt, authZQuery,
+            INVALID_AUTH_QUERY, DBConnectorType.AUTHZ_QUERY);
       } else {
         message = res.getString(INVALID_AUTH_QUERY);
         problemFields.add(DBConnectorType.AUTHZ_QUERY);
       }
 
-      return flag;
+      return result;
     }
 
     /**
@@ -380,7 +370,7 @@ public class ValidateUtil {
       driverClassName = config.get(DBConnectorType.DRIVER_CLASS_NAME);
 
       // Test JDBC driver class.
-      success = testDriverClass();
+      boolean success = testDriverClass();
       if (!success) {
         return success;
       }
@@ -427,14 +417,14 @@ public class ValidateUtil {
 
       // Close database connection, result set and statement.
       try {
-        if (conn != null) {
-          conn.close();
-        }
-        if (resultSet != null) {
-          resultSet.close();
-        }
-        if (stmt != null) {
-          stmt.close();
+        try {
+          if (stmt != null) {
+            stmt.close();
+          }
+        } finally {
+          if (conn != null) {
+            conn.close();
+          }
         }
       } catch (SQLException e) {
         LOG.log(Level.WARNING, "Caught SQLException closing connection", e);
@@ -456,11 +446,11 @@ public class ValidateUtil {
    * Tests if any of the attributes are missing.
    */
   private class MissingAttributes implements ConfigValidation {
-    private Map<String, String> config;
+    private final Map<String, String> config;
     private String message = "";
     private boolean success = false;
     private List<String> problemFields;
-    ResourceBundle res;
+    private final ResourceBundle res;
 
     public MissingAttributes(Map<String, String> config, ResourceBundle res) {
       this.config = config;
@@ -507,12 +497,12 @@ public class ValidateUtil {
    * Tests if any of the required fields are missing.
    */
   private static class RequiredFields implements ConfigValidation {
-    List<String> missingFields = new ArrayList<String>();
-    Map<String, String> config;
+    private List<String> missingFields = new ArrayList<String>();
+    private final Map<String, String> config;
     private String message = "";
     private boolean success = false;
     private List<String> problemFields;
-    ResourceBundle res;
+    private final ResourceBundle res;
 
     public RequiredFields(Map<String, String> config, ResourceBundle res) {
       this.config = config;
@@ -561,12 +551,12 @@ public class ValidateUtil {
    * error message is shown.
    */
   private static class XSLTCheck implements ConfigValidation {
-    Map<String, String> config;
+    private final Map<String, String> config;
     private String message = "";
     private boolean success = false;
     private List<String> problemFields = new ArrayList<String>();
-    StringBuilder xslt;
-    ResourceBundle res;
+    private StringBuilder xslt;
+    private final ResourceBundle res;
 
     public XSLTCheck(Map<String, String> config, ResourceBundle res) {
       this.config = config;
@@ -608,14 +598,14 @@ public class ValidateUtil {
    */
   private static class QueryParameterAndPrimaryKeyCheck implements
       ConfigValidation {
-    Map<String, String> config;
-    ResourceBundle res;
+    private final Map<String, String> config;
+    private final ResourceBundle res;
     private String message = "";
     private boolean success = false;
     private List<String> problemFields = new ArrayList<String>();
     private static final String KEY_VALUE_PLACEHOLDER = "#{value}";
-    String[] primaryKeys;
-    String sqlCrawlQuery;
+    private String[] primaryKeys;
+    private String sqlCrawlQuery;
 
     public QueryParameterAndPrimaryKeyCheck(Map<String, String> config,
         ResourceBundle res) {
@@ -653,12 +643,12 @@ public class ValidateUtil {
    * Validation Class to check whether HostName is valid.
    */
   private static class HostNameFQDNCheck implements ConfigValidation {
-    Map<String, String> config;
+    private final Map<String, String> config;
     private String message = "";
     private boolean success = false;
     private List<String> problemFields = new ArrayList<String>();
-    String hostName;
-    ResourceBundle res;
+    private String hostName;
+    private final ResourceBundle res;
 
     public HostNameFQDNCheck(Map<String, String> config, ResourceBundle res) {
       this.config = config;
