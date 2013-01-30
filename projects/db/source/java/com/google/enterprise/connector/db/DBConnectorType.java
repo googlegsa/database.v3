@@ -57,7 +57,7 @@ public class DBConnectorType implements ConnectorType {
   // SIZE is a constant for size attribute of html input field
   private static final String SIZE = "size";
   // SIZE_VALUE is a constant value for size attribute of html input field
-  private static final String SIZE_VALUE = "40";
+  private static final String SIZE_VALUE = "50";
 
   private static final String CLOSE_ELEMENT_SLASH = "/>";
   private static final String OPEN_ELEMENT = "<";
@@ -95,7 +95,7 @@ public class DBConnectorType implements ConnectorType {
   public static final String PRIMARY_KEYS_STRING = "primaryKeysString";
   public static final String XSLT = "xslt";
   public static final String LAST_MODIFIED_DATE_FIELD = "lastModifiedDate";
-  
+
   // AuthZ Query
   public static final String AUTHZ_QUERY = "authZQuery";
   public static final String DOCUMENT_URL_FIELD = "documentURLField";
@@ -119,26 +119,32 @@ public class DBConnectorType implements ConnectorType {
       CONNECTION_URL, DB_NAME, LOGIN, DRIVER_CLASS_NAME, SQL_QUERY,
       PRIMARY_KEYS_STRING });
 
-  public static final List<String> configKeys = ImmutableList.<String>builder().add(
-        HOSTNAME,
-        DRIVER_CLASS_NAME,
-        CONNECTION_URL,
-        DB_NAME,
-        LOGIN,
-        PASSWORD,
-        SQL_QUERY,
-        PRIMARY_KEYS_STRING,
-        LAST_MODIFIED_DATE_FIELD,
-        XSLT,
-        AUTHZ_QUERY,
-        EXT_METADATA,
-        DOCUMENT_URL_FIELD,
-        DOCUMENT_ID_FIELD,
-        BASE_URL,
-        CLOB_BLOB_FIELD,
-        FETCH_URL_FIELD,
-        EXT_METADATA_TYPE
-      ).build();
+  public static final List<String> configKeys =
+      ImmutableList.<String>builder().add(
+          // JDBC connection
+          DRIVER_CLASS_NAME,
+          CONNECTION_URL,
+          LOGIN,
+          PASSWORD,
+          // SQL query and column names
+          SQL_QUERY,
+          PRIMARY_KEYS_STRING,
+          LAST_MODIFIED_DATE_FIELD,
+          // Indexing
+          HOSTNAME,
+          DB_NAME,
+          XSLT,
+          // AuthZ
+          AUTHZ_QUERY,
+          // More indexing
+          EXT_METADATA,
+          DOCUMENT_URL_FIELD,
+          DOCUMENT_ID_FIELD,
+          BASE_URL,
+          CLOB_BLOB_FIELD,
+          FETCH_URL_FIELD,
+          EXT_METADATA_TYPE
+        ).build();
 
   public DBConnectorType() {
   }
@@ -204,7 +210,7 @@ public class DBConnectorType implements ConnectorType {
     private final Map<String, String> configMap;
     private boolean isDocIdDisabled = false;
     private boolean isLOBFieldDisable = false;
-    
+
     public ConfigForm(Map<String, String> configMap, Locale locale) 
         throws MissingResourceException {
       this.resource = ResourceBundle.getBundle(LOCALE_DB, locale);
@@ -237,7 +243,7 @@ public class DBConnectorType implements ConnectorType {
     private String formSnippetWithColor(String key, String value, boolean red) {
       StringBuilder buf = new StringBuilder();
       appendStartRow(buf, key, red, value);
-      
+
       // Check if key is "externalMetadata". For this label we don't have to
       // create corresponding Text Field/Area . End TD and TR elements and return.
       if (EXT_METADATA.equalsIgnoreCase(key)) {
@@ -278,13 +284,13 @@ public class DBConnectorType implements ConnectorType {
         appendAttribute(buf, SIZE, SIZE_VALUE);
         appendAttribute(buf, NAME, key);
         appendAttribute(buf, ID, key);
-        
+
         if (null != value) {
           appendAttribute(buf, VALUE, value);
         }
-        
+
         setReadOnly(key, value, buf);
-        
+
         buf.append(CLOSE_ELEMENT_SLASH);
       }
 
