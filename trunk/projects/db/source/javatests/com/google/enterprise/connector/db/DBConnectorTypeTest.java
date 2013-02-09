@@ -254,38 +254,38 @@ public class DBConnectorTypeTest extends DBTestBase {
    *        connector
    */
   private void assertExpectedFields(final String configForm) {
-    LOG.info("Checking for Sql Query field...");
+    LOG.info("Checking for Sql Query field..." + "\n" + configForm);
     String strPattern = "<textarea .*name=\"sqlQuery\".*>";
     Pattern pattern = Pattern.compile(strPattern);
     Matcher match = pattern.matcher(configForm);
     assertTrue(match.find());
 
     LOG.info("Checking for Driver Class Name field...");
-    strPattern = "<input.*size=\"40\" name=\"driverClassName\".*>";
+    strPattern = "<input.*size=\"50\" name=\"driverClassName\".*>";
     pattern = Pattern.compile(strPattern);
     match = pattern.matcher(configForm);
     assertTrue(match.find());
 
     LOG.info("Checking for Password field...");
-    strPattern = "<input.*size=\"40\" name=\"password\".*>";
+    strPattern = "<input.*size=\"50\" name=\"password\".*>";
     pattern = Pattern.compile(strPattern);
     match = pattern.matcher(configForm);
     assertTrue(match.find());
 
     LOG.info("Checking for Primary Keys String field...");
-    strPattern = "<input.*size=\"40\" name=\"primaryKeysString\".*>";
+    strPattern = "<input.*size=\"50\" name=\"primaryKeysString\".*>";
     pattern = Pattern.compile(strPattern);
     match = pattern.matcher(configForm);
     assertTrue(match.find());
 
     LOG.info("Checking for login field...");
-    strPattern = "<input.*size=\"40\" name=\"login\".*>";
+    strPattern = "<input.*size=\"50\" name=\"login\".*>";
     pattern = Pattern.compile(strPattern);
     match = pattern.matcher(configForm);
     assertTrue(match.find());
 
     LOG.info("Checking for Database Name field...");
-    strPattern = "<input.*size=\"40\" name=\"dbName\".*>";
+    strPattern = "<input.*size=\"50\" name=\"dbName\".*>";
     pattern = Pattern.compile(strPattern);
     match = pattern.matcher(configForm);
     assertTrue(match.find());
@@ -303,13 +303,13 @@ public class DBConnectorTypeTest extends DBTestBase {
     assertTrue(match.find());
 
     LOG.info("Checking for Hostname field...");
-    strPattern = "<input.*size=\"40\" name=\"hostname\".*>";
+    strPattern = "<input.*size=\"50\" name=\"hostname\".*>";
     pattern = Pattern.compile(strPattern);
     match = pattern.matcher(configForm);
     assertTrue(match.find());
 
     LOG.info("Checking for Connection URL field...");
-    strPattern = "<input.*size=\"40\" name=\"connectionUrl\".*>";
+    strPattern = "<input.*size=\"50\" name=\"connectionUrl\".*>";
     pattern = Pattern.compile(strPattern);
     match = pattern.matcher(configForm);
     assertTrue(match.find());
@@ -334,7 +334,7 @@ public class DBConnectorTypeTest extends DBTestBase {
     assertTrue(match.find());
 
     LOG.info("Checking for Last Modified date Field...");
-    strPattern = "<input.*size=\"40\".*name=\"lastModifiedDate\".*"
+    strPattern = "<input.*size=\"50\".*name=\"lastModifiedDate\".*"
         + "id=\"lastModifiedDate\".*/>";
     pattern = Pattern.compile(strPattern);
     match = pattern.matcher(configForm);
