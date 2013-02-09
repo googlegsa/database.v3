@@ -126,7 +126,7 @@ abstract class DocumentBuilder {
     ContentHolder contentHolder = getContentHolder(row, docId);
     DocumentHolder docHolder = getDocumentHolder(row, docId, contentHolder);
     String jsonString = getJsonString(docId, contentHolder.getChecksum());
-    return new DBSnapshot(docId, jsonString, docHolder);
+    return new DBSnapshot(dbContext, docId, jsonString, docHolder);
   }
 
   /**

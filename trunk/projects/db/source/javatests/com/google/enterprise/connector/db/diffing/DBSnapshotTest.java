@@ -20,6 +20,7 @@ import static org.easymock.EasyMock.replay;
 import static org.easymock.EasyMock.same;
 import static org.easymock.EasyMock.verify;
 
+import com.google.enterprise.connector.db.NullOrdering;
 import com.google.enterprise.connector.spi.Document;
 import com.google.enterprise.connector.spi.RepositoryException;
 import com.google.enterprise.connector.spi.SpiConstants;
@@ -32,6 +33,7 @@ public class DBSnapshotTest extends TestCase {
   private DocumentBuilder builder;
   private DocumentBuilder.DocumentHolder holder;
   private DocumentSnapshot documentSnapshot;
+  private NullOrdering nullOrdering;
 
   protected void setUp() throws Exception {
     // This is a partial mock, only mocking the getDocumentHandle method
@@ -45,11 +47,17 @@ public class DBSnapshotTest extends TestCase {
     holder = new DocumentBuilder.DocumentHolder(builder, null, docId,
         new ContentHolder("hello, world", checksum, mimeType));
 
-    documentSnapshot = new DBSnapshot("1", jsonString, holder);
+    nullOrdering = new NullOrdering() {
+        public boolean nullsAreSortedLow() {
+          return true;
+        }
+      };
+
+    documentSnapshot = new DBSnapshot(nullOrdering, "1", jsonString, holder);
   }
 
   public void testGetDocumentId() {
-    DBSnapshot snapshot = new DBSnapshot("1", "", null);
+    DBSnapshot snapshot = new DBSnapshot(null, "1", "", null);
     assertEquals("1", snapshot.getDocumentId());
   }
 
@@ -66,12 +74,12 @@ public class DBSnapshotTest extends TestCase {
   public void testGetUpdateNoChange() throws Exception {
     String serialSnapshot = documentSnapshot.toString();
     DocumentSnapshot deserialSnapshot =
-        new DBSnapshotFactory().fromString(serialSnapshot);
+        new DBSnapshot(nullOrdering, serialSnapshot);
     assertNull(documentSnapshot.getUpdate(deserialSnapshot));
   }
 
   public void testGetUpdateChangedDocument() throws Exception {
-    DocumentSnapshot onGsa = new DBSnapshot(
+    DocumentSnapshot onGsa = new DBSnapshot(null,
         builder.getJsonString(documentSnapshot.getDocumentId(), "9999"));
 
     // Assert that our DocumentHolder is used to create the DocumentHandle.

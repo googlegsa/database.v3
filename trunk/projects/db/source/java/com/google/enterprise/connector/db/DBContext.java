@@ -22,7 +22,7 @@ import java.util.logging.Logger;
  * An encapsulation of all the config needed for a working Database Connector
  * instance.
  */
-public class DBContext {
+public class DBContext implements NullOrdering {
   private static final Logger LOG = Logger.getLogger(DBContext.class.getName());
 
   private final MimeTypeDetector mimeTypeDetector = new MimeTypeDetector();
@@ -50,6 +50,7 @@ public class DBContext {
   private Integer minValue = -1;
   private boolean publicFeed = true;
   private boolean parameterizedQueryFlag = false;
+  private Boolean nullsSortLow = null;
 
   public DBContext() {
   }
@@ -90,6 +91,15 @@ public class DBContext {
 
   public void init() throws DBException {
     client.setDBContext(this);
+
+    // If the NULL value sort behaviour has not been explicitly overriden
+    // in the configuration, fetch it from the DatabaseMetadata.
+    if (nullsSortLow == null) {
+      nullsSortLow = client.nullsAreSortedLow();
+      if (nullsSortLow == null) {
+        throw new DBException("nullsSortLowFlag must be set in configuration.");
+      }
+    }
   }
 
   public MimeTypeDetector getMimeTypeDetector() {
@@ -292,5 +302,14 @@ public class DBContext {
 
   public void setPublicFeed(boolean publicFeed) {
     this.publicFeed = publicFeed;
+  }
+
+  @Override
+  public boolean nullsAreSortedLow() {
+    return nullsSortLow.booleanValue();
+  }  
+
+  public void setNullsAreSortedLow(Boolean nullsSortLow) {
+    this.nullsSortLow = nullsSortLow;
   }
 }

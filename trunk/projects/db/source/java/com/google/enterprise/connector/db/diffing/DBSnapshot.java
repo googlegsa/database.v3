@@ -17,6 +17,7 @@ package com.google.enterprise.connector.db.diffing;
 import com.google.common.base.Function;
 import com.google.enterprise.connector.db.DBException;
 import com.google.enterprise.connector.db.DocIdUtil;
+import com.google.enterprise.connector.db.NullOrdering;
 import com.google.enterprise.connector.spi.RepositoryException;
 import com.google.enterprise.connector.spi.SpiConstants;
 import com.google.enterprise.connector.util.diffing.DocumentHandle;
@@ -43,17 +44,20 @@ public class DBSnapshot
   private final DocumentBuilder.DocumentHolder docHolder;
   private final String documentId;
   private final String jsonString;
+  private final NullOrdering nullOrdering;
 
   /** Constructs a snapshot from a {@code DBSnapshotRepository}. */
-  public DBSnapshot(String documentId, String jsonString,
+  public DBSnapshot(NullOrdering nullOrdering, String documentId, String jsonString,
       DocumentBuilder.DocumentHolder docHolder) {
+    this.nullOrdering = nullOrdering;
     this.docHolder = docHolder;
     this.documentId = documentId;
     this.jsonString = jsonString;
   }
 
   /** Reconstructs a snapshot from a snapshot file. */
-  public DBSnapshot(String jsonString) {
+  public DBSnapshot(NullOrdering nullOrdering, String jsonString) {
+    this.nullOrdering = nullOrdering;
     this.docHolder = null;
     try {
       JSONObject jo = new JSONObject(jsonString);
@@ -84,7 +88,7 @@ public class DBSnapshot
    */
   @Override
   public int compareTo(DocumentSnapshot onGsa) throws ClassCastException {
-    return DocIdUtil.compare(documentId, onGsa.getDocumentId());
+    return DocIdUtil.compare(nullOrdering, documentId, onGsa.getDocumentId());
   }
 
   /**

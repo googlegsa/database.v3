@@ -32,5 +32,15 @@
     <!--
     <property name="parameterizedQueryFlag" value="true"></property>
     -->
+
+    <!--
+      Flag to specify whether NULL values sort high or low in ORDER BY queries.
+      This can usually be determined by examining the DatabaseMetadata.
+      However, if that information is unavailable or incorrect, you can
+      explicitly specify the ordering here.
+    -->
+    <!--
+    <property name="nullsAreSortedLow" value="true"></property>
+    -->
   </bean>
 </beans>
