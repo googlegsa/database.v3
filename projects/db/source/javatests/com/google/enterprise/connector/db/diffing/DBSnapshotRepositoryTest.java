@@ -128,7 +128,7 @@ public class DBSnapshotRepositoryTest extends DBTestBase {
   private DocumentSnapshot getDeserializedSnapshot(DocumentSnapshot snapshot) {
     String serialSnapshot = snapshot.toString();
     DocumentSnapshot deserialSnapshot =
-        new DBSnapshotFactory().fromString(serialSnapshot);
+        new DBSnapshotFactory(getDbContext()).fromString(serialSnapshot);
     assertNotNull(deserialSnapshot);
     return deserialSnapshot;
   }

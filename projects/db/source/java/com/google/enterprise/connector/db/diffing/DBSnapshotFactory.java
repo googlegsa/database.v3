@@ -14,12 +14,21 @@
 
 package com.google.enterprise.connector.db.diffing;
 
+import com.google.common.base.Preconditions;
+import com.google.enterprise.connector.db.DBContext;
 import com.google.enterprise.connector.util.diffing.DocumentSnapshot;
 import com.google.enterprise.connector.util.diffing.DocumentSnapshotFactory;
 
 public class DBSnapshotFactory implements DocumentSnapshotFactory {
+  private final DBContext dbContext;
+
+  public DBSnapshotFactory(DBContext dbContext) {
+    Preconditions.checkNotNull(dbContext, "dbContext may not be null");
+    this.dbContext = dbContext;
+  }
+
   @Override
   public DocumentSnapshot fromString(String stringForm) {
-    return new DBSnapshot(stringForm);
+    return new DBSnapshot(dbContext, stringForm);
   }
 }

@@ -158,10 +158,15 @@ public class DocIdUtilTest extends TestCase {
 
   private void compareDocids(String lesserId, String greaterId)
       throws Exception {
-    assertEquals(0, DocIdUtil.compare(lesserId, lesserId));
-    assertEquals(0, DocIdUtil.compare(greaterId, greaterId));
-    assertTrue(DocIdUtil.compare(lesserId, greaterId) < 0);
-    assertTrue(DocIdUtil.compare(greaterId, lesserId) > 0);
+    compareDocids(new MockNullOrdering(true), lesserId, greaterId);
+  }
+
+  private void compareDocids(NullOrdering nullOrdering, String lesserId, 
+      String greaterId) throws Exception {
+    assertEquals(0, DocIdUtil.compare(nullOrdering, lesserId, lesserId));
+    assertEquals(0, DocIdUtil.compare(nullOrdering, greaterId, greaterId));
+    assertTrue(DocIdUtil.compare(nullOrdering, lesserId, greaterId) < 0);
+    assertTrue(DocIdUtil.compare(nullOrdering, greaterId, lesserId) > 0);
   }
 
   public void testCompareIntegerDocids() throws Exception {
@@ -259,14 +264,36 @@ public class DocIdUtilTest extends TestCase {
                   "G/1972-12-11 19:54:57.789");
   }
 
-  public void testCompareNullsInDocids() throws Exception {
-    compareDocids("A/", "F/Hi");
-    compareDocids("FA/Hi/", "FB/Hi/-123456");
-    compareDocids("FAB/Hi//-12345", "FAB/Hi//23456");
+  public void testCompareNullsSortLowInDocids() throws Exception {
+    NullOrdering nullOrdering = new MockNullOrdering(true);
+    compareDocids(nullOrdering, "A/", "F/Hi");
+    compareDocids(nullOrdering, "FA/Hi/", "FB/Hi/-123456");
+    compareDocids(nullOrdering, "FAB/Hi//456", "FBB/Hi/123/456");
+    compareDocids(nullOrdering, "FAB/Hi//-12345", "FAB/Hi//23456");
+  }
+
+  public void testCompareNullsSortHighInDocids() throws Exception {
+    NullOrdering nullOrdering = new MockNullOrdering(false);
+    compareDocids(nullOrdering, "F/Hi", "A/");
+    compareDocids(nullOrdering, "FB/Hi/-123456", "FA/Hi/");
+    compareDocids(nullOrdering, "FBB/Hi/123/456", "FAB/Hi//456");
+    compareDocids(nullOrdering, "FAB/Hi//-12345", "FAB/Hi//23456");
   }
 
   public void testCompareLegacyDocid() throws Exception {
     // Legacy docids always sort lower.
     compareDocids("MSxKYW4", "I/1969-07-20");
+  }
+
+  private static class MockNullOrdering implements NullOrdering {
+    private final boolean sortsLow;
+
+    MockNullOrdering(boolean sortsLow) {
+      this.sortsLow = sortsLow;
+    }
+
+    public boolean nullsAreSortedLow() {
+      return sortsLow;
+    }
   }
 }

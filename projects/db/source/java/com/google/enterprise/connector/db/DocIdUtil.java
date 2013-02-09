@@ -277,12 +277,13 @@ public class DocIdUtil {
    * values out and compares them individually. Numeric values are compared 
    * numerically, all other values are compared lexigraphically.
    *
+   * @param nullOrdering used to determine sort order of NULLs
    * @param docid1
    * @param docid2
    * @return a negative integer, zero, or a positive integer indicating
    *         whether docid1 is less than, equal to, or greater than docid2.
    */
-  public static int compare(String docid1, String docid2) {
+  public static int compare(NullOrdering nullOrdering, String docid1, String docid2) {
     if (docid1.equals(docid2)) {
       return 0;
     }
@@ -308,11 +309,10 @@ public class DocIdUtil {
       } else {
         // The types are different?
         // Watch out for null values.
-        // TODO(bmj): Determine whether NULLs sort high or low from DB metadata.
         if (type1 == Type.NULL) {
-          retval = -1;
+          retval = nullOrdering.nullsAreSortedLow() ? -1 : 1;
         } else if (type2 == Type.NULL) {
-          retval = 1;
+          retval = nullOrdering.nullsAreSortedLow() ? 1 : -1;
         } else if (type1.isNumeric() && type2.isNumeric()) {
           // If they are different types of numbers, compare them numerically.
           retval = new BigDecimal(tokens1[i])

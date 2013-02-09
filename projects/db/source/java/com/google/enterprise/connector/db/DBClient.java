@@ -15,6 +15,8 @@
 package com.google.enterprise.connector.db;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Function;
+import com.google.common.base.Strings;
 import com.google.enterprise.connector.spi.XmlUtils;
 import com.google.enterprise.connector.util.diffing.SnapshotRepositoryRuntimeException;
 
@@ -335,13 +337,39 @@ public class DBClient {
   }
 
   /**
+   * Like google.common.base.Function, but apply() may
+   * throw SQLExceptions.
+   */
+  public interface SqlFunction<F, T> {
+    public T apply(F input) throws SQLException;
+  }
+
+  /**
    * Returns the database name and version details.
    *
    * @author Suresh_Ghuge
    * @return database name and version details
    */
   public String getDatabaseInfo() {
-    String dbDetails = "";
+    return Strings.nullToEmpty(getDatabaseMetaData(
+        new SqlFunction<DatabaseMetaData, String>() {
+          public String apply(DatabaseMetaData metaData) throws SQLException {
+            return metaData.getDatabaseProductName() + " "
+                 + metaData.getDatabaseProductVersion();
+          }
+        }));
+  }
+
+  /**
+   * Returns information derived from the DatabaseMetaData.
+   *
+   * @param metaDataHandler a Function that takes a DatabaseMetaData as input
+   *        and returns a value
+   * @return the value returned by the metaDataHandler Function, or null if
+   *        there was an error
+   */
+  public <T> T getDatabaseMetaData(
+       SqlFunction<DatabaseMetaData, T>  metaDataHandler) {
     try {
       SqlSession session = sqlSessionFactory.openSession();
       try {
@@ -349,9 +377,7 @@ public class DBClient {
         try {
           DatabaseMetaData meta = conn.getMetaData();
           if (meta != null) {
-            String productName = meta.getDatabaseProductName();
-            String productVersion = meta.getDatabaseProductVersion();
-            dbDetails = productName + " " + productVersion;
+            return metaDataHandler.apply(meta);
           }
         } finally {
           conn.close();
@@ -364,7 +390,7 @@ public class DBClient {
     } catch (Exception e) {
       LOG.warning("Caught Exception while fetching database details: " + e);
     }
-    return dbDetails;
+    return null;
   }
 
   /**
@@ -396,5 +422,19 @@ public class DBClient {
       session.close();
     }
     return authorizedDocs;
+  }
+
+  /**
+   * Returns true if nulls sort low in this database implementation; or
+   * false if nulls sort high.
+   */
+  public Boolean nullsAreSortedLow() {
+    return getDatabaseMetaData(
+        new SqlFunction<DatabaseMetaData, Boolean>() {
+          public Boolean apply(DatabaseMetaData meta) throws SQLException {
+            return Boolean.valueOf(meta.nullsAreSortedLow()
+                                   || meta.nullsAreSortedAtStart());
+          }
+        });
   }
 }
