@@ -277,13 +277,14 @@ public class DocIdUtil {
    * values out and compares them individually. Numeric values are compared 
    * numerically, all other values are compared lexigraphically.
    *
-   * @param nullOrdering used to determine sort order of NULLs
+   * @param valueOrdering used to determine sort order of NULLs and text
    * @param docid1
    * @param docid2
    * @return a negative integer, zero, or a positive integer indicating
    *         whether docid1 is less than, equal to, or greater than docid2.
    */
-  public static int compare(NullOrdering nullOrdering, String docid1, String docid2) {
+  public static int compare(ValueOrdering valueOrdering, String docid1,
+                            String docid2) {
     if (docid1.equals(docid2)) {
       return 0;
     }
@@ -305,14 +306,14 @@ public class DocIdUtil {
 
       // The most common case should be the types are the same.
       if (type1 == type2) {
-        retval = compareLikeTypes(type1, tokens1[i], tokens2[i]);
+        retval = compareLikeTypes(valueOrdering, type1, tokens1[i], tokens2[i]);
       } else {
         // The types are different?
         // Watch out for null values.
         if (type1 == Type.NULL) {
-          retval = nullOrdering.nullsAreSortedLow() ? -1 : 1;
+          retval = valueOrdering.nullsAreSortedLow() ? -1 : 1;
         } else if (type2 == Type.NULL) {
-          retval = nullOrdering.nullsAreSortedLow() ? 1 : -1;
+          retval = valueOrdering.nullsAreSortedLow() ? 1 : -1;
         } else if (type1.isNumeric() && type2.isNumeric()) {
           // If they are different types of numbers, compare them numerically.
           retval = new BigDecimal(tokens1[i])
@@ -323,7 +324,7 @@ public class DocIdUtil {
               (type1 == Type.STRING) ? urlDecode(tokens1[i]) : tokens1[i];
           String value2 =
               (type2 == Type.STRING) ? urlDecode(tokens2[i]) : tokens2[i];
-          retval = value1.compareTo(value2);
+          retval = valueOrdering.getCollator().compare(value1, value2);
         }
       }
       if (retval != 0) {
@@ -334,7 +335,8 @@ public class DocIdUtil {
     return tokens1.length - tokens2.length;
   }
 
-  private static int compareLikeTypes(Type type, String value1, String value2) {
+  private static int compareLikeTypes(ValueOrdering valueOrdering, Type type,
+                                      String value1, String value2) {
     switch (type) {
       case NULL:
         return 0;
@@ -347,7 +349,8 @@ public class DocIdUtil {
       case BIGINT:
         return new BigInteger(value1).compareTo(new BigInteger(value2));
       case STRING:
-        return urlDecode(value1).compareTo(urlDecode(value2));
+        return valueOrdering.getCollator()
+               .compare(urlDecode(value1), urlDecode(value2));
       default:  // All the ISO 8601 dates/times sort lexigraphically.
         return value1.compareTo(value2);
     }

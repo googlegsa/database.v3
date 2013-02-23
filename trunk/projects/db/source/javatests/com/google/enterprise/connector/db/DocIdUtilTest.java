@@ -19,14 +19,22 @@ import java.math.BigInteger;
 import java.sql.Date;
 import java.sql.Time;
 import java.sql.Timestamp;
+import java.text.Collator;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 
 import junit.framework.TestCase;
 
 public class DocIdUtilTest extends TestCase {
+
+  private static final Collator collator;
+  static {
+    collator = Collator.getInstance(Locale.US);
+    collator.setStrength(Collator.IDENTICAL);
+  }
 
   /**
    * Test getDocIdString method.
@@ -158,15 +166,23 @@ public class DocIdUtilTest extends TestCase {
 
   private void compareDocids(String lesserId, String greaterId)
       throws Exception {
-    compareDocids(new MockNullOrdering(true), lesserId, greaterId);
+    compareDocids(new MockValueOrdering(true, collator), lesserId, greaterId);
   }
 
-  private void compareDocids(NullOrdering nullOrdering, String lesserId, 
+  private void compareDocids(ValueOrdering valueOrdering, String lesserId, 
       String greaterId) throws Exception {
-    assertEquals(0, DocIdUtil.compare(nullOrdering, lesserId, lesserId));
-    assertEquals(0, DocIdUtil.compare(nullOrdering, greaterId, greaterId));
-    assertTrue(DocIdUtil.compare(nullOrdering, lesserId, greaterId) < 0);
-    assertTrue(DocIdUtil.compare(nullOrdering, greaterId, lesserId) > 0);
+    assertEquals(0, DocIdUtil.compare(valueOrdering, lesserId, lesserId));
+    assertEquals(0, DocIdUtil.compare(valueOrdering, greaterId, greaterId));
+    assertTrue(DocIdUtil.compare(valueOrdering, lesserId, greaterId) < 0);
+    assertTrue(DocIdUtil.compare(valueOrdering, greaterId, lesserId) > 0);
+  }
+
+  private void compareEquivalentDocids(ValueOrdering valueOrdering, String id1, 
+      String id2) throws Exception {
+    assertEquals(0, DocIdUtil.compare(valueOrdering, id1, id1));
+    assertEquals(0, DocIdUtil.compare(valueOrdering, id2, id2));
+    assertEquals(0, DocIdUtil.compare(valueOrdering, id1, id2));
+    assertEquals(0, DocIdUtil.compare(valueOrdering, id2, id1));
   }
 
   public void testCompareIntegerDocids() throws Exception {
@@ -215,13 +231,37 @@ public class DocIdUtilTest extends TestCase {
 
   public void testCompareStringDocids() throws Exception {
     compareDocids("F/apple", "F/banana");
-    compareDocids("F/Banana", "F/apple");
-    compareDocids("F/APPLE", "F/apple");
-    compareDocids("F/a+b", "F/a*b");
-    compareDocids("F/a+b", "F/a-b");
-    compareDocids("F/a+b", "F/a%2Bb");    
-    compareDocids("F/a-b", "F/a%2Fb");
+    compareDocids("F/apple", "F/Banana");
+    compareDocids("F/apple", "F/Apple");
+    compareDocids("F/a%2Bb", "F/a+b");    
     compareDocids("F/1000000+Years+BC", "F/20000+Leagues+Under+the+Sea");
+  }
+
+  public void testCollator() throws Exception {
+    Collator collator = Collator.getInstance(Locale.FRENCH);
+    collator.setStrength(Collator.TERTIARY);
+    collator.setDecomposition(Collator.CANONICAL_DECOMPOSITION);
+    MockValueOrdering valueOrdering = new MockValueOrdering(true, collator);
+
+    // Case and Accent Sensitive ordering.
+    compareDocids(valueOrdering, "F/apple", "F/Apple");
+    compareDocids(valueOrdering, "F/Apple", "F/\u00C0pple");
+    compareDocids(valueOrdering, "F/Apple", "F/\u00E0pple");
+    compareDocids(valueOrdering, "F/\u00E0pple", "F/\u00C0pple");
+
+    // Case Insensitive, Accent Sensitive ordering.
+    collator.setStrength(Collator.SECONDARY);
+    compareEquivalentDocids(valueOrdering, "F/apple", "F/Apple");
+    compareDocids(valueOrdering, "F/Apple", "F/\u00C0pple");
+    compareDocids(valueOrdering, "F/Apple", "F/\u00E0pple");
+    compareEquivalentDocids(valueOrdering, "F/\u00E0pple", "F/\u00C0pple");
+
+    // Case and Accent Insensitive ordering.
+    collator.setStrength(Collator.PRIMARY);
+    compareEquivalentDocids(valueOrdering, "F/apple", "F/Apple");
+    compareEquivalentDocids(valueOrdering, "F/Apple", "F/\u00C0pple");
+    compareEquivalentDocids(valueOrdering, "F/Apple", "F/\u00E0pple");
+    compareEquivalentDocids(valueOrdering, "F/\u00E0pple", "F/\u00C0pple");
   }
 
   public void testCompareDateTimeDocids() throws Exception {
@@ -259,25 +299,25 @@ public class DocIdUtilTest extends TestCase {
   public void testCompareMixedDocids() throws Exception {
     compareDocids("B/1234", "F/124");
     compareDocids("I/1969-07-20", "E/196907E-20");
-    compareDocids("F/123456E+10", "C/123456E+10");
+    compareDocids("C/123456E+10", "F/123456E+10");
     compareDocids("H/1969-07-20 20:17:40.123456789",
                   "G/1972-12-11 19:54:57.789");
   }
 
   public void testCompareNullsSortLowInDocids() throws Exception {
-    NullOrdering nullOrdering = new MockNullOrdering(true);
-    compareDocids(nullOrdering, "A/", "F/Hi");
-    compareDocids(nullOrdering, "FA/Hi/", "FB/Hi/-123456");
-    compareDocids(nullOrdering, "FAB/Hi//456", "FBB/Hi/123/456");
-    compareDocids(nullOrdering, "FAB/Hi//-12345", "FAB/Hi//23456");
+    ValueOrdering valueOrdering = new MockValueOrdering(true, collator);
+    compareDocids(valueOrdering, "A/", "F/Hi");
+    compareDocids(valueOrdering, "FA/Hi/", "FB/Hi/-123456");
+    compareDocids(valueOrdering, "FAB/Hi//456", "FBB/Hi/123/456");
+    compareDocids(valueOrdering, "FAB/Hi//-12345", "FAB/Hi//23456");
   }
 
   public void testCompareNullsSortHighInDocids() throws Exception {
-    NullOrdering nullOrdering = new MockNullOrdering(false);
-    compareDocids(nullOrdering, "F/Hi", "A/");
-    compareDocids(nullOrdering, "FB/Hi/-123456", "FA/Hi/");
-    compareDocids(nullOrdering, "FBB/Hi/123/456", "FAB/Hi//456");
-    compareDocids(nullOrdering, "FAB/Hi//-12345", "FAB/Hi//23456");
+    ValueOrdering valueOrdering = new MockValueOrdering(false, collator);
+    compareDocids(valueOrdering, "F/Hi", "A/");
+    compareDocids(valueOrdering, "FB/Hi/-123456", "FA/Hi/");
+    compareDocids(valueOrdering, "FBB/Hi/123/456", "FAB/Hi//456");
+    compareDocids(valueOrdering, "FAB/Hi//-12345", "FAB/Hi//23456");
   }
 
   public void testCompareLegacyDocid() throws Exception {
@@ -285,15 +325,21 @@ public class DocIdUtilTest extends TestCase {
     compareDocids("MSxKYW4", "I/1969-07-20");
   }
 
-  private static class MockNullOrdering implements NullOrdering {
+  private static class MockValueOrdering implements ValueOrdering {
     private final boolean sortsLow;
+    private final Collator collator;
 
-    MockNullOrdering(boolean sortsLow) {
+    MockValueOrdering(boolean sortsLow, Collator collator) {
       this.sortsLow = sortsLow;
+      this.collator = collator;
     }
 
     public boolean nullsAreSortedLow() {
       return sortsLow;
+    }
+
+    public Collator getCollator() {
+      return collator;
     }
   }
 }

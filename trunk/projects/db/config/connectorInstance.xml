@@ -42,5 +42,16 @@
     <!--
     <property name="nullsAreSortedLow" value="true"></property>
     -->
+
+    <!--
+      A java.text.Collator implementation that mimics the sorting done by
+      the database ORDER BY clause specified in the Traversal SQL query
+      for text values (CHAR, VARCHAR, etc).
+      By default, the connector uses the Collator for the current default
+      locale, with TERTIARY strength (case and accent sensitive), and
+      CANONICAL_DECOMPOSITION of accented characters.
+      See CollatorConfiguration examples in the Database connector Wiki:
+      http://code.google.com/p/google-enterprise-connector-database/wiki/ConfiguringCollator
+    -->
   </bean>
 </beans>

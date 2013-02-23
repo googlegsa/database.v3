@@ -16,13 +16,15 @@ package com.google.enterprise.connector.db;
 
 import com.google.enterprise.connector.util.MimeTypeDetector;
 
+import java.text.Collator;
+import java.util.Locale;
 import java.util.logging.Logger;
 
 /**
  * An encapsulation of all the config needed for a working Database Connector
  * instance.
  */
-public class DBContext implements NullOrdering {
+public class DBContext implements ValueOrdering {
   private static final Logger LOG = Logger.getLogger(DBContext.class.getName());
 
   private final MimeTypeDetector mimeTypeDetector = new MimeTypeDetector();
@@ -51,6 +53,7 @@ public class DBContext implements NullOrdering {
   private boolean publicFeed = true;
   private boolean parameterizedQueryFlag = false;
   private Boolean nullsSortLow = null;
+  private Collator collator;
 
   public DBContext() {
   }
@@ -84,7 +87,10 @@ public class DBContext implements NullOrdering {
     this.fetchURLField = fetchURLField;
     this.lastModifiedDate = lastModifiedDate;
 
-    // Since we're not Spring-instantiated here, we need to explictly
+    this.collator = Collator.getInstance(Locale.US);
+    this.collator.setStrength(Collator.IDENTICAL);
+
+    // Since we're not Spring-instantiated here, we need to explicitly
     // call the init method.
     init();
   }
@@ -311,5 +317,14 @@ public class DBContext implements NullOrdering {
 
   public void setNullsAreSortedLow(Boolean nullsSortLow) {
     this.nullsSortLow = nullsSortLow;
+  }
+
+  @Override
+  public Collator getCollator() {
+    return collator;
+  }
+
+  public void setCollator(Collator collator) {
+    this.collator = collator;
   }
 }
