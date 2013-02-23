@@ -14,10 +14,19 @@
 
 package com.google.enterprise.connector.db;
 
-public interface NullOrdering {
+import java.text.Collator;
+
+public interface ValueOrdering {
   /**
    * Returns {@code true} if NULLs sort low in this database implementation;
    * or {@code false} if NULLs sort high.
    */
   boolean nullsAreSortedLow();
+
+  /**
+   * Returns a {@link Collator} implementation that mimics the sorting done by
+   * the database {@code ORDER BY} clause specified in the Traversal SQL query
+   * for text values (CHAR, VARCHAR, etc).
+   */
+  Collator getCollator();
 }

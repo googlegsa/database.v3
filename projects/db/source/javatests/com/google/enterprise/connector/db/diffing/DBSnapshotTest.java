@@ -20,7 +20,7 @@ import static org.easymock.EasyMock.replay;
 import static org.easymock.EasyMock.same;
 import static org.easymock.EasyMock.verify;
 
-import com.google.enterprise.connector.db.NullOrdering;
+import com.google.enterprise.connector.db.ValueOrdering;
 import com.google.enterprise.connector.spi.Document;
 import com.google.enterprise.connector.spi.RepositoryException;
 import com.google.enterprise.connector.spi.SpiConstants;
@@ -29,11 +29,14 @@ import com.google.enterprise.connector.util.diffing.DocumentSnapshot;
 
 import junit.framework.TestCase;
 
+import java.text.Collator;
+import java.util.Locale;
+
 public class DBSnapshotTest extends TestCase {
   private DocumentBuilder builder;
   private DocumentBuilder.DocumentHolder holder;
   private DocumentSnapshot documentSnapshot;
-  private NullOrdering nullOrdering;
+  private ValueOrdering valueOrdering;
 
   protected void setUp() throws Exception {
     // This is a partial mock, only mocking the getDocumentHandle method
@@ -47,13 +50,16 @@ public class DBSnapshotTest extends TestCase {
     holder = new DocumentBuilder.DocumentHolder(builder, null, docId,
         new ContentHolder("hello, world", checksum, mimeType));
 
-    nullOrdering = new NullOrdering() {
+    valueOrdering = new ValueOrdering() {
         public boolean nullsAreSortedLow() {
           return true;
         }
+        public Collator getCollator() {
+          return Collator.getInstance(Locale.US);
+        }
       };
 
-    documentSnapshot = new DBSnapshot(nullOrdering, "1", jsonString, holder);
+    documentSnapshot = new DBSnapshot(valueOrdering, "1", jsonString, holder);
   }
 
   public void testGetDocumentId() {
@@ -74,7 +80,7 @@ public class DBSnapshotTest extends TestCase {
   public void testGetUpdateNoChange() throws Exception {
     String serialSnapshot = documentSnapshot.toString();
     DocumentSnapshot deserialSnapshot =
-        new DBSnapshot(nullOrdering, serialSnapshot);
+        new DBSnapshot(valueOrdering, serialSnapshot);
     assertNull(documentSnapshot.getUpdate(deserialSnapshot));
   }
 

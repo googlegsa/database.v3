@@ -44,6 +44,21 @@
     -->
     <property name="parameterizedQueryFlag" value="false"></property>
 
+    <!--
+     By default, the connector uses the Collator for the current default
+     locale, with TERTIARY strength (case and accent sensitive), and
+     CANONICAL_DECOMPOSITION of accented characters.
+    -->
+    <property name="collator">
+      <bean class="java.text.Collator" factory-method="getInstance">
+        <property name="strength">
+          <util:constant static-field="java.text.Collator.TERTIARY"/>
+        </property>
+        <property name="decomposition">
+          <util:constant static-field="java.text.Collator.CANONICAL_DECOMPOSITION"/>
+        </property>
+      </bean>
+    </property>
   </bean>
 
   <!-- Bean which is a holder for the TraversalContext object -->
