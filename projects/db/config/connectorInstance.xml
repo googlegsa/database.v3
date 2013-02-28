@@ -53,5 +53,22 @@
       See CollatorConfiguration examples in the Database connector Wiki:
       http://code.google.com/p/google-enterprise-connector-database/wiki/ConfiguringCollator
     -->
+    <!--
+      This example uses the java.text.Collator static factory method to
+      get a Collator for the current default locale, then set the strength
+      to be case-sensitive and accent-sensitive.
+    -->
+    <!--
+    <property name="collator">
+      <bean class="java.text.Collator" factory-method="getInstance">
+        <property name="strength">
+          <util:constant static-field="java.text.Collator.TERTIARY"/>
+        </property>
+        <property name="decomposition">
+          <util:constant static-field="java.text.Collator.CANONICAL_DECOMPOSITION"/>
+        </property>
+      </bean>
+    </property>
+    -->
   </bean>
 </beans>

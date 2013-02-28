@@ -17,6 +17,8 @@ package com.google.enterprise.connector.db;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Function;
 import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableMap;
+import com.google.enterprise.connector.spi.SpiConstants.DatabaseType;
 import com.google.enterprise.connector.spi.XmlUtils;
 import com.google.enterprise.connector.util.diffing.SnapshotRepositoryRuntimeException;
 
@@ -34,14 +36,14 @@ import java.io.Writer;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
+import java.text.Collator;
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import javax.sql.DataSource;
 
 /**
  * A client which gets rows from a database corresponding to a given SQL query.
@@ -51,8 +53,10 @@ import javax.sql.DataSource;
 public class DBClient {
   private static final Logger LOG = Logger.getLogger(DBClient.class.getName());
 
+  private boolean hasCustomCollationQuery = false;
   protected DBContext dbContext;
   protected SqlSessionFactory sqlSessionFactory;
+  protected DatabaseType databaseType;
 
   static {
     org.apache.ibatis.logging.LogFactory.useJdkLogging();
@@ -73,6 +77,7 @@ public class DBClient {
     generateSqlMap();
     this.sqlSessionFactory = getSqlSessionFactory(generateMyBatisConfig());
     LOG.info("DBClient for database " + getDatabaseInfo() + " is instantiated");
+    this.databaseType = getDatabaseType();
   }
 
   /**
@@ -83,6 +88,7 @@ public class DBClient {
   DBClient(DBContext dbContext) throws DBException {
     this.dbContext = dbContext;
     this.sqlSessionFactory = getSqlSessionFactory(generateMyBatisConfig());
+    this.databaseType = getDatabaseType();
   }
 
   private SqlSessionFactory getSqlSessionFactory(String config) {
@@ -185,7 +191,7 @@ public class DBClient {
      * Below code is added to handle scenarios when table is deleted or
      * connectivity with database is lost. In this scenario connector first
      * check the connectivity with database and if there is no connectivity,
-     * throw a SnapshotRepositoryRuntimeException, otherwise 
+     * throw a SnapshotRepositoryRuntimeException, otherwise
      * allow the connector to continue as if there was no data available.
      */
     Connection conn = null;
@@ -225,7 +231,7 @@ public class DBClient {
      * "jar:file:<path_to_jar>/dtd.jar!<path_to_dtd>/mybatis-3-config.dtd"
      */
     String passwordFormat = "<property name=\"password\" value=\"%s\"/>";
-    String passwordElem = 
+    String passwordElem =
         String.format(passwordFormat, toAttrValue(dbContext.getPassword()));
     String config = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n"
         + "<!DOCTYPE configuration "
@@ -263,7 +269,7 @@ public class DBClient {
         + config.replace(passwordElem, String.format(passwordFormat, "*****")));
     return config;
   }
-  
+
   /** Escapes special characters in value for use in an XML attribute value. */
   private String toAttrValue(String value) {
     StringBuilder builder = new StringBuilder();
@@ -304,7 +310,7 @@ public class DBClient {
         + "<mapper namespace=\"IbatisDBClient\">\n"
         + "  <select id=\"getAll\" resultType=\"java.util.HashMap\">\n"
         + "    <![CDATA[ " + dbContext.getSqlQuery() + " ]]>\n"
-        + "  </select> \n";
+        + "  </select>\n";
 
     /*
      * check if authZ query is provided. If authZ query is there , add 'select'
@@ -315,13 +321,16 @@ public class DBClient {
       sqlMap += "  <select id=\"getAuthorizedDocs\" parameterType="
           + "\"java.util.HashMap\" resultType=\"java.lang.String\">\n "
           + "    <![CDATA[ " + dbContext.getAuthZQuery()  + " ]]>\n"
-          + "  </select>";
+          + "  </select>\n";
       dbContext.setPublicFeed(false);
     } else {
       dbContext.setPublicFeed(true);
     }
-    sqlMap += "</mapper>\n";
 
+    // Add in the SqlCollator Query strings, if any.
+    sqlMap += generateCollationQueries(dbContext.getCollator());
+
+    sqlMap += "</mapper>\n";
     LOG.config("Generated sqlMap : \n" + sqlMap);
     File file = new File(dbContext.getGoogleConnectorWorkDir(),
         "IbatisSqlMap.xml");
@@ -334,6 +343,55 @@ public class DBClient {
       throw new DBException("Could not write to/close Sql Map "
           + dbContext.getGoogleConnectorWorkDir() + "/IbatisSqlMap.xml", e);
     }
+  }
+
+  /**
+   * Returns the collation queries mappings for the supported databases.
+   */
+  @VisibleForTesting
+  String generateCollationQueries(Collator collator) {
+    String collationQuery;
+    String collationId;
+    if (collator != null && collator instanceof SqlCollator) {
+      SqlCollator dbCollator = (SqlCollator) collator;
+      collationQuery = dbCollator.getCollationQuery();
+      collationId = dbCollator.getCollationId();
+    } else {
+      return "";
+    }
+
+    if (!Strings.isNullOrEmpty(collationQuery)) {
+      hasCustomCollationQuery = true;
+      return generateCollationQuery("compareStrings", collationQuery);
+    } else if (!Strings.isNullOrEmpty(collationId)) {
+      String queries = generateCollationQuery("compareStrings_oracle",
+          MessageFormat.format("SELECT Name FROM (SELECT ''$'{'source'}''' "
+              + "AS Name, NLSSORT(''$'{'source'}''', ''NLS_SORT = {0}'') "
+              + "AS SortKey FROM dual UNION ALL SELECT ''$'{'target'}''',"
+              + "NLSSORT(''$'{'target'}''', ''NLS_SORT = {0}'') FROM dual) "
+              + "temp WHERE NLSSORT(''$'{'source'}''', ''NLS_SORT = {0}'') <> "
+              + "NLSSORT(''$'{'target'}''', ''NLS_SORT = {0}'') "
+              + "ORDER BY SortKey", collationId));
+      queries += generateCollationQuery("compareStrings",
+          MessageFormat.format(
+              "SELECT Name FROM (SELECT ''$'{'source'}''' COLLATE {0} AS Name "
+              + "UNION SELECT ''$'{'target'}''' COLLATE {0}) AS temp ORDER BY "
+              + "Name", collationId));
+      return queries;
+    } else {
+      return generateCollationQuery("compareStrings_oracle",
+                 "SELECT Name FROM (SELECT '${source}' AS Name FROM dual "
+                 + "UNION SELECT '${target}' FROM dual) temp ORDER BY Name")
+             + generateCollationQuery("compareStrings",
+                 "SELECT Name FROM (SELECT '${source}' AS Name "
+                 + "UNION SELECT '${target}') AS temp ORDER BY Name");
+    }
+  }
+
+  private String generateCollationQuery(String name, String query) {
+    return "  <select id=\"" + name + "\" parameterType=\"java.util.HashMap\" "
+         + "resultType=\"java.lang.String\">\n"
+         + "    <![CDATA[ " + query + " ]]>\n  </select>\n";
   }
 
   /**
@@ -358,6 +416,28 @@ public class DBClient {
                  + metaData.getDatabaseProductVersion();
           }
         }));
+  }
+
+  /**
+   * Returns the {@link DatabaseType} for this client.
+   */
+  public DatabaseType getDatabaseType() {
+    return getDatabaseMetaData(
+        new SqlFunction<DatabaseMetaData, DatabaseType>() {
+          public DatabaseType apply(DatabaseMetaData metaData)
+              throws SQLException {
+            String productName = metaData.getDatabaseProductName();
+            if (productName.equalsIgnoreCase("Oracle")) {
+              return DatabaseType.ORACLE;
+            } else if (productName.equalsIgnoreCase("Microsoft SQL Server")) {
+              return DatabaseType.SQLSERVER;
+            } else if (productName.equalsIgnoreCase("H2")) {
+              return DatabaseType.H2;
+            } else {
+              return DatabaseType.OTHER;
+           }
+          }
+        });
   }
 
   /**
@@ -422,6 +502,51 @@ public class DBClient {
       session.close();
     }
     return authorizedDocs;
+  }
+
+  /**
+   * Executes the Collation SQL query, to determine the sort order of the two
+   * string values.
+   *
+   * @param source the source String
+   * @param target the target String
+   * @return an integer less than, equal to, or greater than zero depending
+   * on whether the source string is less than, equal to, or greater than the
+   * target string.
+   */
+  public int executeCollationQuery(String source, String target) {
+    // Determine which query to use based on DatabaseType or custom query.
+    String collationQueryId = "IbatisDBClient.compareStrings";
+    if (!hasCustomCollationQuery) {
+      if (databaseType == DatabaseType.ORACLE) {
+        collationQueryId += "_" + databaseType.toString();
+      }
+    }
+
+    // Create a hashmap to provide input parameters to the query.
+    Map<String, Object> paramMap =
+        ImmutableMap.<String, Object>of("source", source, "target", target);
+
+    // Execute the Collation query.
+    SqlSession session = getSqlSession();
+    List<String> result;
+    try {
+      result = session.selectList(collationQueryId, paramMap);
+    } catch (Exception e) {
+      LOG.log(Level.WARNING, "Could not execute SQL Collation query.", e);
+      // Fall back to local Java Collation.
+      return Collator.getInstance().compare(source, target);
+    } finally {
+      session.close();
+    }
+    // If the query returns two rows, the lesser value will be the first one.
+    if (result.size() == 2) {
+      return source.equals(result.get(0)) ? -1 : 1;
+    } else {
+      // If the query returns fewer than two rows, the strings were considered
+      // equivalent; either through the UNION or the WHERE clause of the query.
+      return 0;
+    }
   }
 
   /**
