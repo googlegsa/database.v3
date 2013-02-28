@@ -19,7 +19,7 @@ Should probably mention nullsAreSortedLow property, too.
     -->
     <!--                                                                               
       This example uses the java.text.Collator static factory method to                
-      get a Collator for the current default locale, then set the strenth              
+      get a Collator for the current default locale, then set the strength              
       to be case-insensitive and accent-insensitive.                                   
     -->
     <!--                                                                               
