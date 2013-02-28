@@ -34,6 +34,7 @@ Should probably mention nullsAreSortedLow property, too.
       </bean>                                                                          
     </property>                                                                        
     -->
+
     <!--                                                                               
       This example uses the java.text.Collator static factory method to                
       get the specified locale, then set the strength to be                            
@@ -57,6 +58,7 @@ Should probably mention nullsAreSortedLow property, too.
       </bean>                                                                          
     </property>                                                                        
     -->
+
     <!--                                                                               
       This example configures a brain-dead java.text.RuleBasedCollator.                
     -->
@@ -66,6 +68,17 @@ Should probably mention nullsAreSortedLow property, too.
         <constructor-arg value="< a,A< b,B< c,C< d,D< e,E< f,F< g,G< h,H< i,I< j,J < k,K< l,L< m,M< n,N< o,O< p,P< q,Q< r,R< s,S< t,T < u,U< v,V< w,W< x,X< y,Y< z,Z"/>      
       </bean>                                                                          
     </property>                                                                        
+    -->
+
+    <!--                                                                               
+      This example configures a collator that performs collation using a SQL query.                 
+    -->
+    <!--                                                                                                                                                         
+    <property name="collator">                                                                                                                                   
+      <bean class="com.google.enterprise.connector.db.SqlCollator">                                                                                              
+        <property name="collatorId" value="Latin1_General_CS_AI"/>                                                                                               
+      </bean>                                                                                                                                                    
+    </property>                                                                                                                                                  
     -->
 
 }}}
