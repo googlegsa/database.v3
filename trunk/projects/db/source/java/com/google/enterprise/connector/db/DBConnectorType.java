@@ -276,7 +276,7 @@ public class DBConnectorType implements ConnectorType {
         buf.append(CLOSE_ELEMENT_SLASH);
       } else {
         buf.append(INPUT);
-        if (key.equalsIgnoreCase(PASSWORD)) {
+        if (isKeySensitive(key)) {
           appendAttribute(buf, TYPE, PASSWORD);
         } else {
           appendAttribute(buf, TYPE, TEXT);
@@ -296,6 +296,11 @@ public class DBConnectorType implements ConnectorType {
 
       appendEndRow(buf);
       return buf.toString();
+    }
+
+    /** Returns true, if a key's value should be masked. */
+    private boolean isKeySensitive(String key) {
+      return key.toLowerCase().contains(PASSWORD);
     }
 
     public ConfigValidation validateConfig() {
