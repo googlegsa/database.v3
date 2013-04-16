@@ -267,7 +267,7 @@ public class DBConnectorTypeTest extends DBTestBase {
     assertTrue(match.find());
 
     LOG.info("Checking for Password field...");
-    strPattern = "<input.*size=\"50\" name=\"password\".*>";
+    strPattern = "<input.*type=\"password\".*size=\"50\" name=\"password\".*>";
     pattern = Pattern.compile(strPattern);
     match = pattern.matcher(configForm);
     assertTrue(match.find());
@@ -279,7 +279,7 @@ public class DBConnectorTypeTest extends DBTestBase {
     assertTrue(match.find());
 
     LOG.info("Checking for login field...");
-    strPattern = "<input.*size=\"50\" name=\"login\".*>";
+    strPattern = "<input.*type=\"text\".*size=\"50\" name=\"login\".*>";
     pattern = Pattern.compile(strPattern);
     match = pattern.matcher(configForm);
     assertTrue(match.find());
