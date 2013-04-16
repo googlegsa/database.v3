@@ -189,28 +189,63 @@ public class DBClient {
       throws SnapshotRepositoryRuntimeException {
     /*
      * Below code is added to handle scenarios when table is deleted or
-     * connectivity with database is lost. In this scenario connector first
+     * connectivity with database is lost. In this scenario first check
+     * the SQLState of the supplied Exception.  If it has no SQLState,
      * check the connectivity with database and if there is no connectivity,
-     * throw a SnapshotRepositoryRuntimeException, otherwise
-     * allow the connector to continue as if there was no data available.
+     * throw a SnapshotRepositoryRuntimeException, otherwise if the SQLState
+     * indicates a syntax error (which a dropped table or changed primary
+     * key will show up as) allow the connector to continue as if there was
+     * no data available.  If the SQLState is anything other than a syntax
+     * error, throw a SnapshotRepositoryRuntimeException.
      */
-    Connection conn = null;
-    try {
-      conn = session.getConnection();
-      LOG.log(Level.WARNING, "Could not execute SQL query on the database", e);
-      // Swallow the exception.
-    } catch (RuntimeException e1) {
-      Throwable cause = (e1.getCause() != null &&
-          e1.getCause() instanceof SQLException) ? e1.getCause() : e1;
-      LOG.log(Level.WARNING, "Unable to connect to the database", cause);
-      throw new SnapshotRepositoryRuntimeException(
-          "Unable to connect to the database", cause);
-    } finally {
-      if (conn != null) {
-        try {
-          conn.close();
-        } catch (SQLException e1) {
-          LOG.fine("Could not close database connection: " + e1.toString());
+    SQLException sqlException;
+    if (e instanceof SQLException) {
+      sqlException = (SQLException) e;
+    } else if (e.getCause() != null && e.getCause() instanceof SQLException) {
+      sqlException = (SQLException) e.getCause();
+    } else {
+      // It is not even a SQLException. Something else is wrong, so propagate
+      // the error.
+      throw new SnapshotRepositoryRuntimeException(e.getMessage(), e);
+    }
+    String sqlState = sqlException.getSQLState();
+    if (sqlState != null) {
+      // Look for SQL syntax errors, both ISO style and XOpen style.
+      if (sqlState.startsWith("42") || sqlState.startsWith("S0") 
+          || sqlState.startsWith("37")) {
+        LOG.log(Level.WARNING, "Could not execute SQL query on the database.",
+                sqlException);
+        // Swallow the exception.
+      } else if (sqlState.startsWith("08")) {    // Connection errors.
+        LOG.log(Level.WARNING, "Unable to connect to the database.",
+                sqlException);
+        throw new SnapshotRepositoryRuntimeException(
+            "Unable to connect to the database.", sqlException);
+      } else {
+        throw new SnapshotRepositoryRuntimeException(sqlException.getMessage(),
+                                                     sqlException);
+      }
+    } else {
+      // No SQLState to consider. Check connectivity with DB.
+      Connection conn = null;
+      try {
+        conn = session.getConnection();
+        LOG.log(Level.WARNING, "Could not execute SQL query on the database.",
+                e);
+        // Swallow the exception.
+      } catch (RuntimeException e1) {
+        Throwable cause = (e1.getCause() != null &&
+            e1.getCause() instanceof SQLException) ? e1.getCause() : e1;
+        LOG.log(Level.WARNING, "Unable to connect to the database", cause);
+        throw new SnapshotRepositoryRuntimeException(
+            "Unable to connect to the database.", cause);
+      } finally {
+        if (conn != null) {
+          try {
+            conn.close();
+          } catch (SQLException e1) {
+            LOG.fine("Could not close database connection: " + e1.toString());
+          }
         }
       }
     }

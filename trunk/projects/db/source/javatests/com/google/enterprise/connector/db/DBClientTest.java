@@ -23,6 +23,8 @@ import java.io.IOException;
 import java.io.Writer;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.List;
+import java.util.Map;
 
 public class DBClientTest extends DBTestBase {
 
@@ -101,5 +103,16 @@ public class DBClientTest extends DBTestBase {
     } catch (IOException e) {
       System.out.println("Cannot write to IbatisSQLMap.xml \n" + e);
     }
+  }
+
+  /**
+   * Check that missing table returns no rows, but throws no exceptions.
+   */
+  public void testMissingTable() throws Exception {
+    DBClient dbClient = getDbClient();
+    runDBScript(DROP_TEST_DB_TABLE);
+    List<Map<String, Object>> results = dbClient.executePartialQuery(0, 100);
+    assertNotNull(results);
+    assertTrue(results.isEmpty());
   }
 }
