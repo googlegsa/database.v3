@@ -52,10 +52,12 @@
     <property name="collator">
       <bean class="java.text.Collator" factory-method="getInstance">
         <property name="strength">
-          <util:constant static-field="java.text.Collator.TERTIARY"/>
+          <bean id="java.text.Collator.TERTIARY"
+                class="org.springframework.beans.factory.config.FieldRetrievingFactoryBean" />
         </property>
         <property name="decomposition">
-          <util:constant static-field="java.text.Collator.CANONICAL_DECOMPOSITION"/>
+          <bean id="java.text.Collator.CANONICAL_DECOMPOSITION"
+                class="org.springframework.beans.factory.config.FieldRetrievingFactoryBean" />
         </property>
       </bean>
     </property>
@@ -206,6 +208,10 @@
         <prop key="lobField"></prop>
         <prop key="fetchURLField"></prop>
         <prop key="extMetadataType"></prop>
+
+        <!-- Escape MyBatis syntax that looks like a Spring placeholder.
+             See https://jira.springsource.org/browse/SPR-4953 -->
+        <prop key="docIds">#{'${docIds}'}</prop>
       </props>
     </property>
   </bean>

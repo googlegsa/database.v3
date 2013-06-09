@@ -26,18 +26,11 @@ import java.util.logging.Logger;
 public class TestUtils {
   private static final Logger LOG = Logger.getLogger(TestUtils.class.getName());
 
-  public static final String TESTCONFIG_DIR = "config/";
-  public static final String TESTCONNECTORCONFIG_DIR = "";
-  public static final String CONNECTOR_INSTANCE_XML = "connectorInstance.xml";
-  public static final String SQL_DATA_FILE = "connector_test.sql";
-  public static final String UPDATE_SQL_DATA_FILE = "update_connector_test.sql";
-  public static final String ADD_SQL_DATA_FILE = "add_connector_test.sql";
-  public static final String DELETE_SQL_DATA_FILE = "delete_connector_test.sql";
-  public static final String DB_TYPE_MYSQL = "mysql";
-  public static final String DB_TYPE_ORACLE = "oracle";
-  public static final String DB_TYPE_MS_SQL_SERVER = "sqlserver";
-  public static final String DB_TYPE_DB2 = "db2";
-  public static final String DB_TYPE_SYBASE = "sybase";
+  private static final String DB_TYPE_MYSQL = "mysql";
+  private static final String DB_TYPE_ORACLE = "oracle";
+  private static final String DB_TYPE_MS_SQL_SERVER = "sqlserver";
+  private static final String DB_TYPE_DB2 = "db2";
+  private static final String DB_TYPE_SYBASE = "sybase";
 
   // This class is not instantiable.
   private TestUtils() {
