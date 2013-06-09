@@ -16,25 +16,24 @@ package com.google.enterprise.connector.db;
 
 import com.google.enterprise.connector.spi.Connector;
 import com.google.enterprise.connector.spi.ConnectorFactory;
+import com.google.enterprise.connector.spi.RepositoryException;
 import com.google.enterprise.connector.util.diffing.DiffingConnector;
 
+import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.PropertyPlaceholderConfigurer;
-import org.springframework.beans.factory.xml.XmlBeanFactory;
+import org.springframework.beans.factory.support.DefaultListableBeanFactory;
+import org.springframework.beans.factory.xml.XmlBeanDefinitionReader;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
 
+import junit.framework.Assert;
+
+import java.util.Arrays;
 import java.util.Map;
 import java.util.Properties;
 
 public class MockDBConnectorFactory implements ConnectorFactory {
-  private final String connectorInstanceXmlFile;
-
-  /**
-   * @param connectorInstanceXmlFile path to a "connectorInstance.xml" Spring
-   *        configuration file.
-   */
-  public MockDBConnectorFactory(String connectorInstanceXmlFile) {
-    this.connectorInstanceXmlFile = connectorInstanceXmlFile;
+  public MockDBConnectorFactory() {
   }
 
   /**
@@ -42,18 +41,43 @@ public class MockDBConnectorFactory implements ConnectorFactory {
    *
    * @param config map of configuration values.
    */
-  /* @Override */
-  public Connector makeConnector(Map<String, String> config) {
+  /* TODO(jlacey): Extract the Spring instantiation code in CM. */
+  @Override
+  public Connector makeConnector(Map<String, String> config)
+      throws RepositoryException {
     Properties props = new Properties();
     props.putAll(config);
 
-    Resource res = new ClassPathResource(connectorInstanceXmlFile,
+    // Escape MyBatis syntax that looks like a Spring placeholder.
+    // See https://jira.springsource.org/browse/SPR-4953
+    // TODO(jlacey): This placeholder value is in the EPPC bean in
+    // connectorDefaults.xml, but we're not loading that, and doing so
+    // would unravel a ball of string: using setLocation instead of
+    // setProperties (since the EPPC bean already has properties),
+    // which in turn requires the ByteArrayResource machinery in
+    // InstanceInfo or writing the properties to a file.
+    props.put("docIds", "#{'${docIds}'}");
+
+    Resource prototype = new ClassPathResource("config/connectorInstance.xml",
         MockDBConnectorFactory.class);
-    XmlBeanFactory factory = new XmlBeanFactory(res);
+    Resource defaults = new ClassPathResource("config/connectorDefaults.xml",
+        MockDBConnectorFactory.class);
+
+    DefaultListableBeanFactory factory = new DefaultListableBeanFactory();
+    XmlBeanDefinitionReader beanReader = new XmlBeanDefinitionReader(factory);
+    try {
+      beanReader.loadBeanDefinitions(prototype);
+      beanReader.loadBeanDefinitions(defaults);
+    } catch (BeansException e) {
+      throw new RepositoryException(e);
+    }
+
     PropertyPlaceholderConfigurer cfg = new PropertyPlaceholderConfigurer();
     cfg.setProperties(props);
     cfg.postProcessBeanFactory(factory);
-    DiffingConnector connector = null;
-    return connector;
+
+    String[] beanList = factory.getBeanNamesForType(DiffingConnector.class);
+    Assert.assertEquals(Arrays.asList(beanList).toString(), 1, beanList.length);
+    return (Connector) factory.getBean(beanList[0]);
   }
 }

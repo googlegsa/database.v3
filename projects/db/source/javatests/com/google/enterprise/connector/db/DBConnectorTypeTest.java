@@ -65,8 +65,7 @@ public class DBConnectorTypeTest extends DBTestBase {
 
     connectorType = new DBConnectorType();
 
-    mdbConnectorFactory = new MockDBConnectorFactory(
-        TestUtils.TESTCONFIG_DIR + TestUtils.CONNECTOR_INSTANCE_XML);
+    mdbConnectorFactory = new MockDBConnectorFactory();
   }
 
   public void testMissingRequiredField() {
@@ -102,16 +101,11 @@ public class DBConnectorTypeTest extends DBTestBase {
   /** Asserts that the ResultSet from the given query has no rows. */
   private void assertEmptyResultSet(String sqlQuery) throws SQLException {
     assertFalse(applyResultSet("select id from TestEmpTable where dept = 42",
-        new SqlFunction<ResultSet, Boolean>() {
+        new DBClient.SqlFunction<ResultSet, Boolean>() {
           public Boolean apply(ResultSet resultSet) throws SQLException {
             return resultSet.next();
           }
         }));
-  }
-
-  // TODO(jlacey): Use DBClient.SqlFunction once that is committed.
-  public interface SqlFunction<F, T> {
-    public T apply(F input) throws SQLException;
   }
 
   /**
@@ -121,7 +115,7 @@ public class DBConnectorTypeTest extends DBTestBase {
    * @return the value of the function applied to the {@code ResultSet}
    */
   private <T> T applyResultSet(String sqlQuery,
-      SqlFunction<ResultSet, T> function) throws SQLException {
+      DBClient.SqlFunction<ResultSet, T> function) throws SQLException {
     SqlSession sqlSession = getDbClient().getSqlSession();
     try {
       Connection dbConnection = sqlSession.getConnection();
