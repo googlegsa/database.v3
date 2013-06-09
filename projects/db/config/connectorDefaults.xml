@@ -211,7 +211,7 @@
 
         <!-- Escape MyBatis syntax that looks like a Spring placeholder.
              See https://jira.springsource.org/browse/SPR-4953 -->
-        <prop key="docIds">#{'${docIds}'}</prop>
+        <prop key="docIds">#{'$'}{docIds}</prop>
       </props>
     </property>
   </bean>
