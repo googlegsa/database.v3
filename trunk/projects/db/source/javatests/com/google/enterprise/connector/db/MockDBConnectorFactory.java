@@ -56,7 +56,7 @@ public class MockDBConnectorFactory implements ConnectorFactory {
     // setProperties (since the EPPC bean already has properties),
     // which in turn requires the ByteArrayResource machinery in
     // InstanceInfo or writing the properties to a file.
-    props.put("docIds", "#{'${docIds}'}");
+    props.put("docIds", "#{'$'}{docIds}");
 
     Resource prototype = new ClassPathResource("config/connectorInstance.xml",
         MockDBConnectorFactory.class);
