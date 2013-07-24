@@ -472,7 +472,7 @@ public class DBConnectorType implements ConnectorType {
        * metadata fields readOnly. "AuthZ Field" will become editable when user
        * selects BLOB/CLOB Field i.e when BLOB/CLOB field is editable.
        */
-      String javascript = "<SCRIPT> "
+      String javascript = "<script type=\"text/javascript\"> "
           + "function setReadOnlyProperties(urlField , docIdField , lobField){"
           + "document.getElementById('documentURLField').readOnly=urlField ;    "
           + "document.getElementById('documentIdField').readOnly=docIdField ;    "
@@ -486,7 +486,7 @@ public class DBConnectorType implements ConnectorType {
           + "document.getElementById('fetchURLField').value='';}"
           + "if(!lobField){document.getElementById('authZQuery').readOnly=false}"
           + "else{document.getElementById('authZQuery').readOnly=true} }"
-          + "</SCRIPT>";
+          + "</script>";
 
       return javascript;
     }
