@@ -198,6 +198,8 @@ public class RepositoryHandler {
   }
 
   private List<DocumentSnapshot> getDocList(List<Map<String, Object>> rows) {
+    LOG.log(Level.FINE, "Building document snapshots for {0} rows.",
+        rows.size());
     List<DocumentSnapshot> docList = Lists.newArrayList();
     if (rows.size() > 0) {
       DocumentBuilder docBuilder =

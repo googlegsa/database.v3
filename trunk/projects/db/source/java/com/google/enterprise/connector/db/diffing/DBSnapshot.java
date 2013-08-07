@@ -146,6 +146,7 @@ public class DBSnapshot
 
   @Override
   public String toString() {
+    LOG.log(Level.FINEST, "Serializing document snapshot for {0}", documentId);
     return jsonString;
   }
 }
