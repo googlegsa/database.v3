@@ -14,38 +14,38 @@
 
 package com.google.enterprise.connector.db;
 
-import com.google.enterprise.connector.db.diffing.DigestContentHolder;
-
 import java.sql.CallableStatement;
 import java.sql.Clob;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class ClobTypeHandler extends LobTypeHandler<Clob> {
+public class ClobTypeStrategy implements LobTypeHandler.Strategy {
   private static final Logger LOGGER =
-      Logger.getLogger(ClobTypeHandler.class.getName());
+      Logger.getLogger(ClobTypeStrategy.class.getName());
 
   @Override
-  public DigestContentHolder getNullableResult(ResultSet rs, String columnName)
+  public byte[] getBytes(ResultSet rs, int columnIndex) throws SQLException {
+    return getBytes(rs.getClob(columnIndex));
+  }
+
+  @Override
+  public byte[] getBytes(CallableStatement cs, int columnIndex)
       throws SQLException {
-    return getContentHolder(rs.getClob(columnName));
+    return getBytes(cs.getClob(columnIndex));
   }
 
-  @Override
-  public DigestContentHolder getNullableResult(ResultSet rs, int columnIndex)
-      throws SQLException {
-    return getContentHolder(rs.getClob(columnIndex));
-  }
-
-  @Override
-  public DigestContentHolder getNullableResult(CallableStatement cs, 
-      int columnIndex) throws SQLException {
-    return getContentHolder(cs.getClob(columnIndex));
-  }
-  
-  protected byte[] getBytes(Clob clob) throws SQLException {
-    LOGGER.finest("CLOB handler called with CLOB of length " + clob.length());
-    return Util.getBytes((int) clob.length(), clob.getCharacterStream());
+  private byte[] getBytes(Clob clob) throws SQLException {
+    LOGGER.log(Level.FINEST, "CLOB handler called with CLOB of length {0}",
+        clob.length());
+    byte[] bytes =
+        Util.getBytes((int) clob.length(), clob.getCharacterStream());
+    try {
+      clob.free();
+    } catch (SQLException e) {
+      LOGGER.log(Level.WARNING, "Error freeing the CLOB", e);
+    }
+    return bytes;
   }
 }

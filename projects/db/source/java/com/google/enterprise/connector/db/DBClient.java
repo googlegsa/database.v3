@@ -273,12 +273,6 @@ public class DBClient {
         + "PUBLIC \"-//mybatis.org//DTD Config 3.0//EN\" "
         + "\"http://mybatis.org/dtd/mybatis-3-config.dtd\">\n"
         + "<configuration>\n"
-        + "  <typeHandlers>\n"
-        + "    <typeHandler jdbcType=\"BLOB\" "
-        + "handler=\"com.google.enterprise.connector.db.BlobTypeHandler\"/>\n"
-        + "    <typeHandler jdbcType=\"CLOB\" "
-        + "handler=\"com.google.enterprise.connector.db.ClobTypeHandler\"/>\n"
-        + "  </typeHandlers>\n"
         + "  <environments default=\"connector\">\n"
         + "    <environment id=\"connector\">\n"
         + "      <transactionManager type=\"JDBC\"/>\n"
@@ -342,8 +336,24 @@ public class DBClient {
         + "<!DOCTYPE mapper "
         + "PUBLIC \"-//mybatis.org//DTD Mapper 3.0//EN\" "
         + "\"http://mybatis.org/dtd/mybatis-3-mapper.dtd\">\n"
-        + "<mapper namespace=\"IbatisDBClient\">\n"
-        + "  <select id=\"getAll\" resultType=\"java.util.HashMap\">\n"
+        + "<mapper namespace=\"IbatisDBClient\">\n";
+
+    // Add a type handler for the lob field, if there is one.
+    String lobField = dbContext.getLobField();
+    String resultAttribute;
+    if (lobField != null && lobField.trim().length() > 0) {
+      sqlMap += "  <resultMap id=\"lobResultMap\" type=\"hashmap\">\n"
+          + "    <result property=\"" + lobField + "\" column=\"" + lobField
+          + "\" typeHandler=\""
+          + "com.google.enterprise.connector.db.LobTypeHandler\"/>\n"
+          + "  </resultMap>\n";
+      resultAttribute = "resultMap=\"lobResultMap\"";
+    } else {
+      // TODO(jlacey): Could we just use an empty resultMap?
+      resultAttribute = "resultType=\"hashmap\"";
+    }
+
+    sqlMap +="  <select id=\"getAll\" " + resultAttribute + ">\n"
         + "    <![CDATA[ " + dbContext.getSqlQuery() + " ]]>\n"
         + "  </select>\n";
 

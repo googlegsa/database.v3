@@ -74,7 +74,9 @@ public class ValidateUtil {
     private String message = "";
     private List<String> problemFields = new ArrayList<String>();
     private final ResourceBundle res;
-    List<String> columnNames = new ArrayList<String>();
+    private final List<String> columnNames = new ArrayList<String>();
+    private final List<Integer> columnTypes = new ArrayList<Integer>();
+    private final List<String> columnClasses = new ArrayList<String>();
 
     private static final String USERNAME_PLACEHOLDER = "#{username}";
     private static final String DOCI_IDS_PLACEHOLDER = "${docIds}";
@@ -204,6 +206,8 @@ public class ValidateUtil {
             ResultSetMetaData rsMeta = resultSet.getMetaData();
             for (int i = 1; i <= rsMeta.getColumnCount(); i++) {
               columnNames.add(rsMeta.getColumnLabel(i));
+              columnTypes.add(rsMeta.getColumnType(i));
+              columnClasses.add(rsMeta.getColumnClassName(i));
             }
           } finally {
             resultSet.close();
@@ -322,10 +326,16 @@ public class ValidateUtil {
 
       // Check for valid BLOB/CLOB column name.
       if (blobClobField != null && blobClobField.trim().length() > 0) {
-        if (!columnNames.contains(blobClobField)) {
+        int index = columnNames.indexOf(blobClobField);
+        if (index == -1) {
           result = false;
           message = res.getString(INVALID_COLUMN_NAME);
           problemFields.add(DBConnectorType.CLOB_BLOB_FIELD);
+        } else {
+          LOG.log(Level.CONFIG,
+              "BLOB or CLOB column {0} type is {1}, class name {2}.",
+              new Object[] { blobClobField, columnTypes.get(index),
+                             columnClasses.get(index) });
         }
 
         if (fetchURL != null && fetchURL.trim().length() > 0
