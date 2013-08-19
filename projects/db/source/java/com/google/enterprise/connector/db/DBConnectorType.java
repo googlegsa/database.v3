@@ -14,6 +14,7 @@
 
 package com.google.enterprise.connector.db;
 
+import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.enterprise.connector.spi.ConfigureResponse;
@@ -190,7 +191,8 @@ public class DBConnectorType implements ConnectorType {
                                    + e.getMessage(), "");
     }
     ConfigValidation configValidation = configForm.validateConfig();
-    if (configValidation.validate()) {
+    if (Strings.isNullOrEmpty(configValidation.getMessage()) &&
+        configValidation.getProblemFields().isEmpty()) {
       try {
         factory.makeConnector(configMap);
       } catch (RepositoryException e) {

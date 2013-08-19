@@ -68,15 +68,26 @@ public class DBConnectorTypeTest extends DBTestBase {
     mdbConnectorFactory = new MockDBConnectorFactory();
   }
 
-  public void testMissingRequiredField() {
+  public void testMissingRequiredFields() {
     Map<String, String> newConfigMap = Maps.newHashMap(this.configMap);
     // Remove a required field.
     newConfigMap.put("dbName", "");
+    newConfigMap.put("sqlQuery", "");
     ConfigureResponse configRes = this.connectorType.validateConfig(
         newConfigMap, Locale.ENGLISH, mdbConnectorFactory);
     assertNotNull(configRes);
-    assertTrue(configRes.getMessage(),
-        configRes.getMessage().contains(BUNDLE.getString("REQ_FIELDS")));
+    String message = configRes.getMessage();
+    assertTrue(message, message.contains(BUNDLE.getString("REQ_FIELDS")));
+    // There was a bug where each required field would appear twice in
+    // the message.
+    int index = message.indexOf(BUNDLE.getString("dbName"));
+    assertTrue(message, index > 0);
+    index = message.indexOf(BUNDLE.getString("dbName"), index + 1);
+    assertFalse(message, index > 0);
+    index = message.indexOf(BUNDLE.getString("sqlQuery"));
+    assertTrue(message, index > 0);
+    index = message.indexOf(BUNDLE.getString("sqlQuery"), index + 1);
+    assertFalse(message, index > 0);
   }
 
   public void testValidConfig() {
