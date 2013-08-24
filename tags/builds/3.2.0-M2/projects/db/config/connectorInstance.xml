@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE beans PUBLIC "-//SPRING//DTD BEAN//EN"
+          "http://www.springframework.org/dtd/spring-beans.dtd">
+<beans>
+  <!--
+    Bean for encapsulation of all the configuration parameter needed for a
+    working Database Connector instance.
+  -->
+  <bean id="db-connector-config" class="com.google.enterprise.connector.db.DBContext"
+    parent="database-connector-defaults" singleton="false">
+
+    <!--
+      Parameter for fetching number of rows in a single call to the repository.
+    -->
+    <!--
+    <property name="numberOfRows" value="500"></property>
+    -->
+
+    <!--
+      Replace the minValue with minimum key value when configuring the connector
+      with with parameterized query.  Default value -1 is for minimum value
+      comparison with the result set key values for the first time to compute
+      the next highest order key.
+    -->
+    <!--
+    <property name="minValue" value="-1"></property>
+    -->
+
+    <!--
+      Flag to determine whether the SQL query is parameterized.
+    -->
+    <!--
+    <property name="parameterizedQueryFlag" value="true"></property>
+    -->
+
+    <!--
+      Flag to specify whether NULL values sort high or low in ORDER BY queries.
+      This can usually be determined by examining the DatabaseMetadata.
+      However, if that information is unavailable or incorrect, you can
+      explicitly specify the ordering here.
+    -->
+    <!--
+    <property name="nullsAreSortedLow" value="true"></property>
+    -->
+
+    <!--
+      A java.text.Collator implementation that mimics the sorting done by
+      the database ORDER BY clause specified in the Traversal SQL query
+      for text values (CHAR, VARCHAR, etc).
+      By default, the connector uses the Collator for the current default
+      locale, with TERTIARY strength (case and accent sensitive), and
+      CANONICAL_DECOMPOSITION of accented characters.
+      See CollatorConfiguration examples in the Database connector Wiki:
+      http://code.google.com/p/google-enterprise-connector-database/wiki/ConfiguringCollator
+    -->
+    <!--
+      This example uses the java.text.Collator static factory method to
+      get a Collator for the current default locale, then set the strength
+      to be case-sensitive and accent-sensitive.
+    -->
+    <!--
+    <property name="collator">
+      <bean class="java.text.Collator" factory-method="getInstance">
+        <property name="strength">
+          <util:constant static-field="java.text.Collator.TERTIARY"/>
+        </property>
+        <property name="decomposition">
+          <util:constant static-field="java.text.Collator.CANONICAL_DECOMPOSITION"/>
+        </property>
+      </bean>
+    </property>
+    -->
+  </bean>
+</beans>
