@@ -14,6 +14,7 @@
 
 package com.google.enterprise.connector.db;
 
+import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.enterprise.connector.spi.ConfigureResponse;
@@ -190,7 +191,8 @@ public class DBConnectorType implements ConnectorType {
                                    + e.getMessage(), "");
     }
     ConfigValidation configValidation = configForm.validateConfig();
-    if (configValidation.validate()) {
+    if (Strings.isNullOrEmpty(configValidation.getMessage()) &&
+        configValidation.getProblemFields().isEmpty()) {
       try {
         factory.makeConnector(configMap);
       } catch (RepositoryException e) {
@@ -472,7 +474,7 @@ public class DBConnectorType implements ConnectorType {
        * metadata fields readOnly. "AuthZ Field" will become editable when user
        * selects BLOB/CLOB Field i.e when BLOB/CLOB field is editable.
        */
-      String javascript = "<SCRIPT> "
+      String javascript = "<script type=\"text/javascript\"> "
           + "function setReadOnlyProperties(urlField , docIdField , lobField){"
           + "document.getElementById('documentURLField').readOnly=urlField ;    "
           + "document.getElementById('documentIdField').readOnly=docIdField ;    "
@@ -486,7 +488,7 @@ public class DBConnectorType implements ConnectorType {
           + "document.getElementById('fetchURLField').value='';}"
           + "if(!lobField){document.getElementById('authZQuery').readOnly=false}"
           + "else{document.getElementById('authZQuery').readOnly=true} }"
-          + "</SCRIPT>";
+          + "</script>";
 
       return javascript;
     }

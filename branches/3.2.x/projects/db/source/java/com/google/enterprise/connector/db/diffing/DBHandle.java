@@ -23,6 +23,7 @@ import com.google.enterprise.connector.util.diffing.DocumentHandle;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -79,6 +80,7 @@ public class DBHandle implements DocumentHandle {
 
   @Override
   public String toString() {
+    LOG.log(Level.FINEST, "Serializing document handle for {0}", documentId);
     return document.toJson();
   }
 }
