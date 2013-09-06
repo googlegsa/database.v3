@@ -229,7 +229,7 @@ class LobDocumentBuilder extends DocumentBuilder {
       skipColumns.add(displayURL.toString());
     } else {
       jsonObjectUtil.setProperty(SpiConstants.PROPNAME_DISPLAYURL,
-                                 getDisplayUrl(hostname, dbName, holder.docId));
+                                 getDisplayUrl(holder.docId));
     }
 
     skipLastModified(skipColumns, dbContext);

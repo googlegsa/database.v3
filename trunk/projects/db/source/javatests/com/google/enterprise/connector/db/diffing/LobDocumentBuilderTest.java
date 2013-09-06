@@ -318,8 +318,6 @@ public class LobDocumentBuilderTest extends DocumentBuilderFixture {
         dbContext.getNumberOfRows());
     JsonDocument jsonDocument = null;
     for (Map<String, Object> row : rows) {
-      // TODO: This used to use "mysql" as the dbName, but now it gets
-      // "testdb_" from the dbContext. Fix that or just remove this TODO.
       jsonDocument =
           getJsonDocument(new LobDocumentBuilder(dbContext, context), row);
     }

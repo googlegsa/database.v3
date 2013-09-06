@@ -71,7 +71,7 @@ public class DBConnectorTypeTest extends DBTestBase {
   public void testMissingRequiredFields() {
     Map<String, String> newConfigMap = Maps.newHashMap(this.configMap);
     // Remove a required field.
-    newConfigMap.put("dbName", "");
+    newConfigMap.put("connectionUrl", "");
     newConfigMap.put("sqlQuery", "");
     ConfigureResponse configRes = this.connectorType.validateConfig(
         newConfigMap, Locale.ENGLISH, mdbConnectorFactory);
@@ -80,9 +80,9 @@ public class DBConnectorTypeTest extends DBTestBase {
     assertTrue(message, message.contains(BUNDLE.getString("REQ_FIELDS")));
     // There was a bug where each required field would appear twice in
     // the message.
-    int index = message.indexOf(BUNDLE.getString("dbName"));
+    int index = message.indexOf(BUNDLE.getString("connectionUrl"));
     assertTrue(message, index > 0);
-    index = message.indexOf(BUNDLE.getString("dbName"), index + 1);
+    index = message.indexOf(BUNDLE.getString("connectionUrl"), index + 1);
     assertFalse(message, index > 0);
     index = message.indexOf(BUNDLE.getString("sqlQuery"));
     assertTrue(message, index > 0);
@@ -289,12 +289,6 @@ public class DBConnectorTypeTest extends DBTestBase {
     match = pattern.matcher(configForm);
     assertTrue(match.find());
 
-    LOG.info("Checking for Database Name field...");
-    strPattern = "<input.*size=\"50\" name=\"dbName\".*>";
-    pattern = Pattern.compile(strPattern);
-    match = pattern.matcher(configForm);
-    assertTrue(match.find());
-
     LOG.info("Checking for xslt field...");
     strPattern = "<textarea .*name=\"xslt\".*>";
     pattern = Pattern.compile(strPattern);
@@ -303,12 +297,6 @@ public class DBConnectorTypeTest extends DBTestBase {
 
     LOG.info("Checking for 'authZ Query' field...");
     strPattern = "<textarea .*name=\"authZQuery\".*>";
-    pattern = Pattern.compile(strPattern);
-    match = pattern.matcher(configForm);
-    assertTrue(match.find());
-
-    LOG.info("Checking for Hostname field...");
-    strPattern = "<input.*size=\"50\" name=\"hostname\".*>";
     pattern = Pattern.compile(strPattern);
     match = pattern.matcher(configForm);
     assertTrue(match.find());

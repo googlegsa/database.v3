@@ -31,10 +31,9 @@ public class DBContext implements ValueOrdering {
 
   private DBClient client;
   private String connectionUrl;
-  private String hostname;
+  private String connectorName;
   private String login;
   private String password;
-  private String dbName;
   private String sqlQuery;
   private String authZQuery;
   private String googleConnectorWorkDir;
@@ -59,8 +58,8 @@ public class DBContext implements ValueOrdering {
   }
 
   /** Constructor for the tests. */
-  public DBContext(String connectionUrl, String hostname,
-      String driverClassName, String login, String password, String dbName,
+  public DBContext(String connectionUrl, String googleConnectorName,
+      String driverClassName, String login, String password,
       String sqlQuery, String googleConnectorWorkDir, String primaryKeysString,
       String xslt, String authZQuery, String lastModifiedDate,
       String documentTitle, String documentURLField, String documentIdField,
@@ -69,11 +68,10 @@ public class DBContext implements ValueOrdering {
 
     this.client = new DBClient();
     this.connectionUrl = connectionUrl;
-    this.hostname = hostname;
+    this.connectorName = googleConnectorName;
     this.driverClassName = driverClassName;
     this.login = login;
     this.password = password;
-    this.dbName = dbName;
     this.sqlQuery = sqlQuery;
     this.googleConnectorWorkDir = googleConnectorWorkDir;
     this.primaryKeys = primaryKeysString;
@@ -132,8 +130,8 @@ public class DBContext implements ValueOrdering {
     this.connectionUrl = connectionUrl;
   }
 
-  public void setHostname(String hostname) {
-    this.hostname = hostname;
+  public void setGoogleConnectorName(String connectorName) {
+    this.connectorName = connectorName;
   }
 
   public void setLogin(String login) {
@@ -142,10 +140,6 @@ public class DBContext implements ValueOrdering {
 
   public void setPassword(String password) {
     this.password = password;
-  }
-
-  public void setDbName(String dbName) {
-    this.dbName = dbName;
   }
 
   public void setSqlQuery(String sqlQuery) {
@@ -238,8 +232,8 @@ public class DBContext implements ValueOrdering {
     return connectionUrl;
   }
 
-  public String getHostname() {
-    return hostname;
+  public String getConnectorName() {
+    return connectorName;
   }
 
   public String getSqlQuery() {
@@ -264,10 +258,6 @@ public class DBContext implements ValueOrdering {
 
   public String getPassword() {
     return password;
-  }
-
-  public String getDbName() {
-    return dbName;
   }
 
   public String getDriverClassName() {

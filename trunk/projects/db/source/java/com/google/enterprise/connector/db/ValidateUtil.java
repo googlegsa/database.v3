@@ -45,7 +45,6 @@ public class ValidateUtil {
   private static final String TEST_PRIMARY_KEYS = "TEST_PRIMARY_KEYS";
   private static final String INVALID_COLUMN_NAME = "INVALID_COLUMN_NAME";
   private static final String INVALID_AUTH_QUERY = "INVALID_AUTH_QUERY";
-  private static final String FQDN_HOSTNAME = "FQDN_HOSTNAME";
   private static final String MISSING_ATTRIBUTES = "MISSING_ATTRIBUTES";
   private static final String REQ_FIELDS = "REQ_FIELDS";
   private static final String TEST_PRIMARY_KEYS_AND_KEY_VALUE_PLACEHOLDER =
@@ -649,42 +648,6 @@ public class ValidateUtil {
     }
   }
 
-  /**
-   * Validation Class to check whether HostName is valid.
-   */
-  private static class HostNameFQDNCheck implements ConfigValidation {
-    private final Map<String, String> config;
-    private String message = "";
-    private boolean success = false;
-    private List<String> problemFields = new ArrayList<String>();
-    private String hostName;
-    private final ResourceBundle res;
-
-    public HostNameFQDNCheck(Map<String, String> config, ResourceBundle res) {
-      this.config = config;
-      this.res = res;
-    }
-
-    public String getMessage() {
-      return message;
-    }
-
-    public List<String> getProblemFields() {
-      return problemFields;
-    }
-
-    public boolean validate() {
-      hostName = config.get(DBConnectorType.HOSTNAME);
-      if (hostName.contains(".")) {
-        success = true;
-      } else {
-        message = res.getString(FQDN_HOSTNAME);
-        problemFields.add(DBConnectorType.HOSTNAME);
-      }
-      return success;
-    }
-  }
-
   public ConfigValidation validate(Map<String, String> config,
       ResourceBundle resource) {
     boolean success = false;
@@ -698,19 +661,14 @@ public class ValidateUtil {
         configValidation = new TestDbFields(config, resource);
         success = configValidation.validate();
         if (success) {
-          configValidation = new HostNameFQDNCheck(config, resource);
+          configValidation = new XSLTCheck(config, resource);
           success = configValidation.validate();
-
           if (success) {
-            configValidation = new XSLTCheck(config, resource);
+            configValidation =
+                new QueryParameterAndPrimaryKeyCheck(config, resource);
             success = configValidation.validate();
             if (success) {
-              configValidation = new QueryParameterAndPrimaryKeyCheck(config,
-                  resource);
-              success = configValidation.validate();
-              if (success) {
-                return configValidation;
-              }
+              return configValidation;
             }
           }
         }

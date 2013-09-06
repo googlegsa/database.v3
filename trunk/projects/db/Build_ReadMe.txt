@@ -54,10 +54,6 @@ Following are the steps to build Google Search Appliance Connector for Databases
          driverClassName=com.mysql.jdbc.Driver
          # Provide the connection URL for your database
          connectionUrl=protocol://db-server:port/DB_Name
-         # Provide name of test database
-         dbName=MyDB
-         # Provide fully qualified connector host name
-         hostname=machine.domain
        Note: Do not modify the values of the sqlQuery or primaryKeysString
        properties.
 

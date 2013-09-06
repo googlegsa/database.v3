@@ -56,8 +56,7 @@ public abstract class DBTestBase extends TestCase {
     configMap.put("login", LanguageResource.getPropertyValue("login"));
     configMap.put("password", LanguageResource.getPropertyValue("password"));
     configMap.put("connectionUrl", LanguageResource.getPropertyValue("connectionUrl"));
-    configMap.put("dbName", LanguageResource.getPropertyValue("dbName"));
-    configMap.put("hostname", LanguageResource.getPropertyValue("hostname"));
+    configMap.put("googleConnectorName", "test_connector");
     configMap.put("driverClassName", LanguageResource.getPropertyValue("driverClassName"));
     configMap.put("sqlQuery", LanguageResource.getPropertyValue("sqlQuery"));
     configMap.put("primaryKeysString", LanguageResource.getPropertyValue("primaryKeysString"));
@@ -101,9 +100,9 @@ public abstract class DBTestBase extends TestCase {
   protected DBContext getDbContext(Map<String, String> configMap) {
     try {
       DBContext dbContext = new DBContext(configMap.get("connectionUrl"),
-          configMap.get("hostname"), configMap.get("driverClassName"),
+          configMap.get("googleConnectorName"), configMap.get("driverClassName"),
           configMap.get("login"), configMap.get("password"),
-          configMap.get("dbName"), configMap.get("sqlQuery"),
+          configMap.get("sqlQuery"),
           configMap.get("googleConnectorWorkDir"),
           configMap.get("primaryKeysString"), configMap.get("xslt"),
           configMap.get("authZQuery"), configMap.get("lastModifiedDate"),
@@ -121,9 +120,8 @@ public abstract class DBTestBase extends TestCase {
 
   public static DBContext getMinimalDbContext() {
       DBContext dbContext = new DBContext();
-      dbContext.setDbName("testdb_");
       dbContext.setPrimaryKeys("id,lastname");
-      dbContext.setHostname("localhost");
+      dbContext.setGoogleConnectorName("test_connector");
       return dbContext;
   }
 

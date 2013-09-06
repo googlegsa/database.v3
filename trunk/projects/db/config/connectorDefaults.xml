@@ -10,14 +10,13 @@
     <property name="client">
       <bean class="com.google.enterprise.connector.db.DBClient"/>
     </property>
+    <property name="googleConnectorName" value="${googleConnectorName}"/>
+    <property name="googleConnectorWorkDir" value="${googleConnectorWorkDir}"/>
     <property name="connectionUrl" value="${connectionUrl}"></property>
-    <property name="hostname" value="${hostname}"></property>
     <property name="driverClassName" value="${driverClassName}"></property>
     <property name="login" value="${login}"></property>
     <property name="password" value="${password}"></property>
-    <property name="dbName" value="${dbName}"></property>
     <property name="sqlQuery" value="${sqlQuery}"></property>
-    <property name="googleConnectorWorkDir" value="${googleConnectorWorkDir}"></property>
     <property name="primaryKeys" value="${primaryKeysString}"></property>
     <property name="xslt" value="${xslt}"></property>
     <property name="authZQuery" value="${authZQuery}"></property>
@@ -192,8 +191,6 @@
         <prop key="login"></prop>
         <prop key="password"></prop>
         <prop key="connectionUrl"></prop>
-        <prop key="dbName"></prop>
-        <prop key="hostname"></prop>
         <prop key="driverClassName"></prop>
         <prop key="sqlQuery"></prop>
         <prop key="primaryKeysString"></prop>
