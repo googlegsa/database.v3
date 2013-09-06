@@ -40,13 +40,14 @@ import javax.xml.transform.stream.StreamResult;
  */
 public class XmlUtils {
 
-  // This class should not be initialized.
+  /** This class should not be instantiated. */
   private XmlUtils() {
+    throw new AssertionError();
   }
 
   /**
-   * Converts a DB row into its xml representation. E.g., A following DB row of
-   * test database:
+   * Converts a database row into its XML representation. For example,
+   * the following row from the "test" connector instance:
    *
    * <pre>
    *    [{id=1, lastName=last_01}
@@ -73,7 +74,7 @@ public class XmlUtils {
    *    &lt;/html&gt;
    * </pre>
    *
-   * @param dbName Name of the Database instance
+   * @param connectorName name of the connector instance
    * @param row map representing database row
    * @param primaryKeys array of primary key columns
    * @param xslt for rendering XML representing database row.
@@ -83,7 +84,7 @@ public class XmlUtils {
    * @return
    * @throws DBException
    */
-  public static String getXMLRow(String dbName, Map<String, Object> row,
+  public static String getXMLRow(String connectorName, Map<String, Object> row,
       String[] primaryKeys, String xslt, DBContext dbContext,
       boolean isCompleteDoc) throws DBException {
     DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
@@ -95,7 +96,7 @@ public class XmlUtils {
       throw new DBException("Unable to get XML for row." + "\n" + e, e);
     }
 
-    Element top = doc.createElement(dbName);
+    Element top = doc.createElement(connectorName);
     doc.appendChild(top);
     Element title = doc.createElement("title");
     title.appendChild(doc.createTextNode(Util.getTitle(primaryKeys, row)));
@@ -136,7 +137,8 @@ public class XmlUtils {
         xmlString = getStringFromDomDocument(doc, null);
       } else if (xslt.length() == 0) {
         xmlString = getStringFromDomDocument(doc, getDomDocFromXslt(
-            getDefaultStyleSheet(dbName, row, dbContext, isCompleteDoc)));
+            getDefaultStyleSheet(connectorName, row, dbContext,
+                isCompleteDoc)));
       } else {
         xmlString = getStringFromDomDocument(doc, getDomDocFromXslt(xslt));
       }
@@ -148,16 +150,15 @@ public class XmlUtils {
   }
 
   /**
-   * @param dbName name of the Database instance
+   * @param connectorName name of the connector instance
    * @param row map representing database row
-   * @param dbContext dbContext instance of DBContext
-   * @param isCompleteDoc sCompleteDoc flag that tells whether to generate DB
-   *          doc for entire row or skip doc title and last modified date
-   *          columns.
+   * @param dbContext instance of DBContext
+   * @param isCompleteDoc flag that tells whether to generate DB doc
+   *          for entire row or skip the last modified date column
    * @return default Stylesheet for rendering XML representation of database
    *         row.
    */
-  private static String getDefaultStyleSheet(String dbName,
+  private static String getDefaultStyleSheet(String connectorName,
       Map<String, Object> row, DBContext dbContext, boolean isCompleteDoc) {
     StringBuffer buf = new StringBuffer();
     Set<String> columnNames = row.keySet();
@@ -165,7 +166,7 @@ public class XmlUtils {
         + "<xsl:stylesheet version=\"1.0\" "
         + "xmlns:xsl=\"http://www.w3.org/1999/XSL/Transform\">"
         + "<xsl:template match=\"/\"><html><body><xsl:for-each select=\"");
-    buf.append(dbName).append("\">");
+    buf.append(connectorName).append("\">");
     buf.append("<title><xsl:value-of select=\"title\"/></title>"
         + "</xsl:for-each><table border=\"1\"><tr bgcolor=\"#9acd32\">");
     for (String column : columnNames) {
@@ -179,7 +180,7 @@ public class XmlUtils {
       }
     }
     buf.append("</tr><xsl:for-each select=\"");
-    buf.append(dbName).append("\"><tr>");
+    buf.append(connectorName).append("\"><tr>");
     for (String column : columnNames) {
       if (isCompleteDoc) {
         if (column.equalsIgnoreCase("title"))

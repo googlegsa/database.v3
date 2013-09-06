@@ -85,13 +85,11 @@ public class DBConnectorType implements ConnectorType {
   public static final String DOC_ID = "docId";
   public static final String BLOB_CLOB = "lob";
 
-  public static final String HOSTNAME = "hostname";
   public static final String CONNECTION_URL = "connectionUrl";
   public static final String LOGIN = "login";
   // Note: "password" is both the name of the property and the form input type.
   public static final String PASSWORD = "password";
   public static final String DRIVER_CLASS_NAME = "driverClassName";
-  public static final String DB_NAME = "dbName";
   public static final String SQL_QUERY = "sqlQuery";
   public static final String PRIMARY_KEYS_STRING = "primaryKeysString";
   public static final String XSLT = "xslt";
@@ -116,8 +114,8 @@ public class DBConnectorType implements ConnectorType {
       "'javascript:setReadOnlyProperties(true , true , false)'";
 
   /** List of required fields. */
-  public static List<String> requiredFields = Arrays.asList(new String[] { HOSTNAME,
-      CONNECTION_URL, DB_NAME, LOGIN, DRIVER_CLASS_NAME, SQL_QUERY,
+  public static List<String> requiredFields = Arrays.asList(new String[] {
+      CONNECTION_URL, LOGIN, DRIVER_CLASS_NAME, SQL_QUERY,
       PRIMARY_KEYS_STRING });
 
   public static final List<String> configKeys =
@@ -132,8 +130,6 @@ public class DBConnectorType implements ConnectorType {
           PRIMARY_KEYS_STRING,
           LAST_MODIFIED_DATE_FIELD,
           // Indexing
-          HOSTNAME,
-          DB_NAME,
           XSLT,
           // AuthZ
           AUTHZ_QUERY,

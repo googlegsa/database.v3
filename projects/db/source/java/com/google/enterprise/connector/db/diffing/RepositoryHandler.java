@@ -180,8 +180,7 @@ public class RepositoryHandler {
     }
     if (rows.size() == 0) {
       queryStrategy.logComplete();
-      LOG.info("Crawl cycle of database "
-          + dbContext.getDbName() + " is complete. Resetting DB cursor to "
+      LOG.info("Crawl cycle of database is complete. Resetting DB cursor to "
           + "start traversal from begining");
       queryStrategy.resetCursor();
     } else {

@@ -47,7 +47,7 @@ public abstract class DocumentBuilderFixture extends DBTestBase {
 
     dbContext = super.getDbContext();
     dbContext.setPrimaryKeys(primaryKeyColumn);
-    dbContext.setHostname("localhost");
+    dbContext.setGoogleConnectorName("test_connector");
   }
 
   public static String getProperty(JsonDocument doc, String propName)

@@ -96,18 +96,16 @@ abstract class DocumentBuilder {
 
   protected final DBContext dbContext;
 
-  protected final String dbName;
   protected final String[] primaryKeys;
-  protected final String hostname;
+  protected final String connectorName;
 
   protected DocumentBuilder(DBContext dbContext) {
     this.dbContext = dbContext;
 
-    this.dbName = dbContext.getDbName();
     // TODO: Split this on the way into DBContext?
     this.primaryKeys =
         dbContext.getPrimaryKeys().split(Util.PRIMARY_KEYS_SEPARATOR);
-    this.hostname = dbContext.getHostname();
+    this.connectorName = dbContext.getConnectorName();
   }
 
   // PUBLIC TEMPLATE METHODS
@@ -204,12 +202,12 @@ abstract class DocumentBuilder {
   /** Get XML representation of document (exclude the LOB column). */
   protected final String getXmlDoc(Map<String, Object> row, String xslt)
       throws DBException {
-    return XmlUtils.getXMLRow(dbName, row, primaryKeys, xslt, dbContext, true);
+    return XmlUtils.getXMLRow(connectorName, row, primaryKeys, xslt, dbContext,
+        true);
   }
 
-  protected final String getDisplayUrl(String hostname, String dbName,
-      String docId) {
-    return String.format("dbconnector://%s/%s/%s", hostname, dbName, docId);
+  protected final String getDisplayUrl(String docId) {
+    return String.format("dbconnector://%s.localhost/%s", connectorName, docId);
   }
 
   /**

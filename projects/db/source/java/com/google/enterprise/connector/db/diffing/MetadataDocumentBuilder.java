@@ -53,8 +53,8 @@ class MetadataDocumentBuilder extends DocumentBuilder {
       throws DBException {
     @SuppressWarnings("unchecked") Map<String, Object> row =
         (Map<String, Object>) holder.getContent();
-    String xml =
-        XmlUtils.getXMLRow(dbName, row, primaryKeys, xslt, dbContext, false);
+    String xml = XmlUtils.getXMLRow(connectorName, row, primaryKeys, xslt,
+        dbContext, false);
     try {
       byte[] original = xml.getBytes("UTF8");
       byte[] output = Base64.encode(
@@ -97,7 +97,7 @@ class MetadataDocumentBuilder extends DocumentBuilder {
                                holder.contentHolder.getMimeType());
 
     jsonObjectUtil.setProperty(SpiConstants.PROPNAME_DISPLAYURL,
-                               getDisplayUrl(hostname, dbName, holder.docId));
+                               getDisplayUrl(holder.docId));
 
     jsonObjectUtil.setProperty(SpiConstants.PROPNAME_FEEDTYPE,
                                SpiConstants.FeedType.CONTENT.toString());
