@@ -54,7 +54,7 @@ public class Util {
   public static String getTitle(String[] primaryKeys, Map<String, Object> row)
       throws DBException {
     StringBuilder title = new StringBuilder();
-    title.append(DATABASE_TITLE_PREFIX).append(" ");
+    title.append(DATABASE_TITLE_PREFIX);
 
     if (row != null && (primaryKeys != null && primaryKeys.length > 0)) {
       Set<String> keySet = row.keySet();
@@ -82,8 +82,7 @@ public class Util {
         } else {
           strKeyValue = keyValue.toString();
         }
-        title.append(primaryKey).append("=");
-        title.append(strKeyValue).append(" ");
+        title.append(" ").append(primaryKey).append("=").append(strKeyValue);
       }
     } else {
       String msg = "";

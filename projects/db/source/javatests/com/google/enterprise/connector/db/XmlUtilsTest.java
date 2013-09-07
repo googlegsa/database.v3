@@ -14,70 +14,53 @@
 
 package com.google.enterprise.connector.db;
 
+import junit.framework.TestCase;
+
 import org.w3c.dom.Document;
-import org.xml.sax.SAXException;
 
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.util.Map;
-import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.transform.TransformerException;
-
-import junit.framework.TestCase;
 
 public class XmlUtilsTest extends TestCase {
   private Map<String, Object> rowMap;
-  private static final Logger LOG = Logger.getLogger(XmlUtilsTest.class.getName());
 
-  /* @Override */
+  @Override
   protected void setUp() throws Exception {
     super.setUp();
     rowMap = TestUtils.getStandardDBRow();
   }
 
-  /* @Override */
-  protected void tearDown() throws Exception {
-    rowMap.clear();
-    super.tearDown();
-  }
-
-  public final void testGetXMLRowNoXslt() {
+  public void testGetXmlRowNoXslt() throws DBException {
     String expected = "<testdb_>"
-        + "<title>Database Connector Result id=1 lastName=last_01 "
-        + "</title><email>01@google.com</email>"
+        + "<title>Database Connector Result id=1 lastName=last_01</title>"
+        + "<email>01@example.com</email>"
         + "<firstName>first_01</firstName><id>1</id>"
-        + "<lastName>last_01</lastName>" + "</testdb_>";
-    try {
-      String rowXml = XmlUtils.getXMLRow("testdb_", rowMap,
-           TestUtils.getStandardPrimaryKeys(), null, null, true);
-      assertTrue(rowXml.contains(expected));
-    } catch (DBException e) {
-      fail(" Caught exception");
-    }
+        + "<lastName>last_01</lastName>"
+        + "</testdb_>";
+    String rowXml = XmlUtils.getXMLRow("testdb_", rowMap,
+        TestUtils.getStandardPrimaryKeys(), null, null, true);
+    assertTrue(rowXml, rowXml.endsWith(expected));
   }
 
-  public final void testGetXmlRowEmptyStylesheet() {
+  public void testGetXmlRowEmptyStylesheet() throws DBException {
     String[] expectedPatterns = new String[] {
-        "<title>Database Connector Result id=1 lastName=last_01 </title>",
+        "<title>Database Connector Result id=1 lastName=last_01</title>",
         "<tr bgcolor=\"#9acd32\">", "<th>id</th>", "<th>lastName</th>",
         "<th>email</th>", "<th>firstName</th>", "<td>1</td>",
-        "<td>last_01</td>", "<td>01@google.com</td>", "<td>first_01</td>" };
-    try {
-      String rowXml = XmlUtils.getXMLRow("testdb_", rowMap,
-          TestUtils.getStandardPrimaryKeys(), "", null, true);
-      assertCheckPatterns(rowXml, expectedPatterns);
-    } catch (DBException e) {
-      fail(" Caught exception");
-    }
+        "<td>last_01</td>", "<td>01@example.com</td>", "<td>first_01</td>" };
+    String rowXml = XmlUtils.getXMLRow("testdb_", rowMap,
+        TestUtils.getStandardPrimaryKeys(), "", null, true);
+    assertCheckPatterns(rowXml, expectedPatterns);
+    assertTrue(rowXml, rowXml.indexOf("<html>") < rowXml.indexOf("<title>"));
+    assertTrue(rowXml, rowXml.indexOf("</title>") < rowXml.indexOf("<body>"));
   }
 
-  public final void testGetXmlRowWithXslt() {
+  public void testGetXmlRowWithXslt() throws DBException {
     String xslt = "<?xml version=\"1.0\" encoding=\"ISO-8859-1\" "
         + "standalone=\"no\"?><xsl:stylesheet xmlns:xsl="
         + "\"http://www.w3.org/1999/XSL/Transform\" version=\"1.0\">\n\n"
@@ -98,46 +81,28 @@ public class XmlUtilsTest extends TestCase {
 
     final String[] expectedPatterns = new String[] {
         "<title>Database Connector Result id=1 lastName=.*</title>",
-        "<td>01@google.com</td>", "<td>first_01</td>", "<td>1</td>",
+        "<td>01@example.com</td>", "<td>first_01</td>", "<td>1</td>",
         "<td>last_01</td>" };
-    try {
-      String rowXml = XmlUtils.getXMLRow("testdb_", rowMap,
-          TestUtils.getStandardPrimaryKeys(), xslt, null, true);
-      assertCheckPatterns(rowXml, expectedPatterns);
-    } catch (DBException e) {
-      fail(" Caught exception");
-    }
+    String rowXml = XmlUtils.getXMLRow("testdb_", rowMap,
+        TestUtils.getStandardPrimaryKeys(), xslt, null, true);
+    assertCheckPatterns(rowXml, expectedPatterns);
   }
 
-  public final void testGetStringFromDomDcoument() {
+  public void testGetStringFromDomDcoument() throws Exception {
     String expected = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>"
         + "<testdb_>"
-        + "<title>Database Connector Result id=1 lastName=last_01 </title>"
+        + "<title>Database Connector Result id=1 lastName=last_01</title>"
         + "<id>1</id><lastName>last_01</lastName>"
-        + "<email>01@google.com</email><firstName>first_01</firstName>"
+        + "<email>01@example.com</email><firstName>first_01</firstName>"
         + "</testdb_>";
     ByteArrayInputStream bais = new ByteArrayInputStream(expected.getBytes());
     DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-    DocumentBuilder builder;
-    try {
-      builder = factory.newDocumentBuilder();
-      org.w3c.dom.Document doc = builder.parse(bais);
-      assertEquals(expected, XmlUtils.getStringFromDomDocument(doc, null));
-    } catch (ParserConfigurationException e) {
-      fail("Setup(creating a DOM document) for this test failed - not "
-          + "the actual test");
-    } catch (SAXException e) {
-      fail("Setup(creating a DOM document) for this test failed - not "
-          + "the actual test");
-    } catch (IOException e) {
-      fail("Setup(creating a DOM document) for this test failed - not "
-          + "the actual test");
-    } catch (TransformerException e) {
-      fail("Could not get String for the DOM Document");
-    }
+    DocumentBuilder builder = factory.newDocumentBuilder();
+    Document doc = builder.parse(bais);
+    assertEquals(expected, XmlUtils.getStringFromDomDocument(doc, null));
   }
 
-  public final void testGetDocFromBase64Xslt() {
+  public void testGetDocFromBase64Xslt() throws Exception {
     String expectedXslt = "<?xml version=\"1.0\" encoding=\"UTF-8\""
         + "?><xsl:stylesheet xmlns:xsl="
         + "\"http://www.w3.org/1999/XSL/Transform\" version=\"1.0\">\n\n"
@@ -165,16 +130,10 @@ public class XmlUtilsTest extends TestCase {
         "<td><xsl:value-of select=\"lastName\"/></td>",
         "<td><xsl:value-of select=\"email\"/></td>",
         "<td><xsl:value-of select=\"id\"/></td>" };
-    try {
-      Document doc = XmlUtils.getDomDocFromXslt(expectedXslt);
-      String xmlDocString = XmlUtils.getStringFromDomDocument(doc, null);
-      assertCheckPatterns(xmlDocString, expectedPatterns);
-    } catch (TransformerException te) {
-      fail("Could not get String from DOM document.\n" + te.toString());
-    } catch (DBException dbe) {
-      fail("Could not generate DOM document from base64 encoded XSLT string.\n"
-          + dbe.toString());
-    }
+
+    Document doc = XmlUtils.getDomDocFromXslt(expectedXslt);
+    String xmlDocString = XmlUtils.getStringFromDomDocument(doc, null);
+    assertCheckPatterns(xmlDocString, expectedPatterns);
   }
 
   /**
@@ -186,14 +145,11 @@ public class XmlUtilsTest extends TestCase {
    */
   private void assertCheckPatterns(final String docStringUnderTest,
       final String[] expectedPatterns) {
-    Pattern pattern = null;
-    Matcher match = null;
-
     for (String strPattern : expectedPatterns) {
-      LOG.info("Checking for pattern  :   " + strPattern + "  ...");
-      pattern = Pattern.compile(strPattern);
-      match = pattern.matcher(docStringUnderTest);
-      assertTrue(match.find());
+      Pattern pattern = Pattern.compile(strPattern);
+      Matcher match = pattern.matcher(docStringUnderTest);
+      assertTrue("Did not find [" + strPattern + "] in string ["
+          + docStringUnderTest + "]", match.find());
     }
   }
 }
