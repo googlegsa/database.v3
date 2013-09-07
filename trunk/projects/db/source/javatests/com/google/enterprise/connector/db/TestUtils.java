@@ -37,7 +37,7 @@ public class TestUtils {
   }
 
   public static Map<String, Object> getStandardDBRow() {
-    return getRow(1, "first_01", "last_01", "01@google.com");
+    return getRow(1, "first_01", "last_01", "01@example.com");
   }
 
   /**
@@ -65,10 +65,10 @@ public class TestUtils {
   public static List<Map<String, Object>> getDBRows() {
     final List<Map<String, Object>> rows;
     rows = new ArrayList<Map<String, Object>>();
-    rows.add(getRow(1, "first_01", "last_01", "01@google.com"));
-    rows.add(getRow(2, "first_02", "last_02", "02@google.com"));
-    rows.add(getRow(3, "first_03", "last_03", "03@google.com"));
-    rows.add(getRow(4, "first_04", "last_04", "04@google.com"));
+    rows.add(getRow(1, "first_01", "last_01", "01@example.com"));
+    rows.add(getRow(2, "first_02", "last_02", "02@example.com"));
+    rows.add(getRow(3, "first_03", "last_03", "03@example.com"));
+    rows.add(getRow(4, "first_04", "last_04", "04@example.com"));
     return rows;
   }
 

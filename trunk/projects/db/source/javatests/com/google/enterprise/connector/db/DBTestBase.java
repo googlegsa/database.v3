@@ -100,9 +100,9 @@ public abstract class DBTestBase extends TestCase {
   protected DBContext getDbContext(Map<String, String> configMap) {
     try {
       DBContext dbContext = new DBContext(configMap.get("connectionUrl"),
-          configMap.get("googleConnectorName"), configMap.get("driverClassName"),
-          configMap.get("login"), configMap.get("password"),
-          configMap.get("sqlQuery"),
+          configMap.get("googleConnectorName"),
+          configMap.get("driverClassName"), configMap.get("login"),
+          configMap.get("password"), configMap.get("sqlQuery"),
           configMap.get("googleConnectorWorkDir"),
           configMap.get("primaryKeysString"), configMap.get("xslt"),
           configMap.get("authZQuery"), configMap.get("lastModifiedDate"),
