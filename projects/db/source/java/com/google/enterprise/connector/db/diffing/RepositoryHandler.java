@@ -122,8 +122,7 @@ public class RepositoryHandler {
      * result set(map).
      */
     private void setPrimaryKeyColumn(Set<String> keySet) {
-      String[] keys =
-          dbContext.getPrimaryKeys().split(Util.PRIMARY_KEYS_SEPARATOR);
+      String[] keys = dbContext.getPrimaryKeyColumns();
       String primaryKey = keys[0];
       for (String key : keySet) {
         if (primaryKey.equalsIgnoreCase(key)) {

@@ -23,80 +23,18 @@ import java.io.InputStream;
 import java.io.Reader;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.Map;
-import java.util.Set;
 import java.util.logging.Logger;
 
-/**
- * Utility class for {@code DocumentBuilder} and {@code XmlUtils}.
- */
+/** Byte array and string utilities. */
 public class Util {
   private static final Logger LOG = Logger.getLogger(Util.class.getName());
 
-  public static final String PRIMARY_KEYS_SEPARATOR = ",";
   public static final String CHECKSUM_ALGO = "SHA1";
 
   private static final char[] HEX_CHARS = "0123456789abcdef".toCharArray();
-  private static final String DATABASE_TITLE_PREFIX =
-      "Database Connector Result";
 
   // This class should not be initialized.
   private Util() {
-  }
-
-  /**
-   * Generates the title of the DB document.
-   *
-   * @param primaryKeys primary keys of the database.
-   * @param row row corresponding to the document.
-   * @return title String.
-   */
-  public static String getTitle(String[] primaryKeys, Map<String, Object> row)
-      throws DBException {
-    StringBuilder title = new StringBuilder();
-    title.append(DATABASE_TITLE_PREFIX);
-
-    if (row != null && (primaryKeys != null && primaryKeys.length > 0)) {
-      Set<String> keySet = row.keySet();
-      for (String primaryKey : primaryKeys) {
-        /*
-         * Primary key value is mapped to the value of key of map row before
-         * getting record. We need to do this because GSA admin may entered
-         * primary key value which differed in case from column name.
-         */
-        for (String key : keySet) {
-          if (primaryKey.equalsIgnoreCase(key)) {
-            primaryKey = key;
-            break;
-          }
-        }
-        if (!keySet.contains(primaryKey)) {
-          String msg = "Primary Key does not match any of the column names.";
-          LOG.info(msg);
-          throw new DBException(msg);
-        }
-        Object keyValue = row.get(primaryKey);
-        String strKeyValue;
-        if (keyValue == null || keyValue.toString().trim().length() == 0) {
-          strKeyValue = "";
-        } else {
-          strKeyValue = keyValue.toString();
-        }
-        title.append(" ").append(primaryKey).append("=").append(strKeyValue);
-      }
-    } else {
-      String msg = "";
-      if (row != null && (primaryKeys != null && primaryKeys.length > 0)) {
-        msg = "Row is null and primary key array is empty.";
-      } else if (row != null) {
-        msg = "Hash map row is null.";
-      } else {
-        msg = "Primary key array is empty or null.";
-      }
-      LOG.info(msg);
-      throw new DBException(msg);
-    }
-    return title.toString();
   }
 
   /**
