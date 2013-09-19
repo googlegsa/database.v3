@@ -45,6 +45,9 @@ public class XmlUtils {
     throw new AssertionError();
   }
 
+  private static final String DATABASE_TITLE_PREFIX =
+      "Database Connector Result";
+
   /**
    * Converts a database row into its HTML representation. For example,
    * the following row from the "test" connector instance:
@@ -111,7 +114,7 @@ public class XmlUtils {
     Element top = doc.createElement(connectorName);
     doc.appendChild(top);
     Element title = doc.createElement("title");
-    title.appendChild(doc.createTextNode(Util.getTitle(primaryKeys, row)));
+    title.appendChild(doc.createTextNode(getTitle(primaryKeys, row)));
     top.appendChild(title);
     TreeSet<String> sortedKeySet = new TreeSet<String>(row.keySet());
     Iterator<String> it = sortedKeySet.iterator();
@@ -159,6 +162,59 @@ public class XmlUtils {
           + "\n" + e, e);
     }
     return xmlString;
+  }
+
+  /**
+   * Generates the title of the DB document.
+   *
+   * @param primaryKeys primary keys of the database.
+   * @param row row corresponding to the document.
+   * @return title String.
+   */
+  public static String getTitle(String[] primaryKeys, Map<String, Object> row)
+      throws DBException {
+    StringBuilder title = new StringBuilder();
+    title.append(DATABASE_TITLE_PREFIX);
+
+    if (row != null && (primaryKeys != null && primaryKeys.length > 0)) {
+      Set<String> keySet = row.keySet();
+      for (String primaryKey : primaryKeys) {
+        /*
+         * Primary key value is mapped to the value of key of map row before
+         * getting record. We need to do this because GSA admin may entered
+         * primary key value which differed in case from column name.
+         */
+        for (String key : keySet) {
+          if (primaryKey.equalsIgnoreCase(key)) {
+            primaryKey = key;
+            break;
+          }
+        }
+        if (!keySet.contains(primaryKey)) {
+          String msg = "Primary Key does not match any of the column names.";
+          throw new DBException(msg);
+        }
+        Object keyValue = row.get(primaryKey);
+        String strKeyValue;
+        if (keyValue == null || keyValue.toString().trim().length() == 0) {
+          strKeyValue = "";
+        } else {
+          strKeyValue = keyValue.toString();
+        }
+        title.append(" ").append(primaryKey).append("=").append(strKeyValue);
+      }
+    } else {
+      String msg = "";
+      if (row != null && (primaryKeys != null && primaryKeys.length > 0)) {
+        msg = "Row is null and primary key array is empty.";
+      } else if (row != null) {
+        msg = "Hash map row is null.";
+      } else {
+        msg = "Primary key array is empty or null.";
+      }
+      throw new DBException(msg);
+    }
+    return title.toString();
   }
 
   /**

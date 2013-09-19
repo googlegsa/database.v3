@@ -95,16 +95,12 @@ abstract class DocumentBuilder {
   }
 
   protected final DBContext dbContext;
-
   protected final String[] primaryKeys;
   protected final String connectorName;
 
   protected DocumentBuilder(DBContext dbContext) {
     this.dbContext = dbContext;
-
-    // TODO: Split this on the way into DBContext?
-    this.primaryKeys =
-        dbContext.getPrimaryKeys().split(Util.PRIMARY_KEYS_SEPARATOR);
+    this.primaryKeys = dbContext.getPrimaryKeyColumns();
     this.connectorName = dbContext.getConnectorName();
   }
 

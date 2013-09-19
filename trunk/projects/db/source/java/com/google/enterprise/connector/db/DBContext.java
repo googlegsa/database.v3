@@ -17,15 +17,13 @@ package com.google.enterprise.connector.db;
 import com.google.enterprise.connector.util.MimeTypeDetector;
 
 import java.text.Collator;
-import java.util.Locale;
-import java.util.logging.Logger;
 
 /**
  * An encapsulation of all the config needed for a working Database Connector
  * instance.
  */
 public class DBContext implements ValueOrdering {
-  private static final Logger LOG = Logger.getLogger(DBContext.class.getName());
+  private static final String PRIMARY_KEYS_SEPARATOR = ",";
 
   private final MimeTypeDetector mimeTypeDetector = new MimeTypeDetector();
 
@@ -37,7 +35,7 @@ public class DBContext implements ValueOrdering {
   private String sqlQuery;
   private String authZQuery;
   private String googleConnectorWorkDir;
-  private String primaryKeys;
+  private String[] primaryKeys;
   private String xslt;
   private String driverClassName;
   private String documentURLField;
@@ -55,42 +53,6 @@ public class DBContext implements ValueOrdering {
   private Collator collator;
 
   public DBContext() {
-  }
-
-  /** Constructor for the tests. */
-  public DBContext(String connectionUrl, String googleConnectorName,
-      String driverClassName, String login, String password,
-      String sqlQuery, String googleConnectorWorkDir, String primaryKeysString,
-      String xslt, String authZQuery, String lastModifiedDate,
-      String documentTitle, String documentURLField, String documentIdField,
-      String baseURL, String lobField, String fetchURLField,
-      String extMetadataType) throws DBException {
-
-    this.client = new DBClient();
-    this.connectionUrl = connectionUrl;
-    this.connectorName = googleConnectorName;
-    this.driverClassName = driverClassName;
-    this.login = login;
-    this.password = password;
-    this.sqlQuery = sqlQuery;
-    this.googleConnectorWorkDir = googleConnectorWorkDir;
-    this.primaryKeys = primaryKeysString;
-    this.xslt = xslt;
-    this.authZQuery = authZQuery;
-    this.extMetadataType = extMetadataType;
-    this.documentURLField = documentURLField;
-    this.documentIdField = documentIdField;
-    this.baseURL = baseURL;
-    this.lobField = lobField;
-    this.fetchURLField = fetchURLField;
-    this.lastModifiedDate = lastModifiedDate;
-
-    this.collator = Collator.getInstance(Locale.US);
-    this.collator.setStrength(Collator.IDENTICAL);
-
-    // Since we're not Spring-instantiated here, we need to explicitly
-    // call the init method.
-    init();
   }
 
   public void init() throws DBException {
@@ -116,10 +78,6 @@ public class DBContext implements ValueOrdering {
 
   public void setParameterizedQueryFlag(boolean parameterizedQueryFlag) {
     this.parameterizedQueryFlag = parameterizedQueryFlag;
-  }
-
-  public static Logger getLog() {
-    return LOG;
   }
 
   public void setClient(DBClient client) {
@@ -154,8 +112,8 @@ public class DBContext implements ValueOrdering {
     this.googleConnectorWorkDir = googleConnectorWorkDir;
   }
 
-  public void setPrimaryKeys(String primaryKeys) {
-    this.primaryKeys = primaryKeys;
+  public void setPrimaryKeys(String primaryKeysString) {
+    this.primaryKeys = primaryKeysString.split(PRIMARY_KEYS_SEPARATOR);
   }
 
   public void setXslt(String xslt) {
@@ -195,12 +153,7 @@ public class DBContext implements ValueOrdering {
   }
 
   public void setNumberOfRows(int numberOfRows) {
-    try {
-      this.numberOfRows = numberOfRows;
-    } catch (NumberFormatException e) {
-      LOG.warning("Number Format Exception while setting number of rows to be "
-          + "fetched\n" + e.toString());
-    }
+    this.numberOfRows = numberOfRows;
   }
 
   public Integer getMinValue() {
@@ -208,12 +161,7 @@ public class DBContext implements ValueOrdering {
   }
 
   public void setMinValue(Integer minValue) {
-    try {
-      this.minValue = minValue;
-    } catch (NumberFormatException e) {
-      LOG.warning("Number Format Exception while setting minvalue of number of "
-          + "rows to be fetched\n" + e.toString());
-    }
+    this.minValue = minValue;
   }
 
   public String getGoogleConnectorWorkDir() {
@@ -244,7 +192,11 @@ public class DBContext implements ValueOrdering {
     return authZQuery;
   }
 
-  public String getPrimaryKeys() {
+  /*
+   * This must have a different name or access from setPrimaryKeys to
+   * avoid a Spring bean introspection error with String vs String[].
+   */
+  public String[] getPrimaryKeyColumns() {
     return primaryKeys;
   }
 

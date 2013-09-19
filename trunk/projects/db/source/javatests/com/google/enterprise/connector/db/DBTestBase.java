@@ -17,17 +17,17 @@ package com.google.enterprise.connector.db;
 import com.google.enterprise.connector.spi.RepositoryException;
 import com.google.enterprise.connector.traversal.ProductionTraversalContext;
 
+import junit.framework.TestCase;
+
 import org.apache.ibatis.io.Resources;
 import org.apache.ibatis.jdbc.ScriptRunner;
 import org.apache.ibatis.session.SqlSession;
 
-import java.io.IOException;
 import java.sql.Connection;
-import java.sql.SQLException;
+import java.text.Collator;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
-
-import junit.framework.TestCase;
 
 /**
  * This is a base class for all test classes that requires interaction with
@@ -98,24 +98,41 @@ public abstract class DBTestBase extends TestCase {
   }
 
   protected DBContext getDbContext(Map<String, String> configMap) {
+    DBContext dbContext = new DBContext();
+    dbContext.setClient(new DBClient());
+    dbContext.setConnectionUrl(configMap.get("connectionUrl"));
+    dbContext.setGoogleConnectorName(configMap.get("googleConnectorName"));
+    dbContext.setDriverClassName(configMap.get("driverClassName"));
+    dbContext.setLogin(configMap.get("login"));
+    dbContext.setPassword(configMap.get("password"));
+    dbContext.setSqlQuery(configMap.get("sqlQuery"));
+    dbContext.setGoogleConnectorWorkDir(
+        configMap.get("googleConnectorWorkDir"));
+    dbContext.setPrimaryKeys(configMap.get("primaryKeysString"));
+    dbContext.setXslt(configMap.get("xslt"));
+    dbContext.setAuthZQuery(configMap.get("authZQuery"));
+    dbContext.setLastModifiedDate(configMap.get("lastModifiedDate"));
+    dbContext.setDocumentURLField(configMap.get("documentURLField"));
+    dbContext.setDocumentIdField(configMap.get("documentIdField"));
+    dbContext.setBaseURL(configMap.get("baseURL"));
+    dbContext.setLobField(configMap.get("lobField"));
+    dbContext.setFetchURLField(configMap.get("fetchURLField"));
+    dbContext.setExtMetadataType(configMap.get("extMetadataType"));
+    dbContext.setNumberOfRows(2);
+
+    Collator collator = Collator.getInstance(Locale.US);
+    collator.setStrength(Collator.IDENTICAL);
+    dbContext.setCollator(collator);
+
+    // Since we're not Spring-instantiated here, we need to explicitly
+    // call the init method. Wrap a rare exception to avoid requiring
+    // throws clauses everywhere.
     try {
-      DBContext dbContext = new DBContext(configMap.get("connectionUrl"),
-          configMap.get("googleConnectorName"),
-          configMap.get("driverClassName"), configMap.get("login"),
-          configMap.get("password"), configMap.get("sqlQuery"),
-          configMap.get("googleConnectorWorkDir"),
-          configMap.get("primaryKeysString"), configMap.get("xslt"),
-          configMap.get("authZQuery"), configMap.get("lastModifiedDate"),
-          configMap.get("documentTitle"), configMap.get("documentURLField"),
-          configMap.get("documentIdField"), configMap.get("baseURL"),
-          configMap.get("lobField"), configMap.get("fetchURLField"),
-          configMap.get("extMetadataType"));
-      dbContext.setNumberOfRows(2);
-      return dbContext;
+      dbContext.init();
     } catch (DBException e) {
-      // Wrap a rare exception to avoid requiring throws clauses everywhere.
       throw new RuntimeException(e);
     }
+    return dbContext;
   }
 
   public static DBContext getMinimalDbContext() {
