@@ -14,8 +14,11 @@
 
 package com.google.enterprise.connector.db;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import com.google.enterprise.connector.spi.ConfigureResponse;
+
+import junit.framework.TestCase;
 
 import org.apache.ibatis.session.SqlSession;
 
@@ -33,8 +36,6 @@ import java.util.Set;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import junit.framework.TestCase;
 
 /**
  * Tests for {@link DBConnectorType} class.
@@ -172,6 +173,148 @@ public class DBConnectorTypeTest extends DBTestBase {
     assertEquals(
         BUNDLE.getString("TEST_PRIMARY_KEYS_AND_KEY_VALUE_PLACEHOLDER"),
         configRes.getMessage());
+  }
+
+  private static final String[] SINGLE_FIELD_NAMES = {
+    "fname", "fNAME", "FNAME", " FNAME", "FNAME " };
+
+  private static final String ACTUAL_FIELD_NAME = "FNAME";
+
+  private static final String[] MULTIPLE_FIELD_NAMES = {
+    "id,fname", "iD,fNAME", "ID,fname", "id,FNAME", // cases
+    " ID,FNAME", "ID ,FNAME", "ID, FNAME", "ID,FNAME ", // whitespace
+    " id,fname", "iD ,fNAME", "Id, Fname", // mixed-case whitespace
+    "ID,fNAME", "iD,FNAME" }; // one exact match, one mixed-case
+
+  private static final String INVALID_FIELD_NAME = "not_a_field";
+
+  /**
+   * Tests different cases and extra whitespace in field names. All of
+   * the errors are collected before reporting the failures.
+   *
+   * @param properties property names and the values required for the
+   *     property name under test
+   * @param propertyName the property name under test
+   * @param propertyValues the property values (database field names) to test
+   * @param expectedValue the field name returned by the database
+   * @param bundleMessage the expected error message key for invalid
+   *     column names
+   */
+  private void testFieldNames(Map<String, String> properties,
+      String propertyName, String[] propertyValues, String expectedValue,
+      String bundleMessage) {
+    StringBuilder errors = new StringBuilder();
+    for (String propertyValue : propertyValues) {
+      ConfigureResponse configRes =
+          validateConfig(properties, propertyName, propertyValue);
+      if (configRes.getMessage() != null
+          || configRes.getFormSnippet() != null) {
+        errors.append(propertyName + "=" + propertyValue + ": "
+            + configRes.getMessage() + "\n");
+      } else if (expectedValue != null
+          && !configRes.getConfigData().get(propertyName).equals(
+              expectedValue)) {
+        errors.append(propertyName + "=" + propertyValue + ": expected:<" +
+            expectedValue + "> but was:<"
+            + configRes.getConfigData().get(propertyName) + ">\n");
+      }
+    }
+
+    ConfigureResponse configRes =
+        validateConfig(properties, propertyName, INVALID_FIELD_NAME);
+    if (configRes.getMessage() == null) {
+      errors.append(propertyName + "=" + INVALID_FIELD_NAME
+          + ": Unexpected null\n");
+    } else if (!configRes.getMessage().equals(
+        BUNDLE.getString(bundleMessage))) {
+      errors.append(propertyName + "=" + INVALID_FIELD_NAME + ": "
+          + configRes.getMessage() + "\n");
+    }
+
+    if (errors.length() > 0) {
+      fail(errors.toString());
+    }
+  }
+
+  /**
+   * Helper method to call validateConfig with the fixture values and
+   * the given properties added to the configuration map.
+   */
+  private ConfigureResponse validateConfig(Map<String, String> properties,
+      String propertyName, String propertyValue) {
+    Map<String, String> newConfigMap = Maps.newHashMap();
+    newConfigMap.putAll(configMap);
+    newConfigMap.putAll(properties);
+    newConfigMap.put(propertyName, propertyValue);
+    ConfigureResponse response = connectorType.validateConfig(
+        newConfigMap, Locale.ENGLISH, mdbConnectorFactory);
+
+    // We need to pass the map we created, which was modified by
+    // validateConfig, back to the caller.
+    if (response == null) {
+      return new ConfigureResponse(null, null, newConfigMap);
+    } else {
+      return response;
+    }
+  }
+
+  public void testPrimaryKeySingleValues() {
+    testFieldNames(ImmutableMap.<String, String>of(), "primaryKeysString",
+        SINGLE_FIELD_NAMES, null, "TEST_PRIMARY_KEYS");
+  }
+
+  public void testPrimaryKeyMultipleValues() {
+    testFieldNames(ImmutableMap.<String, String>of(), "primaryKeysString",
+        MULTIPLE_FIELD_NAMES, null, "TEST_PRIMARY_KEYS");
+  }
+
+  public void testLastModifiedDateValues() {
+    testFieldNames(ImmutableMap.<String, String>of(), "lastModifiedDate",
+        SINGLE_FIELD_NAMES, ACTUAL_FIELD_NAME, "INVALID_COLUMN_NAME");
+  }
+
+  public void testLobFieldValues() {
+    testFieldNames(ImmutableMap.of("extMetadataType", "lob"), "lobField",
+        SINGLE_FIELD_NAMES, ACTUAL_FIELD_NAME, "INVALID_COLUMN_NAME");
+  }
+
+  public void testFetchUrlFieldValues() {
+    testFieldNames(
+        ImmutableMap.of("extMetadataType", "lob", "lobField", "LNAME"),
+        "fetchURLField", SINGLE_FIELD_NAMES, ACTUAL_FIELD_NAME,
+        "INVALID_COLUMN_NAME");
+  }
+
+  public void testDocumentURLFieldValues() {
+    testFieldNames(ImmutableMap.of("extMetadataType", "url"),
+        "documentURLField", SINGLE_FIELD_NAMES, ACTUAL_FIELD_NAME,
+        "INVALID_COLUMN_NAME");
+  }
+
+  public void testDocumentIdFieldValues() {
+    testFieldNames(ImmutableMap.of("extMetadataType", "docId",
+        "baseURL", "http://example.com/"), "documentIdField",
+        SINGLE_FIELD_NAMES, ACTUAL_FIELD_NAME, "INVALID_COLUMN_NAME");
+  }
+
+  private void testOneFieldWithoutAnother(String oneField, String oneValue,
+      String missingField) {
+    ConfigureResponse response = validateConfig(
+        ImmutableMap.of("extMetadataType", "docId"), oneField, oneValue);
+    assertNotNull(response.getMessage());
+    assertTrue(response.getMessage(), response.getMessage().startsWith(
+        BUNDLE.getString("MISSING_ATTRIBUTES")));
+    assertTrue(response.getMessage(), response.getMessage().endsWith(
+        BUNDLE.getString(missingField)));
+  }
+
+  public void testDocumentIdFieldWithoutBaseUrl() {
+    testOneFieldWithoutAnother("documentIdField", "fname", "baseURL");
+  }
+
+  public void testBaseUrlWithoutDocumentIdField() {
+    testOneFieldWithoutAnother("baseURL", "http://example.com/",
+        "documentIdField");
   }
 
   /**

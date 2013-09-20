@@ -65,13 +65,6 @@ public class DBClient {
   public DBClient() {
   }
 
-  /**
-   * @param dbContext holds the database context.
-   * @param sqlQuery SQL query to execute on the database.
-   * @param googleConnectorWorkDir working directory of DB connector.
-   * @param primaryKeys primary keys for the result DB table.
-   * @throws DBException
-   */
   public void setDBContext(DBContext dbContext) throws DBException {
     this.dbContext = dbContext;
     generateSqlMap();

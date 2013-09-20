@@ -152,12 +152,12 @@ public class DBConnectorType implements ConnectorType {
    * @param locale
    * @return result ConfigureResponse which contains the form snippet.
    */
-  /* @Override */
+  @Override
   public ConfigureResponse getConfigForm(Locale locale) {
     return getPopulatedConfigForm(ImmutableMap.<String, String>of(), locale);
   }
 
-  /* @Override */
+  @Override
   public ConfigureResponse getPopulatedConfigForm(
       Map<String, String> configMap, Locale locale) {
     ConfigForm configForm;
@@ -174,8 +174,10 @@ public class DBConnectorType implements ConnectorType {
   /**
    * Make sure the configuration map contains all the necessary attributes and
    * that we can instantiate a connector using the provided configuration.
+   * This implementation modifies the {@code configMap} argument to
+   * overwrite the configured property values.
    */
-  /* @Override */
+  @Override
   public ConfigureResponse validateConfig(Map<String, String> configMap,
       Locale locale, ConnectorFactory factory) {
     ConfigForm configForm;
@@ -187,8 +189,7 @@ public class DBConnectorType implements ConnectorType {
                                    + e.getMessage(), "");
     }
     ConfigValidation configValidation = configForm.validateConfig();
-    if (Strings.isNullOrEmpty(configValidation.getMessage()) &&
-        configValidation.getProblemFields().isEmpty()) {
+    if (configValidation == null) {
       try {
         factory.makeConnector(configMap);
       } catch (RepositoryException e) {
