@@ -219,18 +219,20 @@ class LobDocumentBuilder extends DocumentBuilder {
 
     // If connector admin has provided Fetch URL column then use the value of
     // that column as a "Display URL". Else construct the display URL.
-    // TODO(jlacey): What happens if getFetchURLField returns empty or null?
-    Object displayURL = holder.row.get(dbContext.getFetchURLField());
-    if (displayURL != null && displayURL.toString().trim().length() > 0) {
-      jsonObjectUtil.setProperty(SpiConstants.PROPNAME_DISPLAYURL,
-                                 displayURL.toString().trim());
-      // TODO(jlacey): This is broken, isn't it, confusing the field
-      // to skip with the displayURL value?
-      skipColumns.add(displayURL.toString());
+    String displayUrl;
+    String fetchUrlField = dbContext.getFetchURLField();
+    if (fetchUrlField != null) {
+      Object fetchUrl = holder.row.get(fetchUrlField);
+      if (fetchUrl != null && fetchUrl.toString().trim().length() > 0) {
+        displayUrl = fetchUrl.toString().trim();
+        skipColumns.add(fetchUrlField);
+      } else {
+        displayUrl = getDisplayUrl(holder.docId);
+      }
     } else {
-      jsonObjectUtil.setProperty(SpiConstants.PROPNAME_DISPLAYURL,
-                                 getDisplayUrl(holder.docId));
+      displayUrl = getDisplayUrl(holder.docId);
     }
+    jsonObjectUtil.setProperty(SpiConstants.PROPNAME_DISPLAYURL, displayUrl);
 
     skipLastModified(skipColumns, dbContext);
     skipColumns.addAll(Arrays.asList(primaryKeys));

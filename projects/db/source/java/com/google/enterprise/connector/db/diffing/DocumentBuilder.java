@@ -53,11 +53,6 @@ abstract class DocumentBuilder {
 
   public static final String ROW_CHECKSUM = "google:sum";
 
-  /* TODO: Move this method to Util? */
-  private static boolean isNonBlank(String value) {
-    return value != null && value.trim().length() > 0;
-  }
-
   /**
    * Detect the execution mode from the column names(Normal,
    * CLOB, BLOB or External Metadata) of the DB Connector and returns the
@@ -66,20 +61,20 @@ abstract class DocumentBuilder {
   public static DocumentBuilder getInstance(DBContext dbContext,
       TraversalContext traversalContext) {
     String extMetaType = dbContext.getExtMetadataType();
-    if (isNonBlank(extMetaType)
+    if (!Util.isNullOrWhitespace(extMetaType)
         && !extMetaType.equals(DBConnectorType.NO_EXT_METADATA)) {
       if (extMetaType.equalsIgnoreCase(DBConnectorType.COMPLETE_URL)
-          && isNonBlank(dbContext.getDocumentURLField())) {
+          && dbContext.getDocumentURLField() != null) {
         LOG.info("DB Connector is running in External Metadata feed mode with "
             + "complete document URL");
         return new UrlDocumentBuilder(dbContext, UrlType.COMPLETE_URL);
       } else if (extMetaType.equalsIgnoreCase(DBConnectorType.DOC_ID)
-          && isNonBlank(dbContext.getDocumentIdField())) {
+          && dbContext.getDocumentIdField() != null) {
         LOG.info("DB Connector is running in External Metadata feed mode with "
             + "Base URL and document ID");
         return new UrlDocumentBuilder(dbContext, UrlType.BASE_URL);
       } else if (extMetaType.equalsIgnoreCase(DBConnectorType.BLOB_CLOB)
-          && isNonBlank(dbContext.getLobField())) {
+          && dbContext.getLobField() != null) {
         LOG.info(
             "DB Connector is running in Content Feed Mode for BLOB/CLOB data");
         return new LobDocumentBuilder(dbContext, traversalContext);
@@ -216,7 +211,7 @@ abstract class DocumentBuilder {
   protected final void skipLastModified(List<String> skipColumns,
       DBContext dbContext) {
     String lastModColumn = dbContext.getLastModifiedDate();
-    if (lastModColumn != null && lastModColumn.trim().length() > 0) {
+    if (lastModColumn != null) {
       skipColumns.add(lastModColumn);
     }
   }
@@ -228,10 +223,9 @@ abstract class DocumentBuilder {
    */
   protected final void setLastModified(Map<String, Object> row,
       JsonObjectUtil jsonObjectUtil, DBContext dbContext) {
-    if (dbContext == null) {
+    if (dbContext == null || dbContext.getLastModifiedDate() == null) {
       return;
     }
-    // set last modified date
     Object lastModified = row.get(dbContext.getLastModifiedDate());
     if (lastModified != null && (lastModified instanceof Timestamp)) {
       jsonObjectUtil.setLastModifiedDate(SpiConstants.PROPNAME_LASTMODIFIED,

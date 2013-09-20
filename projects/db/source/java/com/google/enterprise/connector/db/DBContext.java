@@ -125,11 +125,11 @@ public class DBContext implements ValueOrdering {
   }
 
   public void setDocumentURLField(String documentURLField) {
-    this.documentURLField = documentURLField;
+    this.documentURLField = Util.nullOrTrimmed(documentURLField);
   }
 
   public void setDocumentIdField(String documentIdField) {
-    this.documentIdField = documentIdField;
+    this.documentIdField = Util.nullOrTrimmed(documentIdField);
   }
 
   public void setBaseURL(String baseURL) {
@@ -137,15 +137,15 @@ public class DBContext implements ValueOrdering {
   }
 
   public void setLobField(String lobField) {
-    this.lobField = lobField;
+    this.lobField = Util.nullOrTrimmed(lobField);
   }
 
   public void setFetchURLField(String fetchURLField) {
-    this.fetchURLField = fetchURLField;
+    this.fetchURLField = Util.nullOrTrimmed(fetchURLField);
   }
 
   public void setLastModifiedDate(String lastModifiedDate) {
-    this.lastModifiedDate = lastModifiedDate;
+    this.lastModifiedDate = Util.nullOrTrimmed(lastModifiedDate);
   }
 
   public int getNumberOfRows() {

@@ -51,8 +51,8 @@ class UrlDocumentBuilder extends DocumentBuilder {
     String finalURL;
     switch (type) {
       case BASE_URL: {
-        String docIdColumn = dbContext.getDocumentIdField();
-        Object urlDocId = row.get(docIdColumn);
+        String docIdField = dbContext.getDocumentIdField();
+        Object urlDocId = row.get(docIdField);
 
         // Build final document URL if urlDocId is not null. Send null
         // JsonDocument if document ID is null.
@@ -62,18 +62,19 @@ class UrlDocumentBuilder extends DocumentBuilder {
         } else {
           return null;
         }
-        skipColumns.add(dbContext.getDocumentIdField());
+        skipColumns.add(docIdField);
         break;
       }
 
       case COMPLETE_URL: {
-        Object docURL = row.get(dbContext.getDocumentURLField());
+        String docUrlField = dbContext.getDocumentURLField();
+        Object docURL = row.get(docUrlField);
         if (docURL != null) {
-          finalURL = row.get(dbContext.getDocumentURLField()).toString();
+          finalURL = docURL.toString();
         } else {
           return null;
         }
-        skipColumns.add(dbContext.getDocumentURLField());
+        skipColumns.add(docUrlField);
         break;
       }
 

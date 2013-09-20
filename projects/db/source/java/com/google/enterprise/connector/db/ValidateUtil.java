@@ -215,13 +215,7 @@ public class ValidateUtil {
           String[] primaryKeys = config.get(DBConnectorType.PRIMARY_KEYS_STRING)
               .split(PRIMARY_KEYS_SEPARATOR);
           for (String key : primaryKeys) {
-            result = false;
-            for (String columnName : columnNames) {
-              if (key.trim().equalsIgnoreCase(columnName)) {
-                result = true;
-                break;
-              }
-            }
+            result = (indexOfIgnoreCase(columnNames, key.trim()) != -1);
             if (!result) {
               LOG.info("One or more primary keys are invalid");
               message = res.getString(TEST_PRIMARY_KEYS);
@@ -235,6 +229,15 @@ public class ValidateUtil {
                 e);
       }
       return result;
+    }
+
+    private int indexOfIgnoreCase(List<String> values, String target) {
+      for (int i = 0; i < values.size(); i++) {
+        if (values.get(i).equalsIgnoreCase(target)) {
+          return i;
+        }
+      }
+      return -1;
     }
 
     /**
@@ -264,45 +267,52 @@ public class ValidateUtil {
     }
 
     /**
+     * If a given property is specified, verifies that the value
+     * matches one of the database column names, ignoring case, and
+     * overwrites the property value in the configuration map with the
+     * correct case.
+     */
+    private boolean validateFieldName(String propertyName, String messageKey) {
+      String fieldName = config.get(propertyName);
+      if (!Util.isNullOrWhitespace(fieldName)) {
+        int index = indexOfIgnoreCase(columnNames, fieldName.trim());
+        if (index == -1) {
+          message = res.getString(messageKey);
+          problemFields.add(propertyName);
+          return false;
+        } else {
+          config.put(propertyName, columnNames.get(index));
+        }
+      }
+      return true;
+    }
+
+    /**
      * Validate the metadata property names.
      *
      * @return true if external metadata related columns are there SQL crawl
      *         query.
      */
     private boolean validateExternalMetadataFields() {
-      boolean result = true;
+      boolean result;
 
       // Validate Document URL field.
-      String documentURLField = config.get(DBConnectorType.DOCUMENT_URL_FIELD);
-      if (documentURLField != null && documentURLField.trim().length() > 0) {
-        if (!columnNames.contains(documentURLField.trim())) {
-          result = false;
-          message = res.getString(INVALID_COLUMN_NAME);
-          problemFields.add(DBConnectorType.DOCUMENT_URL_FIELD);
-        }
-      }
+      result = validateFieldName(DBConnectorType.DOCUMENT_URL_FIELD,
+          INVALID_COLUMN_NAME);
 
       // Validate DocID and Base URL fields.
       String documentIdField = config.get(DBConnectorType.DOCUMENT_ID_FIELD);
       String baseURL = config.get(DBConnectorType.BASE_URL);
 
-      // Check if Base URL field exists without DocId Field.
-      if ((baseURL != null && baseURL.trim().length() > 0)
-          && (documentIdField == null || documentIdField.trim().length() == 0)) {
+      // Check if Base URL field exists without DocId Field or vice versa.
+      if (!Util.isNullOrWhitespace(baseURL)
+          && Util.isNullOrWhitespace(documentIdField)) {
         result = false;
         message = res.getString(MISSING_ATTRIBUTES) + ": "
             + res.getString(DBConnectorType.DOCUMENT_ID_FIELD);
         problemFields.add(DBConnectorType.DOCUMENT_ID_FIELD);
-      }
-
-      // Validate document ID column name.
-      if (documentIdField != null && documentIdField.trim().length() > 0) {
-        if (!columnNames.contains(documentIdField)) {
-          result = false;
-          message = res.getString(INVALID_COLUMN_NAME);
-          problemFields.add(DBConnectorType.DOCUMENT_ID_FIELD);
-        }
-        if (baseURL == null || baseURL.trim().length() == 0) {
+      } else if (!Util.isNullOrWhitespace(documentIdField)) {
+        if (Util.isNullOrWhitespace(baseURL)) {
           result = false;
           message = res.getString(MISSING_ATTRIBUTES) + ": "
               + res.getString(DBConnectorType.BASE_URL);
@@ -310,13 +320,19 @@ public class ValidateUtil {
         }
       }
 
+      // Validate document ID column name.
+      if (!validateFieldName(DBConnectorType.DOCUMENT_ID_FIELD,
+          INVALID_COLUMN_NAME)) {
+        result = false;
+      }
+
       // Validate BLOB/CLOB and Fetch URL field.
       String blobClobField = config.get(DBConnectorType.CLOB_BLOB_FIELD);
       String fetchURL = config.get(DBConnectorType.FETCH_URL_FIELD);
 
       // Check if Fetch URL field exists without BLOB/CLOB Field.
-      if ((fetchURL != null && fetchURL.trim().length() > 0)
-          && (blobClobField == null || blobClobField.trim().length() == 0)) {
+      if (!Util.isNullOrWhitespace(fetchURL)
+          && Util.isNullOrWhitespace(blobClobField)) {
         result = false;
         message = res.getString(MISSING_ATTRIBUTES) + ": "
             + res.getString(DBConnectorType.CLOB_BLOB_FIELD);
@@ -324,45 +340,26 @@ public class ValidateUtil {
       }
 
       // Check for valid BLOB/CLOB column name.
-      if (blobClobField != null && blobClobField.trim().length() > 0) {
-        int index = columnNames.indexOf(blobClobField);
+      if (!Util.isNullOrWhitespace(blobClobField)) {
+        int index = indexOfIgnoreCase(columnNames, blobClobField.trim());
         if (index == -1) {
           result = false;
           message = res.getString(INVALID_COLUMN_NAME);
           problemFields.add(DBConnectorType.CLOB_BLOB_FIELD);
         } else {
+          config.put(DBConnectorType.CLOB_BLOB_FIELD, columnNames.get(index));
           LOG.log(Level.CONFIG,
               "BLOB or CLOB column {0} type is {1}, class name {2}.",
-              new Object[] { blobClobField, columnTypes.get(index),
+              new Object[] { columnNames.get(index), columnTypes.get(index),
                              columnClasses.get(index) });
         }
 
-        if (fetchURL != null && fetchURL.trim().length() > 0
-            && !columnNames.contains(fetchURL)) {
+        if (!validateFieldName(DBConnectorType.FETCH_URL_FIELD,
+            INVALID_COLUMN_NAME)) {
           result = false;
-          message = res.getString(INVALID_COLUMN_NAME);
-          problemFields.add(DBConnectorType.FETCH_URL_FIELD);
         }
       }
 
-      return result;
-    }
-
-    /**
-     * Validates the name of last modified date column.
-     *
-     * @return true if result set contains the last modified date column entered
-     *         by connector admin, false otherwise.
-     */
-    private boolean validateLastModifiedField() {
-      boolean result = true;
-      String lastModifiedDateField =
-          config.get(DBConnectorType.LAST_MODIFIED_DATE_FIELD);
-      if (!columnNames.contains(lastModifiedDateField)) {
-        result = false;
-        message = res.getString(INVALID_COLUMN_NAME);
-        problemFields.add(DBConnectorType.LAST_MODIFIED_DATE_FIELD);
-      }
       return result;
     }
 
@@ -409,18 +406,15 @@ public class ValidateUtil {
       }
 
       // Validate last modified date column name.
-      String lastModDateColumn =
-          config.get(DBConnectorType.LAST_MODIFIED_DATE_FIELD);
-      if (lastModDateColumn != null && lastModDateColumn.trim().length() > 0) {
-        success = validateLastModifiedField();
-        if (!success) {
-          return success;
-        }
+      success = validateFieldName(DBConnectorType.LAST_MODIFIED_DATE_FIELD,
+          INVALID_COLUMN_NAME);
+      if (!success) {
+        return success;
       }
 
       String authZQuery = config.get(DBConnectorType.AUTHZ_QUERY);
       // Validate authZ query if connector admin has provided one.
-      if (authZQuery != null && authZQuery.trim().length() > 0) {
+      if (!Util.isNullOrWhitespace(authZQuery)) {
         success = validateAuthZQuery(authZQuery);
       }
 
@@ -650,10 +644,8 @@ public class ValidateUtil {
 
   public ConfigValidation validate(Map<String, String> config,
       ResourceBundle resource) {
-    boolean success = false;
-
     ConfigValidation configValidation = new MissingAttributes(config, resource);
-    success = configValidation.validate();
+    boolean success = configValidation.validate();
     if (success) {
       configValidation = new RequiredFields(config, resource);
       success = configValidation.validate();
@@ -668,7 +660,7 @@ public class ValidateUtil {
                 new QueryParameterAndPrimaryKeyCheck(config, resource);
             success = configValidation.validate();
             if (success) {
-              return configValidation;
+              return null;
             }
           }
         }

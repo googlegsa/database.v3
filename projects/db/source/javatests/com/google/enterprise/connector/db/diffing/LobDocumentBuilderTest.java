@@ -19,6 +19,7 @@ import static org.easymock.EasyMock.createMock;
 import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.replay;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.common.io.ByteStreams;
 import com.google.common.io.Files;
 import com.google.enterprise.connector.db.DBClient;
@@ -29,7 +30,6 @@ import com.google.enterprise.connector.spi.RepositoryException;
 import com.google.enterprise.connector.spi.SkippedDocumentException;
 import com.google.enterprise.connector.spi.SpiConstants;
 import com.google.enterprise.connector.spi.Value;
-import com.google.enterprise.connector.spiimpl.BinaryValue;
 import com.google.enterprise.connector.traversal.FileSizeLimitInfo;
 import com.google.enterprise.connector.traversal.MimeTypeMap;
 import com.google.enterprise.connector.util.MimeTypeDetector;
@@ -50,7 +50,94 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 
+import javax.sql.rowset.serial.SerialClob;
+
 public class LobDocumentBuilderTest extends DocumentBuilderFixture {
+  public void testLobFieldValue() throws Exception {
+    Object clobContent = "hello, world";
+    String originalName = dbContext.getLobField();
+    Map<String, Object> row =
+        ImmutableMap.of(primaryKeyColumn, 2, originalName, clobContent);
+    MimeTypeDetector.setTraversalContext(context);
+
+    testFieldName("lobField", new LobDocumentBuilder(dbContext, context),
+        row, SpiConstants.PROPNAME_CONTENT, clobContent);
+  }
+
+  // public void testFoo() {
+  //   Object docid = 2;
+  //   Map<String, Object> row =
+  //       ImmutableMap.of(primaryKeyColumn, docid, originalName, clobContent);
+  //   DocumentBuilder builder = new LobDocumentBuilder(dbContext, context);
+  //   DocumentBuilder.DocumentHolder holder = builder.getDocumentHolder(
+  //       row, docid.toString(), build.getContentHolder(row, docid.toString())
+  //   builder.getJsonDocument(holder);
+  //   assertNull(ImmutableMap.<String, Object>of().get("foo"));
+  //   assertNull(ImmutableMap.<String, Object>of().get(null));
+  // }
+  /**
+   * Tests that the lobField is filtered from the XML map, which calls
+   * toString on the map values. In order to avoid extraneous calls to
+   * toString in LobDocumentBuilder.getBinaryContent when extracting
+   * the LOB value, we need to supply it as either a String (which we
+   * can't override toString on) or a Clob. EasyMock cannot override
+   * toString, so I picked a random class I found that implements Clob
+   * so I don't have to, namely javax.sql.rowset.serial.SerialClob.
+   */
+  public void testLobFieldFiltered() throws Exception {
+    Object docid = 2;
+    String expectedDocid = "B/" + docid;
+    Object clobContent = new SerialClob("hello, world".toCharArray()) {
+        public String toString() { throw new IllegalStateException(); } };
+    String originalName = dbContext.getLobField();
+    Map<String, Object> row =
+        ImmutableMap.of(primaryKeyColumn, docid, originalName, clobContent);
+    MimeTypeDetector.setTraversalContext(context);
+
+    // We don't care about the property value testing, just test docid.
+    testFieldName("lobField", new LobDocumentBuilder(dbContext, context),
+        row, SpiConstants.PROPNAME_DOCID, expectedDocid);
+  }
+
+  public void testFetchUrlFieldValue() throws Exception {
+    Object expectedUrl = "http://example.com/2";
+    String originalName = dbContext.getFetchURLField();
+    Map<String, Object> row =
+        ImmutableMap.of(primaryKeyColumn, 2, originalName, expectedUrl);
+    MimeTypeDetector.setTraversalContext(context);
+
+    testFieldName("fetchURLField", new LobDocumentBuilder(dbContext, context),
+        row, SpiConstants.PROPNAME_DISPLAYURL, expectedUrl);
+  }
+
+  /**
+   * When fetchURLField is null or whitespace, the connector should
+   * return a dbConnector display URL, and it should not try to call
+   * row.get(String) with the null key (Map implementations are not
+   * guaranteed to support null keys).
+   */
+  public void testFetchUrlFieldNull() throws Exception {
+    DocumentBuilder builder = new LobDocumentBuilder(dbContext, context);
+    Object docid = 2;
+    String expectedUrl = builder.getDisplayUrl("B/" + docid);
+    dbContext.setFetchURLField(null);
+    Map<String, Object> row = new HashMap<String, Object>() {
+      @Override
+      public Object get(Object key) {
+        if (key == null) {
+          throw new NullPointerException();
+        } else {
+          return super.get(key);
+        }
+      }
+    };
+    row.put(primaryKeyColumn, docid);
+    MimeTypeDetector.setTraversalContext(context);
+
+    testFieldName("fetchURLField", builder, row,
+        SpiConstants.PROPNAME_DISPLAYURL, expectedUrl);
+  }
+
   private Map<String, Object> getLargeObjectRow() {
     Map<String, Object> rowMap = new HashMap<String, Object>();
     // Define common test data.
@@ -123,8 +210,8 @@ public class LobDocumentBuilderTest extends DocumentBuilderFixture {
 
     // Test scenario:- the content of this document will be same as the
     // content of CLOB column.
-    String actualContent = new String(readBlobContent(clobDoc), "UTF-8");
-    assertEquals(clobContent, actualContent);
+    assertEquals(clobContent,
+        getProperty(clobDoc, SpiConstants.PROPNAME_CONTENT));
 
     // The MIME type of the content should have been automatically determined.
     assertEquals("text/plain",
@@ -323,17 +410,8 @@ public class LobDocumentBuilderTest extends DocumentBuilderFixture {
     }
 
     byte[] blobcontent = readBlobContent(jsonDocument);
+    assertNotNull(blobcontent);
     File newFile = new File("newreport.pdf");
     ByteStreams.write(blobcontent, Files.newOutputStreamSupplier(newFile));
   }
-
-  private byte[] readBlobContent(JsonDocument doc)
-      throws IOException, RepositoryException {
-    Value value = Value.getSingleValue(doc, SpiConstants.PROPNAME_CONTENT);
-    assertNotNull(value);
-    InputStream is = ((BinaryValue) value).getInputStream();
-    byte[] blobContent = ByteStreams.toByteArray(is);
-    is.close();
-    return blobContent;
-  }    
 }

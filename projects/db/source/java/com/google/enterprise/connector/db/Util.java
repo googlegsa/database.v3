@@ -37,6 +37,21 @@ public class Util {
   private Util() {
   }
 
+  /** Gets whether a value is null, empty, or contains only whitespace. */
+  public static boolean isNullOrWhitespace(String value) {
+    return value == null || value.trim().isEmpty();
+  }
+
+  /**
+   * Trims leading and trailing whitespace from the given string.
+   *
+   * @return null if the value is null, empty, or contains only
+   *     whitespace, and the trimmed value otherwise.
+   */
+  public static String nullOrTrimmed(String value) {
+    return (isNullOrWhitespace(value)) ? null : value.trim();
+  }
+
   /**
    * Generates the SHA1 checksum.
    *

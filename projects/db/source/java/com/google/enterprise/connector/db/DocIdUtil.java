@@ -167,7 +167,6 @@ public class DocIdUtil {
    */
   public static String generateDocId(String[] primaryKeys,
       Map<String, Object> row) throws DBException {
-
     if (row != null && (primaryKeys != null && primaryKeys.length > 0)) {
       Set<String> keySet = row.keySet();
       StringBuilder values = new StringBuilder();
@@ -187,7 +186,6 @@ public class DocIdUtil {
         }
         if (!keySet.contains(primaryKey)) {
           String msg = "Primary Key does not match any of the column names.";
-          LOG.warning(msg);
           throw new DBException(msg);
         }
         values.append(PRIMARY_KEYS_SEPARATOR);
