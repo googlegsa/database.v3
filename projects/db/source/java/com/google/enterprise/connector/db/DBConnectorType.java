@@ -47,6 +47,7 @@ public class DBConnectorType implements ConnectorType {
   private static final String DIV = "div";
   // Red asterisk for required fields.
   public static final String RED_ASTERISK = "*";
+  private static final String RED_ASTERISK_ID_SUFFIX = "Star";
 
   private static final String TYPE = "type";
   private static final String INPUT = "input";
@@ -64,8 +65,6 @@ public class DBConnectorType implements ConnectorType {
   private static final String OPEN_ELEMENT = "<";
   private static final String OPEN_ELEMENT_SLASH = "</";
   private static final String CLOSE_ELEMENT = ">";
-  private static final String BOLD_TEXT_START = "<b>";
-  private static final String BOLD_TEXT_END = "</b>";
 
   private static final String RADIO = "radio";
   private static final String ALIGN = "align";
@@ -75,7 +74,7 @@ public class DBConnectorType implements ConnectorType {
   private static final String TR_END = "</tr>\n";
   private static final String TD_END = "</td>\n";
   private static final String CHECKED = "checked";
-  private static final String DISABLED = "readonly";
+  private static final String DISABLED = "disabled";
   private static final String HIDDEN = "hidden";
   private static final String TRUE = "true";
   private static final String ON_CLICK = "onClick";
@@ -95,28 +94,37 @@ public class DBConnectorType implements ConnectorType {
   public static final String XSLT = "xslt";
   public static final String LAST_MODIFIED_DATE_FIELD = "lastModifiedDate";
 
-  // AuthZ Query
   public static final String AUTHZ_QUERY = "authZQuery";
   public static final String DOCUMENT_URL_FIELD = "documentURLField";
   public static final String DOCUMENT_ID_FIELD = "documentIdField";
   public static final String BASE_URL = "baseURL";
   public static final String CLOB_BLOB_FIELD = "lobField";
   public static final String FETCH_URL_FIELD = "fetchURLField";
-  public static final String EXT_METADATA = "externalMetadata";
   public static final String NO_EXT_METADATA = "noExt";
   private static final String EXT_METADATA_TYPE = "extMetadataType";
 
+  private static final String STYLESHEET_SCRIPT =
+      "'javascript:setDisabledProperties(false, true, true, true)'";
   private static final String COMPLETE_URL_SCRIPT =
-      "'javascript:setReadOnlyProperties(false , true , true)'";
+      "'javascript:setDisabledProperties(true, false, true, true)'";
   private static final String DOC_ID_SCRIPT =
-      "'javascript:setReadOnlyProperties(true , false , true)'";
+      "'javascript:setDisabledProperties(true, true, false, true)'";
   private static final String BLOB_CLOB_SCRIPT =
-      "'javascript:setReadOnlyProperties(true , true , false)'";
+      "'javascript:setDisabledProperties(true, true, true, false)'";
 
   /** List of required fields. */
-  public static List<String> requiredFields = Arrays.asList(new String[] {
+  public static final List<String> ALWAYS_REQUIRED_FIELDS = ImmutableList.of(
       CONNECTION_URL, LOGIN, DRIVER_CLASS_NAME, SQL_QUERY,
-      PRIMARY_KEYS_STRING });
+      PRIMARY_KEYS_STRING);
+
+  public static final List<String> SOMETIMES_REQUIRED_FIELDS = ImmutableList.of(
+      CLOB_BLOB_FIELD, DOCUMENT_URL_FIELD, DOCUMENT_ID_FIELD, BASE_URL);
+
+  public static final List<String> REQUIRED_FIELDS =
+      ImmutableList.<String>builder()
+      .addAll(ALWAYS_REQUIRED_FIELDS)
+      .addAll(SOMETIMES_REQUIRED_FIELDS)
+      .build();
 
   public static final List<String> configKeys =
       ImmutableList.<String>builder().add(
@@ -130,17 +138,15 @@ public class DBConnectorType implements ConnectorType {
           PRIMARY_KEYS_STRING,
           LAST_MODIFIED_DATE_FIELD,
           // Indexing
+          EXT_METADATA_TYPE,
           XSLT,
-          // AuthZ
-          AUTHZ_QUERY,
-          // More indexing
-          EXT_METADATA,
+          CLOB_BLOB_FIELD,
+          FETCH_URL_FIELD,
           DOCUMENT_URL_FIELD,
           DOCUMENT_ID_FIELD,
           BASE_URL,
-          CLOB_BLOB_FIELD,
-          FETCH_URL_FIELD,
-          EXT_METADATA_TYPE
+          // AuthZ
+          AUTHZ_QUERY
         ).build();
 
   public DBConnectorType() {
@@ -154,7 +160,8 @@ public class DBConnectorType implements ConnectorType {
    */
   @Override
   public ConfigureResponse getConfigForm(Locale locale) {
-    return getPopulatedConfigForm(ImmutableMap.<String, String>of(), locale);
+    return getPopulatedConfigForm(
+        ImmutableMap.<String, String>of("extMetadataType", "noExt"), locale);
   }
 
   @Override
@@ -225,7 +232,7 @@ public class DBConnectorType implements ConnectorType {
     public String getFormSnippet() {
       StringBuilder buf = new StringBuilder(getJavaScript());
       for (String key : configKeys) {
-        buf.append(formSnippetWithColor(key, configMap.get(key), false));
+        buf.append(getFormSnippetField(key, configMap.get(key), false));
       }
       return buf.toString();
     }
@@ -239,13 +246,14 @@ public class DBConnectorType implements ConnectorType {
      * @param red indicates whether this field is required or not
      * @return database connector configuration form snippet
      */
-    private String formSnippetWithColor(String key, String value, boolean red) {
+    private String getFormSnippetField(String key, String value, boolean red) {
       StringBuilder buf = new StringBuilder();
       appendStartRow(buf, key, red, value);
 
-      // Check if key is "externalMetadata". For this label we don't have to
-      // create corresponding Text Field/Area . End TD and TR elements and return.
-      if (EXT_METADATA.equalsIgnoreCase(key)) {
+      // Check if key is "extMetadataType". For this label we don't
+      // have to create corresponding Text Field/Area. End TD and TR
+      // elements and return.
+      if (EXT_METADATA_TYPE.equals(key)) {
         appendEndRow(buf);
         return buf.toString();
       }
@@ -266,13 +274,6 @@ public class DBConnectorType implements ConnectorType {
         buf.append(OPEN_ELEMENT_SLASH);
         buf.append(TEXT_AREA);
         buf.append(CLOSE_ELEMENT);
-      } else if (EXT_METADATA_TYPE.equals(key)) {
-        buf.append(INPUT);
-        appendAttribute(buf, NAME, EXT_METADATA_TYPE);
-        appendAttribute(buf, TYPE, HIDDEN);
-        appendAttribute(buf, ID, key);
-        appendAttribute(buf, VALUE, NO_EXT_METADATA);
-        buf.append(CLOSE_ELEMENT_SLASH);
       } else {
         buf.append(INPUT);
         if (isKeySensitive(key)) {
@@ -315,12 +316,11 @@ public class DBConnectorType implements ConnectorType {
      * @return validated config form snippet
      */
     public String getValidatedFormSnippet(ConfigValidation configValidation) {
-      StringBuilder buf = new StringBuilder();
-      buf.append(getJavaScript());
+      StringBuilder buf = new StringBuilder(getJavaScript());
       List<String> problemfields = configValidation.getProblemFields();
       for (String key : configKeys) {
-        buf.append(formSnippetWithColor(key, configMap.get(key),
-                                        problemfields.contains(key)));
+        buf.append(getFormSnippetField(key, configMap.get(key),
+            problemfields.contains(key)));
       }
       return buf.toString();
     }
@@ -336,12 +336,11 @@ public class DBConnectorType implements ConnectorType {
      */
     private void appendStartRow(StringBuilder buf, String key, boolean red,
         String value) {
-
       buf.append(TR_OPEN);
       appendAttribute(buf, "valign", "top");
       buf.append(CLOSE_ELEMENT);
 
-      if (BASE_URL.equalsIgnoreCase(key) || FETCH_URL_FIELD.equalsIgnoreCase(key)) {
+      if (BASE_URL.equals(key) || FETCH_URL_FIELD.equals(key)) {
         buf.append(TD_OPEN + " " + ALIGN + "='" + CENTER + "'" + CLOSE_ELEMENT);
       } else {
         buf.append(TD_OPEN);
@@ -349,10 +348,6 @@ public class DBConnectorType implements ConnectorType {
         appendAttribute(buf, "rowspan", "1");
         appendAttribute(buf, "style", "white-space:nowrap");
         buf.append(CLOSE_ELEMENT);
-
-        if (EXT_METADATA.equalsIgnoreCase(key)) {
-          buf.append(BOLD_TEXT_START);
-        }
       }
 
       if (red) {
@@ -360,8 +355,14 @@ public class DBConnectorType implements ConnectorType {
       }
 
       // Add radio buttons before "Stylesheet", "Document URL Field",
-      // "Document Id Field" and "BLOB/CLOB Field"
-      if (DOCUMENT_URL_FIELD.equals(key)) {
+      // "Document ID Field" and "BLOB or CLOB Field"
+      boolean isRadio = true;
+      if (XSLT.equals(key)) {
+        String extMetadataType = configMap.get(EXT_METADATA_TYPE);
+        boolean isChecked = Strings.isNullOrEmpty(extMetadataType)
+            || extMetadataType.equals(NO_EXT_METADATA);
+        appendRadio(buf, NO_EXT_METADATA, isChecked);
+      } else if (DOCUMENT_URL_FIELD.equals(key)) {
         // Set isChecked flag true only if value of Document URL Field is not
         // empty.
         boolean isChecked = value != null && value.trim().length() > 0;
@@ -378,33 +379,45 @@ public class DBConnectorType implements ConnectorType {
         boolean isChecked = (value != null && value.trim().length() > 0)
             || (fetchURL != null && fetchURL.trim().length() > 0);
         appendRadio(buf, BLOB_CLOB, isChecked);
+      } else {
+        isRadio = false;
       }
 
-      // No label for External Metadata Type (Radio button).
-      if (!EXT_METADATA_TYPE.equalsIgnoreCase(key)) {
-        buf.append(OPEN_ELEMENT);
-        buf.append(DIV);
+      buf.append(OPEN_ELEMENT);
+      buf.append(DIV);
+      if (BASE_URL.equals(key) || FETCH_URL_FIELD.equals(key)) {
+        // Extra indentation for fields under radio buttons.
+        appendAttribute(buf, "style", "margin-left:45px; float: left;");
+      } else {
         appendAttribute(buf, "style", "float: left;");
-        buf.append(CLOSE_ELEMENT);
-        buf.append(resource.getString(key));
-        buf.append(OPEN_ELEMENT_SLASH);
-        buf.append(DIV);
-        buf.append(CLOSE_ELEMENT);
       }
+      buf.append(CLOSE_ELEMENT);
+      buf.append(resource.getString(key));
+      buf.append(OPEN_ELEMENT_SLASH);
+      buf.append(DIV);
+      buf.append(CLOSE_ELEMENT);
 
+      if (isRadio) {
+        buf.append("</label>");
+      }
       if (red) {
         buf.append("</font>");
       }
-      if (EXT_METADATA.equalsIgnoreCase(key)) {
-        buf.append(BOLD_TEXT_END);
-      }
 
       // Add red asterisk for required fields.
-      if (requiredFields.contains(key)) {
+      if (REQUIRED_FIELDS.contains(key)) {
+        String style = "text-align: right; color: red; "
+            + "font-weight: bold; margin-right: 0.3em;";
+        if (SOMETIMES_REQUIRED_FIELDS.contains(key)) {
+          style = style + " visibility: hidden; float: right;";
+        }
+
         buf.append(OPEN_ELEMENT);
         buf.append(DIV);
-        appendAttribute(buf, "style", "text-align: right; color: red; "
-                        + "font-weight: bold; margin-right: 0.3em;");
+        if (SOMETIMES_REQUIRED_FIELDS.contains(key)) {
+          appendAttribute(buf, "id", key + RED_ASTERISK_ID_SUFFIX);
+        }
+        appendAttribute(buf, "style", style);
         buf.append(CLOSE_ELEMENT);
         buf.append(RED_ASTERISK);
         buf.append(OPEN_ELEMENT_SLASH);
@@ -437,13 +450,18 @@ public class DBConnectorType implements ConnectorType {
 
     private void appendRadio(StringBuilder buf, String value, boolean isChecked)
     {
+      buf.append("<label>");
+      buf.append("<div style='text-align:right; width:40px;");
+      buf.append(" float:left; margin-right:5px'>");
       buf.append(OPEN_ELEMENT + INPUT + " " + TYPE + "=" + "'" + RADIO
           + "' " + NAME + "=" + "'" + EXT_METADATA_TYPE + "' " + VALUE + "=" 
           + "'" + value + "' ");
       if (isChecked) {
         buf.append(CHECKED + "=" + "'" + CHECKED + "' ");
       }
-      if (COMPLETE_URL.equals(value)) {
+      if (NO_EXT_METADATA.equals(value)) {
+        buf.append(ON_CLICK + "=" + STYLESHEET_SCRIPT);
+      } else if (COMPLETE_URL.equals(value)) {
         buf.append(ON_CLICK + "=" + COMPLETE_URL_SCRIPT);
       } else if (DOC_ID.equals(value)) {
         buf.append(ON_CLICK + "=" + DOC_ID_SCRIPT);
@@ -451,6 +469,7 @@ public class DBConnectorType implements ConnectorType {
         buf.append(ON_CLICK + "=" + BLOB_CLOB_SCRIPT);
       }
       buf.append(CLOSE_ELEMENT_SLASH);
+      buf.append("</div>");
     }
 
     /**
@@ -462,32 +481,44 @@ public class DBConnectorType implements ConnectorType {
      * will be cleared. When user selects "Document URL Field" OR
      * "Document Id Field" "AuthZ Query" will become non-editable.
      *
-     * @return JavaScript for making External Metadta fields and authZ query field
-     *         editable/non-editable depending upon context.
+     * @return JavaScript for making fields editable/non-editable
+     *         depending upon context.
      */
     private static String getJavaScript() {
-      /*
-       * urlField , docIdField , lobField are boolean values for making external
-       * metadata fields readOnly. "AuthZ Field" will become editable when user
-       * selects BLOB/CLOB Field i.e when BLOB/CLOB field is editable.
-       */
-      String javascript = "<script type=\"text/javascript\"> "
-          + "function setReadOnlyProperties(urlField , docIdField , lobField){"
-          + "document.getElementById('documentURLField').readOnly=urlField ;    "
-          + "document.getElementById('documentIdField').readOnly=docIdField ;    "
-          + "document.getElementById('baseURL').readOnly=docIdField ;    "
-          + "document.getElementById('lobField').readOnly=lobField ;  "
-          + "document.getElementById('fetchURLField').readOnly=lobField ;"
-          + "if(urlField){document.getElementById('documentURLField').value='';}"
-          + "if(docIdField){document.getElementById('documentIdField').value='' ;"
-          + "document.getElementById('baseURL').value=''}"
-          + "if(lobField){document.getElementById('lobField').value='';"
-          + "document.getElementById('fetchURLField').value='';}"
-          + "if(!lobField){document.getElementById('authZQuery').readOnly=false}"
-          + "else{document.getElementById('authZQuery').readOnly=true} }"
-          + "</script>";
+      // xslt, urlField, docIdField, lobField are boolean values for
+      // making disabling content definition fields. The authZ
+      // query currently applies only to content feeds (i.e.,
+      // stylesheet or BLOB/CLOB configurations.
+      String javascript = "<script type=\"text/javascript\">\n"
+          + "function getVisibility(disabled) {\n"
+          + "if (disabled) { return 'hidden'; } else { return 'visible'; }\n"
+          + "}\n"
+          + "function setDisabledProperties("
+          + "xslt, urlField, docIdField, lobField){\n"
+          + setDisabled(XSLT, "xslt")
+          + setDisabled(DOCUMENT_URL_FIELD, "urlField")
+          + setDisabled(DOCUMENT_ID_FIELD, "docIdField")
+          + setDisabled(BASE_URL, "docIdField")
+          + setDisabled(CLOB_BLOB_FIELD, "lobField")
+          + setDisabled(FETCH_URL_FIELD, "lobField")
+          + setDisabled(AUTHZ_QUERY, "xslt && lobField")
+          + setVisibility("documentURLField", "urlField")
+          + setVisibility("documentIdField", "docIdField")
+          + setVisibility("baseURL", "docIdField")
+          + setVisibility("lobField", "lobField")
+          + "}\n"
+          + "</script>\n";
 
       return javascript;
+    }
+
+    private static String setDisabled(String id, String value) {
+      return "document.getElementById('" + id + "').disabled=" + value + ";\n";
+    }
+
+    private static String setVisibility(String id, String disabled) {
+      return "document.getElementById('" + id + RED_ASTERISK_ID_SUFFIX
+          + "').style.visibility=getVisibility(" + disabled + ");\n";
     }
 
     /**

@@ -65,7 +65,6 @@ public abstract class DBTestBase extends TestCase {
     configMap.put("authZQuery", LanguageResource.getPropertyValue("authZQuery"));
     configMap.put("lastModifiedDate", "");
     configMap.put("documentTitle", "title");
-    configMap.put("externalMetadata", "");
     configMap.put("documentURLField", "docURL");
     configMap.put("documentIdField", "docId");
     configMap.put("baseURL", "http://myhost/app/");

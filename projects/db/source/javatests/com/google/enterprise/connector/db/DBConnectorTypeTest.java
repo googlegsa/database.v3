@@ -69,26 +69,83 @@ public class DBConnectorTypeTest extends DBTestBase {
     mdbConnectorFactory = new MockDBConnectorFactory();
   }
 
-  public void testMissingRequiredFields() {
+  public void testAlwaysRequiredFields() {
     Map<String, String> newConfigMap = Maps.newHashMap(this.configMap);
-    // Remove a required field.
-    newConfigMap.put("connectionUrl", "");
-    newConfigMap.put("sqlQuery", "");
+    // Remove the required fields.
+    for (String field : DBConnectorType.ALWAYS_REQUIRED_FIELDS) {
+      newConfigMap.put(field, "");
+    }
     ConfigureResponse configRes = this.connectorType.validateConfig(
         newConfigMap, Locale.ENGLISH, mdbConnectorFactory);
     assertNotNull(configRes);
     String message = configRes.getMessage();
     assertTrue(message, message.contains(BUNDLE.getString("REQ_FIELDS")));
-    // There was a bug where each required field would appear twice in
-    // the message.
-    int index = message.indexOf(BUNDLE.getString("connectionUrl"));
-    assertTrue(message, index > 0);
-    index = message.indexOf(BUNDLE.getString("connectionUrl"), index + 1);
-    assertFalse(message, index > 0);
-    index = message.indexOf(BUNDLE.getString("sqlQuery"));
-    assertTrue(message, index > 0);
-    index = message.indexOf(BUNDLE.getString("sqlQuery"), index + 1);
-    assertFalse(message, index > 0);
+    for (String field : DBConnectorType.ALWAYS_REQUIRED_FIELDS) {
+      String label = BUNDLE.getString(field);
+      int index = message.indexOf(label);
+      assertFalse(message + " does not contain " + label, index == -1);
+
+      // There was a bug where each required field would appear twice in
+      // the message.
+      index = message.indexOf(label, index + 1);
+      assertTrue(message + " contains duplicates of " + label, index == -1);
+    }
+  }
+
+  /**
+   * If none of the sometimes-required fields are set, or actually if
+   * none of them are set for the given value of extMetadataType,
+   * that's current OK. The connector will fall back to noExt, that
+   * is, the stylesheet.
+   */
+  public void testSometimesRequiredFields() {
+    Map<String, String> newConfigMap = Maps.newHashMap(this.configMap);
+    // Require some of the sometimes required fields.
+    newConfigMap.put("extMetadataType", "lob");
+    // Remove the sometimes required fields.
+    for (String field : DBConnectorType.SOMETIMES_REQUIRED_FIELDS) {
+      newConfigMap.put(field, "");
+    }
+    ConfigureResponse configRes = connectorType.validateConfig(
+        newConfigMap, Locale.ENGLISH, mdbConnectorFactory);
+    if (configRes != null) {
+      fail(configRes.getMessage());
+    }
+  }
+
+  public void testMissingBlobClob() {
+    testSometimesRequiredField("lob", "lobField", "fetchURLField", "fetchURL");
+  }
+
+  public void testMissingDocumentId() {
+    testSometimesRequiredField("url", "documentIdField",
+        "baseURL", "http://myhost/app/");
+  }
+
+  public void testMissingBaseUrl() {
+    testSometimesRequiredField("url", "baseURL", "documentIdField", "docId");
+  }
+
+  /**
+   * Test sometimes required fields that are required when other
+   * fields are set.
+   */
+  private void testSometimesRequiredField(String extMetadataType,
+      String missing, String present, String value) {
+    Map<String, String> newConfigMap = Maps.newHashMap(this.configMap);
+    newConfigMap.put("extMetadataType", extMetadataType);
+    newConfigMap.put(missing, "");
+    newConfigMap.put(present, value);
+
+    ConfigureResponse configRes = this.connectorType.validateConfig(
+        newConfigMap, Locale.ENGLISH, mdbConnectorFactory);
+    assertNotNull(configRes);
+    String message = configRes.getMessage();
+    assertTrue(message,
+        message.contains(BUNDLE.getString("MISSING_ATTRIBUTES")));
+    String label = BUNDLE.getString(missing);
+    int index = message.indexOf(label);
+    assertFalse(message + " does not contain " + label, index == -1);
   }
 
   public void testValidConfig() {

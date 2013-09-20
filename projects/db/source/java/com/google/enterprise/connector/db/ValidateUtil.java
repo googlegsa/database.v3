@@ -446,61 +446,9 @@ public class ValidateUtil {
   }
 
   /**
-   * Tests if any of the attributes are missing.
-   */
-  private class MissingAttributes implements ConfigValidation {
-    private final Map<String, String> config;
-    private String message = "";
-    private boolean success = false;
-    private List<String> problemFields;
-    private final ResourceBundle res;
-
-    public MissingAttributes(Map<String, String> config, ResourceBundle res) {
-      this.config = config;
-      this.res = res;
-    }
-
-    public String getMessage() {
-      return message;
-    }
-
-    public List<String> getProblemFields() {
-      return problemFields;
-    }
-
-    public boolean validate() {
-      List<String> missingAttributes = new ArrayList<String>();
-      for (String configKey : DBConnectorType.configKeys) {
-        if (!config.containsKey(configKey)
-            && !configKey.equalsIgnoreCase(DBConnectorType.EXT_METADATA)) {
-          missingAttributes.add(configKey);
-        }
-      }
-      if (missingAttributes.isEmpty()) {
-        success = true;
-      } else {
-        StringBuilder buf = new StringBuilder();
-        buf.append(res.getString(MISSING_ATTRIBUTES) + ": ");
-        boolean first = true;
-        for (String attribute : missingAttributes) {
-          if (!first) {
-            buf.append(", ");
-          }
-          first = false;
-          buf.append(res.getString(attribute));
-        }
-        message = buf.toString();
-        problemFields = missingAttributes;
-      }
-      return success;
-    }
-  }
-
-  /**
    * Tests if any of the required fields are missing.
    */
   private static class RequiredFields implements ConfigValidation {
-    private List<String> missingFields = new ArrayList<String>();
     private final Map<String, String> config;
     private String message = "";
     private boolean success = false;
@@ -521,7 +469,9 @@ public class ValidateUtil {
     }
 
     public boolean validate() {
-      for (String field : DBConnectorType.requiredFields) {
+      List<String> missingFields = new ArrayList<String>();
+      for (String field : DBConnectorType.ALWAYS_REQUIRED_FIELDS) {
+        // TODO(jlacey): Util.isNullOrWhitespace with tests.
         if (config.get(field).equals("")) {
           missingFields.add(field);
         }
@@ -556,9 +506,7 @@ public class ValidateUtil {
   private static class XSLTCheck implements ConfigValidation {
     private final Map<String, String> config;
     private String message = "";
-    private boolean success = false;
     private List<String> problemFields = new ArrayList<String>();
-    private StringBuilder xslt;
     private final ResourceBundle res;
 
     public XSLTCheck(Map<String, String> config, ResourceBundle res) {
@@ -575,24 +523,19 @@ public class ValidateUtil {
     }
 
     public boolean validate() {
-      xslt = new StringBuilder(config.get(DBConnectorType.XSLT));
-      if (xslt != null) {
-        String XSLT_RECORD_TITLE_ELEMENT2;
-        int index2;
-        XSLT_RECORD_TITLE_ELEMENT2 = "<td><xsl:value-of select=\"title\"/>";
-        index2 = xslt.indexOf(XSLT_RECORD_TITLE_ELEMENT2);
-
-        if (index2 != -1) {
-          success = false;
-          message = res.getString("XSLT_VALIDATE");
-          problemFields.add(DBConnectorType.XSLT);
-        } else {
-          success = true;
-        }
+      boolean success = false;
+      StringBuilder xslt =
+          new StringBuilder(config.get(DBConnectorType.XSLT));
+      int index = xslt.indexOf("<td><xsl:value-of select=\"title\"/>");
+      if (index != -1) {
+        success = false;
+        message = res.getString("XSLT_VALIDATE");
+        problemFields.add(DBConnectorType.XSLT);
+      } else {
+        success = true;
       }
       return success;
     }
-
   }
 
   /**
@@ -644,24 +587,20 @@ public class ValidateUtil {
 
   public ConfigValidation validate(Map<String, String> config,
       ResourceBundle resource) {
-    ConfigValidation configValidation = new MissingAttributes(config, resource);
+    ConfigValidation configValidation = new RequiredFields(config, resource);
     boolean success = configValidation.validate();
     if (success) {
-      configValidation = new RequiredFields(config, resource);
+      configValidation = new TestDbFields(config, resource);
       success = configValidation.validate();
       if (success) {
-        configValidation = new TestDbFields(config, resource);
+        configValidation = new XSLTCheck(config, resource);
         success = configValidation.validate();
         if (success) {
-          configValidation = new XSLTCheck(config, resource);
+          configValidation =
+              new QueryParameterAndPrimaryKeyCheck(config, resource);
           success = configValidation.validate();
           if (success) {
-            configValidation =
-                new QueryParameterAndPrimaryKeyCheck(config, resource);
-            success = configValidation.validate();
-            if (success) {
-              return null;
-            }
+            return null;
           }
         }
       }
