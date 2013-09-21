@@ -123,7 +123,7 @@ public class DBConnectorTypeTest extends DBTestBase {
   }
 
   public void testMissingBaseUrl() {
-    testSometimesRequiredField("url", "baseURL", "documentIdField", "docId");
+    testSometimesRequiredField("url", "baseURL", "documentIdField", "fname");
   }
 
   /**
