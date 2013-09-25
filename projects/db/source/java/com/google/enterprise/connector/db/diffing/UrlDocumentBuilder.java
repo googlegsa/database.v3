@@ -43,8 +43,8 @@ class UrlDocumentBuilder extends DocumentBuilder {
 
   @Override
   protected ContentHolder getContentHolder(Map<String, Object> row,
-      String docId) throws DBException {
-    return new ContentHolder(null, getChecksum(row, null), null);
+      List<String> primaryKey, String docId) throws DBException {
+    return new ContentHolder(null, getChecksum(row, primaryKey, null), null);
   }
 
   private String getUrl(Map<String, Object> row, List<String> skipColumns) {
@@ -116,7 +116,7 @@ class UrlDocumentBuilder extends DocumentBuilder {
                                SpiConstants.ActionType.ADD.toString());
 
     skipLastModified(skipColumns, dbContext);
-    skipColumns.addAll(Arrays.asList(primaryKeys));
+    skipColumns.addAll(holder.primaryKey);
     setMetaInfo(jsonObjectUtil, holder.row, skipColumns);
 
     return new JsonDocument(jsonObjectUtil.getProperties(),

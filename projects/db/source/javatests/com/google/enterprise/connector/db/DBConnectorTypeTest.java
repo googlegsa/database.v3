@@ -243,6 +243,8 @@ public class DBConnectorTypeTest extends DBTestBase {
     " id,fname", "iD ,fNAME", "Id, Fname", // mixed-case whitespace
     "ID,fNAME", "iD,FNAME" }; // one exact match, one mixed-case
 
+  private static final String ACTUAL_FIELD_NAMES = "ID,FNAME";
+
   private static final String INVALID_FIELD_NAME = "not_a_field";
 
   /**
@@ -317,12 +319,32 @@ public class DBConnectorTypeTest extends DBTestBase {
 
   public void testPrimaryKeySingleValues() {
     testFieldNames(ImmutableMap.<String, String>of(), "primaryKeysString",
-        SINGLE_FIELD_NAMES, null, "TEST_PRIMARY_KEYS");
+        SINGLE_FIELD_NAMES, ACTUAL_FIELD_NAME, "TEST_PRIMARY_KEYS");
   }
 
   public void testPrimaryKeyMultipleValues() {
     testFieldNames(ImmutableMap.<String, String>of(), "primaryKeysString",
-        MULTIPLE_FIELD_NAMES, null, "TEST_PRIMARY_KEYS");
+        MULTIPLE_FIELD_NAMES, ACTUAL_FIELD_NAMES, "TEST_PRIMARY_KEYS");
+  }
+
+  public void testPrimaryKeyEmptyValues() {
+    StringBuilder errors = new StringBuilder();
+    for (String empty : new String[] { ",", "   ", "   , ,," }) {
+      ConfigureResponse configRes = validateConfig(
+          ImmutableMap.<String, String>of(), "primaryKeysString", empty);
+      if (configRes.getMessage() == null) {
+        errors.append("primaryKeysString=" + empty
+            + ": Unexpected null\n");
+      } else if (!configRes.getMessage().equals(
+              BUNDLE.getString("TEST_PRIMARY_KEYS"))) {
+        errors.append("primaryKeysString=" + empty + ": "
+            + configRes.getMessage() + "\n");
+      }
+    }
+
+    if (errors.length() > 0) {
+      fail(errors.toString());
+    }
   }
 
   public void testLastModifiedDateValues() {

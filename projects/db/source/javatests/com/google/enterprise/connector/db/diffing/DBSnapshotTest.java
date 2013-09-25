@@ -47,8 +47,8 @@ public class DBSnapshotTest extends TestCase {
     String mimeType = "text/plain";
     String checksum = "1234";
     String jsonString = builder.getJsonString(docId, checksum);
-    holder = new DocumentBuilder.DocumentHolder(builder, null, docId,
-        new ContentHolder("hello, world", checksum, mimeType));
+    holder = new DocumentBuilder.DocumentHolder(builder, null, null,
+        docId, new ContentHolder("hello, world", checksum, mimeType));
 
     valueOrdering = new ValueOrdering() {
         public boolean nullsAreSortedLow() {

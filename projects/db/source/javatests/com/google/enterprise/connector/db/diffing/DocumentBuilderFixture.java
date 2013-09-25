@@ -101,10 +101,21 @@ public abstract class DocumentBuilderFixture extends DBTestBase {
         .getDocument();
   }
 
-  private static class FieldNameBean {
-    private final DBContext dbContext;
+  /** Provides getter and setter methods for a DBContext property. */
+  protected static class FieldNameBean {
+    protected final DBContext dbContext;
     private final Method getter;
     private final Method setter;
+
+    /**
+     * Constructor for subclasses that provide their own get and set
+     * implementation.
+     */
+    protected FieldNameBean(DBContext dbContext) {
+      this.dbContext = dbContext;
+      getter = null;
+      setter = null;
+    }
 
     public FieldNameBean(DBContext dbContext, String propertyName) {
       this.dbContext = dbContext;
@@ -135,20 +146,23 @@ public abstract class DocumentBuilderFixture extends DBTestBase {
         throw new RuntimeException(e);
       }
     }
-  }
 
-  protected static List<String> getNameVariations(String name) {
-    if (Util.isNullOrWhitespace(name)) {
-      // ImmutableList does not support nulls.
-      return Arrays.asList(null, "", " ");
-    } else {
-      return Arrays.asList(name, " " + name, name + " ");
+    public List<String> getNameVariations() {
+      String name = get();
+      if (Util.isNullOrWhitespace(name)) {
+        // ImmutableList does not support nulls.
+        return Arrays.asList(null, "", " ");
+      } else {
+        return Arrays.asList(name, " " + name, name + " ");
+      }
     }
   }
 
   /**
    * Tests different cases and extra whitespace in field names. All of
-   * the errors are collected before reporting the failures.
+   * the errors are collected before reporting the failures. Bean
+   * introspection on the {@code configName} is used to get and set
+   * the field name values.
    *
    * @param configName the DBContext bean property name
    * @param builder the builder instance under test
@@ -160,10 +174,27 @@ public abstract class DocumentBuilderFixture extends DBTestBase {
       DocumentBuilder builder, Map<String, Object> row, String propertyName,
       Object expectedValue) {
     FieldNameBean bean = new FieldNameBean(dbContext, configName);
+    testFieldName(configName, bean, builder, row, propertyName, expectedValue);
+  }
+
+  /**
+   * Tests different cases and extra whitespace in field names. All of
+   * the errors are collected before reporting the failures.
+   *
+   * @param configName the DBContext bean property name
+   * @param bean the bean used to get and set the bean property
+   * @param builder the builder instance under test
+   * @param row the database row
+   * @param propertyName the affected document property name
+   * @param expectedValue the expected value of the document property
+   */
+  protected void testFieldName(String configName, FieldNameBean bean,
+      DocumentBuilder builder, Map<String, Object> row, String propertyName,
+      Object expectedValue) {
     String originalName = bean.get();
 
     StringBuilder errors = new StringBuilder();
-    for (String fieldName : getNameVariations(originalName)) {
+    for (String fieldName : bean.getNameVariations()) {
       bean.set(fieldName);
       try {
         JsonDocument doc = getJsonDocument(builder, row);
@@ -178,7 +209,7 @@ public abstract class DocumentBuilderFixture extends DBTestBase {
           String metadataValue = getProperty(doc, originalName);
           if (metadataValue != null) {
             errors.append(configName + "=" + fieldName
-                + ": expected skipped field but was:<" + propertyValue + ">\n");
+                + ": expected skipped field but was:<" + metadataValue + ">\n");
           }
         }
       } catch (Exception e) {

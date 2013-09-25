@@ -42,6 +42,7 @@ public class RepositoryHandler {
   private final DBClient dbClient;
   private final TraversalContextManager traversalContextManager;
   private final QueryStrategy queryStrategy;
+  private final DocumentBuilder docBuilder;
 
   private TraversalContext traversalContext;
 
@@ -56,11 +57,9 @@ public class RepositoryHandler {
     this.dbClient = dbContext.getClient();
     this.traversalContextManager = traversalContextManager;
 
-    if (dbContext.isParameterizedQueryFlag()) {
-      queryStrategy = new ParameterizedQueryStrategy();
-    } else {
-      queryStrategy = new PartialQueryStrategy();
-    }
+    queryStrategy = (dbContext.isParameterizedQueryFlag())
+        ? new ParameterizedQueryStrategy() : new PartialQueryStrategy();
+    docBuilder = DocumentBuilder.getInstance(dbContext, traversalContext);
   }
 
   private interface QueryStrategy {
@@ -121,16 +120,13 @@ public class RepositoryHandler {
      * the primary key column name entered by user with actual column name in
      * result set(map).
      */
-    private void setPrimaryKeyColumn(Set<String> keySet) {
-      String[] keys = dbContext.getPrimaryKeyColumns();
-      String primaryKey = keys[0];
-      for (String key : keySet) {
-        if (primaryKey.equalsIgnoreCase(key)) {
-          primaryKey = key;
-          break;
-        }
+    private String getPrimaryKeyColumn(Set<String> columnNames) {
+      try {
+        return dbContext.getPrimaryKeyColumns(columnNames).get(0);
+      } catch (DBException e) {
+        throw new SnapshotRepositoryRuntimeException(
+            "Error getting the primary key column.", e);
       }
-      primaryKeyColumn = primaryKey;
     }
 
     /**
@@ -140,9 +136,7 @@ public class RepositoryHandler {
     public void updateCursor(List<Map<String, Object>> rows) {
       Preconditions.checkArgument(rows.size() > 0);
       if (primaryKeyColumn == null) {
-        Map<String, Object> singleRow = rows.iterator().next();
-        Set<String> keySet = singleRow.keySet();
-        setPrimaryKeyColumn(keySet);
+        primaryKeyColumn = getPrimaryKeyColumn(rows.get(0).keySet());
       }
       for (Map<String, Object> row : rows) {
         String newKeyValueString = row.get(primaryKeyColumn).toString();
@@ -199,25 +193,20 @@ public class RepositoryHandler {
     LOG.log(Level.FINE, "Building document snapshots for {0} rows.",
         rows.size());
     List<DocumentSnapshot> docList = Lists.newArrayList();
-    if (rows.size() > 0) {
-      DocumentBuilder docBuilder =
-          DocumentBuilder.getInstance(dbContext, traversalContext);
-
-      for (Map<String, Object> row : rows) {
-        try {
-          DocumentSnapshot snapshot = docBuilder.getDocumentSnapshot(row);
-          if (snapshot != null) {
-            if (LOG.isLoggable(Level.FINER)) {
-              LOG.finer("DBSnapshotRepository returns document with docID "
-                  + snapshot.getDocumentId());
-            }
-            docList.add(snapshot);
+    for (Map<String, Object> row : rows) {
+      try {
+        DocumentSnapshot snapshot = docBuilder.getDocumentSnapshot(row);
+        if (snapshot != null) {
+          if (LOG.isLoggable(Level.FINER)) {
+            LOG.finer("DBSnapshotRepository returns document with docID "
+                + snapshot.getDocumentId());
           }
-        } catch (DBException e) {
-          // See the similar log message in DBSnapshot.getDocumentHandle.
-          LOG.warning("Cannot convert database record to snapshot for "
-              + "record " + row + "\n" + e);
+          docList.add(snapshot);
         }
+      } catch (DBException e) {
+        // See the similar log message in DBSnapshot.getDocumentHandle.
+        LOG.log(Level.WARNING, "Cannot convert database record to snapshot "
+            + "for record " + row, e);
       }
     }
     LOG.info(docList.size() + " document(s) to be fed to GSA");

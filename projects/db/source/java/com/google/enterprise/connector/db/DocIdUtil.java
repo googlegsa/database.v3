@@ -29,6 +29,7 @@ import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
@@ -158,51 +159,22 @@ public class DocIdUtil {
    * into the docid allows the individual values to be extracted and treated
    * appropriately.  For instance when ordering docids, docids consisting of
    * numeric primary keys are sorted numerically, rather than lexigraphically.
-   * 
    *
    * @param primaryKeys array of primary key column names.
    * @param row map representing a row in database table.
    * @return docId encoded values of primary key columns, separated by '/'.
    * @throws DBException
    */
-  public static String generateDocId(String[] primaryKeys,
-      Map<String, Object> row) throws DBException {
-    if (row != null && (primaryKeys != null && primaryKeys.length > 0)) {
-      Set<String> keySet = row.keySet();
-      StringBuilder values = new StringBuilder();
-      StringBuilder types = new StringBuilder();
-
-      for (String primaryKey : primaryKeys) {
-        // If user enters primary key column names in different case in database
-        // connector config form, we need to map primary key column names
-        // entered by user with actual column names in query. Below block of
-        // code map the primary key column names entered by user with actual
-        // column names in result set(map).
-        for (String key : keySet) {
-          if (primaryKey.equalsIgnoreCase(key)) {
-            primaryKey = key;
-            break;
-          }
-        }
-        if (!keySet.contains(primaryKey)) {
-          String msg = "Primary Key does not match any of the column names.";
-          throw new DBException(msg);
-        }
-        values.append(PRIMARY_KEYS_SEPARATOR);
-        appendValue(row.get(primaryKey), values, types);
-      }
-      // Now glue the types and values together as the docId.
-      return types.toString() + values.toString();
-    } else {
-      String msg = "";
-      if (row == null) {
-        msg = "Database row is null";
-      } else if (primaryKeys == null || primaryKeys.length == 0) {
-        msg = "List of primary keys is empty or null";
-      }
-      LOG.warning(msg);
-      throw new DBException(msg);
+  public static String generateDocId(List<String> primaryKeys,
+      Map<String, Object> row) {
+    StringBuilder values = new StringBuilder();
+    StringBuilder types = new StringBuilder();
+    for (String primaryKey : primaryKeys) {
+      values.append(PRIMARY_KEYS_SEPARATOR);
+      appendValue(row.get(primaryKey), values, types);
     }
+    // Now glue the types and values together as the docId.
+    return types.toString() + values.toString();
   }
 
   private static final SimpleDateFormat ISO8601_DATE_FORMAT_MILLIS =

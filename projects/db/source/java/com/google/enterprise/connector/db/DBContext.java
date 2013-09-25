@@ -14,17 +14,17 @@
 
 package com.google.enterprise.connector.db;
 
+import com.google.common.collect.ImmutableList;
 import com.google.enterprise.connector.util.MimeTypeDetector;
 
 import java.text.Collator;
+import java.util.Set;
 
 /**
  * An encapsulation of all the config needed for a working Database Connector
  * instance.
  */
 public class DBContext implements ValueOrdering {
-  private static final String PRIMARY_KEYS_SEPARATOR = ",";
-
   private final MimeTypeDetector mimeTypeDetector = new MimeTypeDetector();
 
   private DBClient client;
@@ -35,7 +35,7 @@ public class DBContext implements ValueOrdering {
   private String sqlQuery;
   private String authZQuery;
   private String googleConnectorWorkDir;
-  private String[] primaryKeys;
+  private String primaryKeys;
   private String xslt;
   private String driverClassName;
   private String documentURLField;
@@ -113,7 +113,7 @@ public class DBContext implements ValueOrdering {
   }
 
   public void setPrimaryKeys(String primaryKeysString) {
-    this.primaryKeys = primaryKeysString.split(PRIMARY_KEYS_SEPARATOR);
+    this.primaryKeys = primaryKeysString;
   }
 
   public void setXslt(String xslt) {
@@ -194,10 +194,18 @@ public class DBContext implements ValueOrdering {
 
   /*
    * This must have a different name or access from setPrimaryKeys to
-   * avoid a Spring bean introspection error with String vs String[].
+   * avoid a Spring bean introspection error with string vs list.
    */
-  public String[] getPrimaryKeyColumns() {
-    return primaryKeys;
+  public ImmutableList<String> getPrimaryKeyColumns(Set<String> columnNames)
+      throws DBException {
+    ImmutableList<String> matchedColumns =
+        Util.getCanonicalPrimaryKey(primaryKeys, columnNames);
+    if (matchedColumns == null) {
+      throw new DBException(
+          "Primary Key does not match any of the column names.");
+    } else {
+      return matchedColumns;
+    }
   }
 
   public String getXslt() {

@@ -23,6 +23,7 @@ import com.google.enterprise.connector.util.Base64;
 import com.google.enterprise.connector.util.InputStreamFactory;
 
 import java.io.UnsupportedEncodingException;
+import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 
@@ -45,15 +46,16 @@ class MetadataDocumentBuilder extends DocumentBuilder {
 
   @Override
   protected ContentHolder getContentHolder(Map<String, Object> row,
-      String docId) throws DBException {
-    return new ContentHolder(row, getChecksum(row, xslt), MIMETYPE);
+      List<String> primaryKey, String docId) throws DBException {
+    return new ContentHolder(row, getChecksum(row, primaryKey, xslt),
+        MIMETYPE);
   }
 
-  private InputStreamFactory getContent(ContentHolder holder)
-      throws DBException {
+  private InputStreamFactory getContent(List<String> primaryKey,
+      ContentHolder holder) throws DBException {
     @SuppressWarnings("unchecked") Map<String, Object> row =
         (Map<String, Object>) holder.getContent();
-    String xml = XmlUtils.getXMLRow(connectorName, row, primaryKeys, xslt,
+    String xml = XmlUtils.getXMLRow(connectorName, row, primaryKey, xslt,
         dbContext, false);
     try {
       byte[] original = xml.getBytes("UTF8");
@@ -82,7 +84,7 @@ class MetadataDocumentBuilder extends DocumentBuilder {
     jsonObjectUtil.setProperty(SpiConstants.PROPNAME_DOCID, holder.docId);
 
     jsonObjectUtil.setBinaryContent(SpiConstants.PROPNAME_CONTENT,
-        getContent(holder.contentHolder));
+        getContent(holder.primaryKey, holder.contentHolder));
     jsonObjectUtil.setProperty(SpiConstants.PROPNAME_CONTENT_ENCODING,
         SpiConstants.ContentEncoding.BASE64BINARY.toString());
     jsonObjectUtil.setProperty(SpiConstants.PROPNAME_ACTION,
