@@ -14,19 +14,20 @@
 
 package com.google.enterprise.connector.db;
 
+import com.google.common.collect.ImmutableList;
+
+import junit.framework.TestCase;
+
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.sql.Date;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.text.Collator;
-import java.util.ArrayList;
-import java.util.Collection;
+import java.util.List;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
-
-import junit.framework.TestCase;
 
 public class DocIdUtilTest extends TestCase {
 
@@ -44,11 +45,7 @@ public class DocIdUtilTest extends TestCase {
     String docId1 = "1,Jan";
     String docId2 = "2,Feb";
     String docId3 = "3,Mar";
-    // build Collection of doc Ids
-    Collection<String> docIds = new ArrayList<String>();
-    docIds.add(docId1);
-    docIds.add(docId2);
-    docIds.add(docId3);
+    List<String> docIds = ImmutableList.of(docId1, docId2, docId3);
 
     // build expected Doc Id String
     String expectedDocIdString = "'" + docId1 + "'," + "'" + docId2 + "',"
@@ -66,11 +63,7 @@ public class DocIdUtilTest extends TestCase {
     String docId1 = "MSxKYW4"; // Legacy docid Base64 encoded "1,Jan";
     String docId2 = "BF/2/Feb";
     String docId3 = "BF/3/March+Madness%21";
-    // build Collection of doc Ids
-    Collection<String> docIds = new ArrayList<String>();
-    docIds.add(docId1);
-    docIds.add(docId2);
-    docIds.add(docId3);
+    List<String> docIds = ImmutableList.of(docId1, docId2, docId3);
 
     Map<String, String> docIdMap = DocIdUtil.getDocIdMap(docIds);
     assertNotNull(docIdMap);
@@ -88,10 +81,9 @@ public class DocIdUtilTest extends TestCase {
     Map<String, Object> row = new HashMap<String, Object>();
 
     // Array of primary key column names.
-    String[] primaryKeys = { "pk1", "pk2", "pk3", "pk4", "pk5",
-        "pk6", "pk7", "pk8", "pk9", "pk10", "pk11", "pk12", "pk13" };
+    List<String> primaryKey = ImmutableList.of("pk1", "pk2", "pk3", "pk4",
+        "pk5", "pk6", "pk7", "pk8", "pk9", "pk10", "pk11", "pk12", "pk13");
 
-    // Put "id" and "month" column values in map along with other columns.
     row.put("pk1", new Integer(123));
     row.put("pk2", new Long(-456));
     row.put("pk3", new Double(1234567890.1234567890));
@@ -119,7 +111,7 @@ public class DocIdUtilTest extends TestCase {
         + "1970-01-14 22:56:07.123456789/Banana/White+space%2Fpunctuation%21//"
         + "true";
 
-    String actualDocId = DocIdUtil.generateDocId(primaryKeys, row);
+    String actualDocId = DocIdUtil.generateDocId(primaryKey, row);
     assertNotNull(actualDocId);
     assertEquals(expectedDocId, actualDocId);
   }
@@ -128,7 +120,7 @@ public class DocIdUtilTest extends TestCase {
    * Test generating and tokenizing a Docid that consists of a single integer.
    */
   public void testIntegerDocid() throws Exception {
-    String[] primaryKey = { "ID" };
+    List<String> primaryKey = ImmutableList.of("id");
     Long id = 123456L;
 
     // Create a row representing a row in database table.
@@ -147,19 +139,19 @@ public class DocIdUtilTest extends TestCase {
    * Test null primary key value in a compound docid.
    */
   public void testNullValue() throws Exception {
-    String[] primaryKeys = new String[] { "PartNum", "Rev" };
+    List<String> primaryKey = ImmutableList.of("PartNum", "Rev");
 
     // Create a row representing a row in database table.
     Map<String, Object> row = new HashMap<String, Object>();
     row.put("PartNum", "12345");
     row.put("Rev", null);
 
-    String docId = DocIdUtil.generateDocId(primaryKeys, row);
+    String docId = DocIdUtil.generateDocId(primaryKey, row);
     assertNotNull(docId);
     assertEquals("FA/12345/", docId);
 
     row.put("PartNum", null);
-    docId = DocIdUtil.generateDocId(primaryKeys, row);
+    docId = DocIdUtil.generateDocId(primaryKey, row);
     assertNotNull(docId);
     assertEquals(docId, "AA//", docId);
   }

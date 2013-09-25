@@ -47,8 +47,8 @@ public class MetadataDocumentBuilderTest extends DocumentBuilderFixture {
     assertEquals(SpiConstants.ContentEncoding.BASE64BINARY.toString(),
         Value.getSingleValueString(
             doc, SpiConstants.PROPNAME_CONTENT_ENCODING));
-    assertTrue(content.contains("id=1"));
-    assertTrue(content.contains("lastName=last_01"));
+    assertTrue(content, content.contains("id=1"));
+    assertTrue(content, content.contains("lastName=last_01"));
     assertEquals("text/html", getProperty(doc, SpiConstants.PROPNAME_MIMETYPE));
 
     // Checksum should be hidden as a public property and in the JSON string.

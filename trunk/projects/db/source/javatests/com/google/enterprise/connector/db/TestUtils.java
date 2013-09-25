@@ -14,6 +14,8 @@
 
 package com.google.enterprise.connector.db;
 
+import com.google.common.collect.ImmutableList;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -55,11 +57,8 @@ public class TestUtils {
     return rowMap;
   }
 
-  public static String[] getStandardPrimaryKeys() {
-    String[] primaryKeys = new String[2];
-    primaryKeys[0] = "id";
-    primaryKeys[1] = "lastName";
-    return primaryKeys;
+  public static List<String> getStandardPrimaryKeys() {
+    return ImmutableList.of("id", "lastName");
   }
 
   public static List<Map<String, Object>> getDBRows() {

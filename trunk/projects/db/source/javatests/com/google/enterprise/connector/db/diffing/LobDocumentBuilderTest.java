@@ -19,6 +19,7 @@ import static org.easymock.EasyMock.createMock;
 import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.replay;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.io.ByteStreams;
 import com.google.common.io.Files;
@@ -53,6 +54,26 @@ import java.util.Set;
 import javax.sql.rowset.serial.SerialClob;
 
 public class LobDocumentBuilderTest extends DocumentBuilderFixture {
+  public void testPrimaryKeySkipped() throws Exception {
+    Object docid = 2;
+    String expectedDocid = "B/" + docid;
+    Object clobContent = "hello, world";
+    Map<String, Object> row = ImmutableMap.of(
+        primaryKeyColumn, docid, dbContext.getLobField(), clobContent);
+    MimeTypeDetector.setTraversalContext(context);
+
+    FieldNameBean bean = new FieldNameBean(dbContext) {
+        public String get() { return primaryKeyColumn; }
+        public void set(String value) { dbContext.setPrimaryKeys(value); }
+        public List<String> getNameVariations() {
+          return ImmutableList.of("id", "Id", "ID", "  id", " iD  "); } };
+
+    // We don't care about the property value testing, just test docid.
+    testFieldName("primaryKey", bean,
+        new LobDocumentBuilder(dbContext, context), row,
+        SpiConstants.PROPNAME_DOCID, expectedDocid);
+  }
+
   public void testLobFieldValue() throws Exception {
     Object clobContent = "hello, world";
     String originalName = dbContext.getLobField();
@@ -64,17 +85,6 @@ public class LobDocumentBuilderTest extends DocumentBuilderFixture {
         row, SpiConstants.PROPNAME_CONTENT, clobContent);
   }
 
-  // public void testFoo() {
-  //   Object docid = 2;
-  //   Map<String, Object> row =
-  //       ImmutableMap.of(primaryKeyColumn, docid, originalName, clobContent);
-  //   DocumentBuilder builder = new LobDocumentBuilder(dbContext, context);
-  //   DocumentBuilder.DocumentHolder holder = builder.getDocumentHolder(
-  //       row, docid.toString(), build.getContentHolder(row, docid.toString())
-  //   builder.getJsonDocument(holder);
-  //   assertNull(ImmutableMap.<String, Object>of().get("foo"));
-  //   assertNull(ImmutableMap.<String, Object>of().get(null));
-  // }
   /**
    * Tests that the lobField is filtered from the XML map, which calls
    * toString on the map values. In order to avoid extraneous calls to

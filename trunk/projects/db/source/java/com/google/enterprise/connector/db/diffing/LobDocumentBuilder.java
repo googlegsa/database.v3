@@ -145,7 +145,7 @@ class LobDocumentBuilder extends DocumentBuilder {
 
   @Override
   protected ContentHolder getContentHolder(Map<String, Object> row,
-      String docId) throws DBException {
+      List<String> primaryKey, String docId) throws DBException {
     // Get the value of large object from map representing a row.
     Object largeObject = row.get(dbContext.getLobField());
 
@@ -154,7 +154,8 @@ class LobDocumentBuilder extends DocumentBuilder {
     if (largeObject instanceof DigestContentHolder) {
       DigestContentHolder holder = (DigestContentHolder) largeObject;
       // TODO: Look into which encoding/charset to use for getBytes().
-      holder.updateDigest(getXmlDoc(getRowForXmlDoc(row), "").getBytes());
+      holder.updateDigest(
+          getXmlDoc(getRowForXmlDoc(row), primaryKey, "").getBytes());
       return holder;
     }
 
@@ -179,12 +180,13 @@ class LobDocumentBuilder extends DocumentBuilder {
           dbContext.getMimeTypeDetector().getMimeType(null, binaryContent));
       holder.updateDigest(binaryContent);
       // TODO: Look into which encoding/charset to use for getBytes().
-      holder.updateDigest(getXmlDoc(getRowForXmlDoc(row), "").getBytes());
+      holder.updateDigest(
+          getXmlDoc(getRowForXmlDoc(row), primaryKey, "").getBytes());
       return holder;
     } else {
       LOG.warning("Content of Document " + docId + " has null value.");
-      return new ContentHolder(null, getChecksum(getRowForXmlDoc(row), ""),
-                               null);
+      return new ContentHolder(null,
+          getChecksum(getRowForXmlDoc(row), primaryKey, ""), null);
     }
   }
 
@@ -235,7 +237,7 @@ class LobDocumentBuilder extends DocumentBuilder {
     jsonObjectUtil.setProperty(SpiConstants.PROPNAME_DISPLAYURL, displayUrl);
 
     skipLastModified(skipColumns, dbContext);
-    skipColumns.addAll(Arrays.asList(primaryKeys));
+    skipColumns.addAll(holder.primaryKey);
     setLastModified(holder.row, jsonObjectUtil, dbContext);
     setMetaInfo(jsonObjectUtil, holder.row, skipColumns);
 

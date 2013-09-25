@@ -49,7 +49,6 @@ public class ValidateUtil {
   private static final String REQ_FIELDS = "REQ_FIELDS";
   private static final String TEST_PRIMARY_KEYS_AND_KEY_VALUE_PLACEHOLDER =
       "TEST_PRIMARY_KEYS_AND_KEY_VALUE_PLACEHOLDER";
-  private static final String PRIMARY_KEYS_SEPARATOR = ",";
   // Red asterisk for required fields.
   public static final String RED_ASTERISK = "<font color=\"RED\">*</font>";
 
@@ -212,16 +211,17 @@ public class ValidateUtil {
             resultSet.close();
           }
 
-          String[] primaryKeys = config.get(DBConnectorType.PRIMARY_KEYS_STRING)
-              .split(PRIMARY_KEYS_SEPARATOR);
-          for (String key : primaryKeys) {
-            result = (indexOfIgnoreCase(columnNames, key.trim()) != -1);
-            if (!result) {
-              LOG.info("One or more primary keys are invalid");
-              message = res.getString(TEST_PRIMARY_KEYS);
-              problemFields.add(DBConnectorType.PRIMARY_KEYS_STRING);
-              break;
-            }
+          String primaryKeys = config.get(DBConnectorType.PRIMARY_KEYS_STRING);
+          List<String> matchedColumns =
+              Util.getCanonicalPrimaryKey(primaryKeys, columnNames);
+          result = (matchedColumns != null);
+          if (result) {
+            config.put(DBConnectorType.PRIMARY_KEYS_STRING,
+                Util.PRIMARY_KEY_JOINER.join(matchedColumns));
+          } else {
+            LOG.info("One or more primary keys are invalid");
+            message = res.getString(TEST_PRIMARY_KEYS);
+            problemFields.add(DBConnectorType.PRIMARY_KEYS_STRING);
           }
         }
       } catch (SQLException e) {
@@ -229,15 +229,6 @@ public class ValidateUtil {
                 e);
       }
       return result;
-    }
-
-    private int indexOfIgnoreCase(List<String> values, String target) {
-      for (int i = 0; i < values.size(); i++) {
-        if (values.get(i).equalsIgnoreCase(target)) {
-          return i;
-        }
-      }
-      return -1;
     }
 
     /**
@@ -275,7 +266,7 @@ public class ValidateUtil {
     private boolean validateFieldName(String propertyName, String messageKey) {
       String fieldName = config.get(propertyName);
       if (!Util.isNullOrWhitespace(fieldName)) {
-        int index = indexOfIgnoreCase(columnNames, fieldName.trim());
+        int index = Util.indexOfIgnoreCase(columnNames, fieldName.trim());
         if (index == -1) {
           message = res.getString(messageKey);
           problemFields.add(propertyName);
@@ -341,7 +332,7 @@ public class ValidateUtil {
 
       // Check for valid BLOB/CLOB column name.
       if (!Util.isNullOrWhitespace(blobClobField)) {
-        int index = indexOfIgnoreCase(columnNames, blobClobField.trim());
+        int index = Util.indexOfIgnoreCase(columnNames, blobClobField.trim());
         if (index == -1) {
           result = false;
           message = res.getString(INVALID_COLUMN_NAME);
@@ -550,8 +541,6 @@ public class ValidateUtil {
     private boolean success = false;
     private List<String> problemFields = new ArrayList<String>();
     private static final String KEY_VALUE_PLACEHOLDER = "#{value}";
-    private String[] primaryKeys;
-    private String sqlCrawlQuery;
 
     public QueryParameterAndPrimaryKeyCheck(Map<String, String> config,
         ResourceBundle res) {
@@ -568,11 +557,11 @@ public class ValidateUtil {
     }
 
     public boolean validate() {
-      primaryKeys = config.get(DBConnectorType.PRIMARY_KEYS_STRING).split(PRIMARY_KEYS_SEPARATOR);
-      sqlCrawlQuery = config.get(DBConnectorType.SQL_QUERY);
-      // This check is required when configuring connector using parameterized
-      // crawl query to assure that single primary key is used .
-      if (primaryKeys.length > 1
+      // We have already validated the primary key, we just need to
+      // see if it has more than one column.
+      String primaryKeys = config.get(DBConnectorType.PRIMARY_KEYS_STRING);
+      String sqlCrawlQuery = config.get(DBConnectorType.SQL_QUERY);
+      if (primaryKeys.indexOf(Util.PRIMARY_KEY_SEPARATOR) != -1
           && sqlCrawlQuery.contains(KEY_VALUE_PLACEHOLDER)) {
         success = false;
         message = res.getString(TEST_PRIMARY_KEYS_AND_KEY_VALUE_PLACEHOLDER);

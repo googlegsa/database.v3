@@ -14,6 +14,9 @@
 
 package com.google.enterprise.connector.db;
 
+import com.google.common.base.Joiner;
+import com.google.common.base.Splitter;
+import com.google.common.collect.ImmutableList;
 import com.google.common.io.ByteStreams;
 import com.google.enterprise.connector.util.InputStreamFactory;
 
@@ -23,11 +26,20 @@ import java.io.InputStream;
 import java.io.Reader;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.List;
 import java.util.logging.Logger;
 
 /** Byte array and string utilities. */
 public class Util {
   private static final Logger LOG = Logger.getLogger(Util.class.getName());
+
+  public static final String PRIMARY_KEY_SEPARATOR = ",";
+
+  public static final Splitter PRIMARY_KEY_SPLITTER =
+      Splitter.on(PRIMARY_KEY_SEPARATOR).trimResults();
+
+  public static final Joiner PRIMARY_KEY_JOINER =
+      Joiner.on(PRIMARY_KEY_SEPARATOR);
 
   public static final String CHECKSUM_ALGO = "SHA1";
 
@@ -50,6 +62,42 @@ public class Util {
    */
   public static String nullOrTrimmed(String value) {
     return (isNullOrWhitespace(value)) ? null : value.trim();
+  }
+
+  public static int indexOfIgnoreCase(List<String> values, String target) {
+    for (int i = 0; i < values.size(); i++) {
+      if (values.get(i).equalsIgnoreCase(target)) {
+        return i;
+      }
+    }
+    return -1;
+  }
+
+  public static String findIgnoreCase(Iterable<String> values, String target) {
+    for (String value : values) {
+      if (value.equalsIgnoreCase(target)) {
+        return value;
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Gets the case-preserving values of the primary key column names
+   * from the actual column names.
+   */
+  public static ImmutableList<String> getCanonicalPrimaryKey(
+      String configNames, Iterable<String> actualNames) {
+    ImmutableList.Builder<String> canonicalNames = ImmutableList.builder();
+    for (String configName : PRIMARY_KEY_SPLITTER.split(configNames)) {
+      String result = findIgnoreCase(actualNames, configName.trim());
+      if (result == null) {
+        return null;
+      } else {
+        canonicalNames.add(result);
+      }
+    }
+    return canonicalNames.build();
   }
 
   /**
