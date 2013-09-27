@@ -45,18 +45,20 @@ public class MockDBConnectorFactory implements ConnectorFactory {
   @Override
   public Connector makeConnector(Map<String, String> config)
       throws RepositoryException {
-    Properties props = new Properties();
-    props.putAll(config);
-
-    // Escape MyBatis syntax that looks like a Spring placeholder.
-    // See https://jira.springsource.org/browse/SPR-4953
-    // TODO(jlacey): This placeholder value is in the EPPC bean in
+    // TODO(jlacey): The placeholder values are in the EPPC bean in
     // connectorDefaults.xml, but we're not loading that, and doing so
     // would unravel a ball of string: using setLocation instead of
     // setProperties (since the EPPC bean already has properties),
     // which in turn requires the ByteArrayResource machinery in
     // InstanceInfo or writing the properties to a file.
+    Properties props = new Properties();
+    for (String configKey : DBConnectorType.CONFIG_KEYS) {
+      props.put(configKey, "");
+    }
+    // Escape MyBatis syntax that looks like a Spring placeholder.
+    // See https://jira.springsource.org/browse/SPR-4953
     props.put("docIds", "#{'$'}{docIds}");
+    props.putAll(config);
 
     Resource prototype = new ClassPathResource("config/connectorInstance.xml",
         MockDBConnectorFactory.class);

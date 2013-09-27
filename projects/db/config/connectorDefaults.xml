@@ -196,9 +196,7 @@
         <prop key="primaryKeysString"></prop>
         <prop key="xslt"></prop>
         <prop key="lastModifiedDate"></prop>
-        <prop key="documentTitle"></prop>
         <prop key="authZQuery"></prop>
-        <prop key="externalMetadata"></prop>
         <prop key="documentURLField"></prop>
         <prop key="documentIdField"></prop>
         <prop key="baseURL"></prop>

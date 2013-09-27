@@ -14,6 +14,7 @@
 
 package com.google.enterprise.connector.db;
 
+import com.google.common.base.Strings;
 import com.google.enterprise.connector.spi.ConnectorType;
 
 import org.apache.ibatis.datasource.unpooled.UnpooledDataSource;
@@ -514,9 +515,8 @@ public class ValidateUtil {
     }
 
     public boolean validate() {
-      boolean success = false;
-      StringBuilder xslt =
-          new StringBuilder(config.get(DBConnectorType.XSLT));
+      boolean success;
+      String xslt = Strings.nullToEmpty(config.get(DBConnectorType.XSLT));
       int index = xslt.indexOf("<td><xsl:value-of select=\"title\"/>");
       if (index != -1) {
         success = false;

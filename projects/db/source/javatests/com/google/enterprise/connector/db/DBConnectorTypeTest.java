@@ -17,6 +17,7 @@ package com.google.enterprise.connector.db;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import com.google.enterprise.connector.spi.ConfigureResponse;
+import com.google.enterprise.connector.util.XmlParseUtil;
 
 import junit.framework.TestCase;
 
@@ -100,11 +101,28 @@ public class DBConnectorTypeTest extends DBTestBase {
    */
   public void testSometimesRequiredFields() {
     Map<String, String> newConfigMap = Maps.newHashMap(this.configMap);
-    // Require some of the sometimes required fields.
     newConfigMap.put("extMetadataType", "lob");
     // Remove the sometimes required fields.
     for (String field : DBConnectorType.SOMETIMES_REQUIRED_FIELDS) {
       newConfigMap.put(field, "");
+    }
+    ConfigureResponse configRes = connectorType.validateConfig(
+        newConfigMap, Locale.ENGLISH, mdbConnectorFactory);
+    if (configRes != null) {
+      fail(configRes.getMessage());
+    }
+  }
+
+  /**
+   * Disabled fields are not submitted, so they won't appear in the
+   * map at all.
+   */
+  public void testSometimesDisabledFields() {
+    Map<String, String> newConfigMap = Maps.newHashMap(this.configMap);
+    newConfigMap.put("extMetadataType", "lob");
+    // Remove the sometimes disabled fields.
+    for (String field : DBConnectorType.SOMETIMES_DISABLED_FIELDS) {
+      newConfigMap.remove(field);
     }
     ConfigureResponse configRes = connectorType.validateConfig(
         newConfigMap, Locale.ENGLISH, mdbConnectorFactory);
@@ -474,6 +492,20 @@ public class DBConnectorTypeTest extends DBTestBase {
     assertExpectedFields(configForm);
   }
 
+  /** Tests an empty config form for valid XHTML. */
+  public void testXhtmlGetConfigForm() throws Exception {
+    ConfigureResponse configureResponse =
+        connectorType.getConfigForm(Locale.ENGLISH);
+    XmlParseUtil.validateXhtml(configureResponse.getFormSnippet());
+  }
+
+  /** Tests a populated config form for valid XHTML. */
+  public void testXhtmlGetPopulatedConfigForm() throws Exception {
+    ConfigureResponse configureResponse =
+        connectorType.getPopulatedConfigForm(configMap, Locale.ENGLISH);
+    XmlParseUtil.validateXhtml(configureResponse.getFormSnippet());
+  }
+
   /**
    * Tests expected patterns in html text of configuration form.
    *
@@ -530,20 +562,20 @@ public class DBConnectorTypeTest extends DBTestBase {
     assertTrue(match.find());
 
     LOG.info("Checking for radio buttons...");
-    strPattern = "<input.*type='radio'.*name='extMetadataType'.*value='url'.*"
-        + "onClick='.*'/>";
+    strPattern = "<input.*type=\"radio\".*name=\"extMetadataType\" "
+        + "value=\"url\".*onclick=\".*\"/>";
+    pattern = Pattern.compile(strPattern);
+    match = pattern.matcher(configForm);
+    assertTrue(configForm, match.find());
+
+    strPattern = "<input type=\"radio\".*name=\"extMetadataType\" "
+        + "value=\"docId\".*onclick=\".*\"/>";
     pattern = Pattern.compile(strPattern);
     match = pattern.matcher(configForm);
     assertTrue(match.find());
 
-    strPattern = "<input type='radio'.*name='extMetadataType'.*value='docId'.*"
-        + "onClick='.*'/>";
-    pattern = Pattern.compile(strPattern);
-    match = pattern.matcher(configForm);
-    assertTrue(match.find());
-
-    strPattern = "<input type='radio'.*name='extMetadataType' value='lob'.*"
-        + "onClick='.*'/>";
+    strPattern = "<input type=\"radio\".*name=\"extMetadataType\" "
+        + "value=\"lob\".*onclick=\".*\"/>";
     pattern = Pattern.compile(strPattern);
     match = pattern.matcher(configForm);
     assertTrue(match.find());
