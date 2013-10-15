@@ -14,6 +14,27 @@
 
 package com.google.enterprise.connector.db;
 
+import static com.google.enterprise.connector.db.DBConnectorType.AUTHZ_QUERY;
+import static com.google.enterprise.connector.db.DBConnectorType.BASE_URL;
+import static com.google.enterprise.connector.db.DBConnectorType.BLOB_CLOB;
+import static com.google.enterprise.connector.db.DBConnectorType.CLOB_BLOB_FIELD;
+import static com.google.enterprise.connector.db.DBConnectorType.COMPLETE_URL;
+import static com.google.enterprise.connector.db.DBConnectorType.CONNECTION_URL;
+import static com.google.enterprise.connector.db.DBConnectorType.DOCUMENT_ID_FIELD;
+import static com.google.enterprise.connector.db.DBConnectorType.DOCUMENT_URL_FIELD;
+import static com.google.enterprise.connector.db.DBConnectorType.DOC_ID;
+import static com.google.enterprise.connector.db.DBConnectorType.DRIVER_CLASS_NAME;
+import static com.google.enterprise.connector.db.DBConnectorType.EXT_METADATA_TYPE;
+import static com.google.enterprise.connector.db.DBConnectorType.FETCH_URL_FIELD;
+import static com.google.enterprise.connector.db.DBConnectorType.LAST_MODIFIED_DATE_FIELD;
+import static com.google.enterprise.connector.db.DBConnectorType.LOGIN;
+import static com.google.enterprise.connector.db.DBConnectorType.NO_EXT_METADATA;
+import static com.google.enterprise.connector.db.DBConnectorType.PASSWORD;
+import static com.google.enterprise.connector.db.DBConnectorType.PRIMARY_KEYS_STRING;
+import static com.google.enterprise.connector.db.DBConnectorType.SQL_QUERY;
+import static com.google.enterprise.connector.db.DBConnectorType.TEXT;
+import static com.google.enterprise.connector.db.DBConnectorType.XSLT;
+
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import com.google.enterprise.connector.spi.ConfigureResponse;
@@ -58,12 +79,12 @@ public class DBConnectorTypeTest extends DBTestBase {
     runDBScript(LOAD_TEST_DATA);
 
     // De-populate a bunch of properties for config form testing and validation.
-    configMap.put("authZQuery", "");
-    configMap.put("baseURL", "");
-    configMap.put("documentIdField", "");
-    configMap.put("documentURLField", "");
-    configMap.put("fetchURLField", "");
-    configMap.put("lobField", "");
+    configMap.put(AUTHZ_QUERY, "");
+    configMap.put(BASE_URL, "");
+    configMap.put(DOCUMENT_ID_FIELD, "");
+    configMap.put(DOCUMENT_URL_FIELD, "");
+    configMap.put(FETCH_URL_FIELD, "");
+    configMap.put(CLOB_BLOB_FIELD, "");
 
     connectorType = new DBConnectorType();
 
@@ -101,7 +122,7 @@ public class DBConnectorTypeTest extends DBTestBase {
    */
   public void testSometimesRequiredFields() {
     Map<String, String> newConfigMap = Maps.newHashMap(this.configMap);
-    newConfigMap.put("extMetadataType", "lob");
+    newConfigMap.put(EXT_METADATA_TYPE, BLOB_CLOB);
     // Remove the sometimes required fields.
     for (String field : DBConnectorType.SOMETIMES_REQUIRED_FIELDS) {
       newConfigMap.put(field, "");
@@ -119,7 +140,7 @@ public class DBConnectorTypeTest extends DBTestBase {
    */
   public void testSometimesDisabledFields() {
     Map<String, String> newConfigMap = Maps.newHashMap(this.configMap);
-    newConfigMap.put("extMetadataType", "lob");
+    newConfigMap.put(EXT_METADATA_TYPE, BLOB_CLOB);
     // Remove the sometimes disabled fields.
     for (String field : DBConnectorType.SOMETIMES_DISABLED_FIELDS) {
       newConfigMap.remove(field);
@@ -132,16 +153,18 @@ public class DBConnectorTypeTest extends DBTestBase {
   }
 
   public void testMissingBlobClob() {
-    testSometimesRequiredField("lob", "lobField", "fetchURLField", "fetchURL");
+    testSometimesRequiredField(BLOB_CLOB, CLOB_BLOB_FIELD,
+        FETCH_URL_FIELD, "fetchURL");
   }
 
   public void testMissingDocumentId() {
-    testSometimesRequiredField("url", "documentIdField",
-        "baseURL", "http://myhost/app/");
+    testSometimesRequiredField(COMPLETE_URL, DOCUMENT_ID_FIELD,
+        BASE_URL, "http://myhost/app/");
   }
 
   public void testMissingBaseUrl() {
-    testSometimesRequiredField("url", "baseURL", "documentIdField", "fname");
+    testSometimesRequiredField(COMPLETE_URL, BASE_URL,
+        DOCUMENT_ID_FIELD, "fname");
   }
 
   /**
@@ -151,7 +174,7 @@ public class DBConnectorTypeTest extends DBTestBase {
   private void testSometimesRequiredField(String extMetadataType,
       String missing, String present, String value) {
     Map<String, String> newConfigMap = Maps.newHashMap(this.configMap);
-    newConfigMap.put("extMetadataType", extMetadataType);
+    newConfigMap.put(EXT_METADATA_TYPE, extMetadataType);
     newConfigMap.put(missing, "");
     newConfigMap.put(present, value);
 
@@ -176,7 +199,7 @@ public class DBConnectorTypeTest extends DBTestBase {
 
   public void testUpdateQuery() throws Exception {
     Map<String, String> newConfigMap = Maps.newHashMap(configMap);
-    newConfigMap.put("sqlQuery", "update TestEmpTable set dept = 42");
+    newConfigMap.put(SQL_QUERY, "update TestEmpTable set dept = 42");
     ConfigureResponse configRes = connectorType.validateConfig(
         newConfigMap, Locale.ENGLISH, mdbConnectorFactory);
     assertEquals(BUNDLE.getString("TEST_SQL_QUERY"), configRes.getMessage());
@@ -228,7 +251,7 @@ public class DBConnectorTypeTest extends DBTestBase {
 
   public void testInvalidQuery() {
     Map<String, String> newConfigMap = Maps.newHashMap(configMap);
-    newConfigMap.put("sqlQuery", "choose the red pill");
+    newConfigMap.put(SQL_QUERY, "choose the red pill");
     ConfigureResponse configRes = connectorType.validateConfig(
         newConfigMap, Locale.ENGLISH, mdbConnectorFactory);
     assertEquals(BUNDLE.getString("TEST_SQL_QUERY"), configRes.getMessage());
@@ -240,9 +263,9 @@ public class DBConnectorTypeTest extends DBTestBase {
    */
   public void testParameterizedQueryAndMutiplePrimaryKeys() {
     Map<String, String> newConfigMap = Maps.newHashMap(this.configMap);
-    newConfigMap.put("sqlQuery",
+    newConfigMap.put(SQL_QUERY,
                      "select * from TestEmpTable where id > #{value}");
-    newConfigMap.put("primaryKeysString", "id,fname");
+    newConfigMap.put(PRIMARY_KEYS_STRING, "id,fname");
     ConfigureResponse configRes = this.connectorType.validateConfig(
         newConfigMap, Locale.ENGLISH, mdbConnectorFactory);
     assertEquals(
@@ -336,12 +359,12 @@ public class DBConnectorTypeTest extends DBTestBase {
   }
 
   public void testPrimaryKeySingleValues() {
-    testFieldNames(ImmutableMap.<String, String>of(), "primaryKeysString",
+    testFieldNames(ImmutableMap.<String, String>of(), PRIMARY_KEYS_STRING,
         SINGLE_FIELD_NAMES, ACTUAL_FIELD_NAME, "TEST_PRIMARY_KEYS");
   }
 
   public void testPrimaryKeyMultipleValues() {
-    testFieldNames(ImmutableMap.<String, String>of(), "primaryKeysString",
+    testFieldNames(ImmutableMap.<String, String>of(), PRIMARY_KEYS_STRING,
         MULTIPLE_FIELD_NAMES, ACTUAL_FIELD_NAMES, "TEST_PRIMARY_KEYS");
   }
 
@@ -349,7 +372,7 @@ public class DBConnectorTypeTest extends DBTestBase {
     StringBuilder errors = new StringBuilder();
     for (String empty : new String[] { ",", "   ", "   , ,," }) {
       ConfigureResponse configRes = validateConfig(
-          ImmutableMap.<String, String>of(), "primaryKeysString", empty);
+          ImmutableMap.<String, String>of(), PRIMARY_KEYS_STRING, empty);
       if (configRes.getMessage() == null) {
         errors.append("primaryKeysString=" + empty
             + ": Unexpected null\n");
@@ -366,38 +389,39 @@ public class DBConnectorTypeTest extends DBTestBase {
   }
 
   public void testLastModifiedDateValues() {
-    testFieldNames(ImmutableMap.<String, String>of(), "lastModifiedDate",
+    testFieldNames(ImmutableMap.<String, String>of(), LAST_MODIFIED_DATE_FIELD,
         SINGLE_FIELD_NAMES, ACTUAL_FIELD_NAME, "INVALID_COLUMN_NAME");
   }
 
   public void testLobFieldValues() {
-    testFieldNames(ImmutableMap.of("extMetadataType", "lob"), "lobField",
-        SINGLE_FIELD_NAMES, ACTUAL_FIELD_NAME, "INVALID_COLUMN_NAME");
+    testFieldNames(ImmutableMap.of(EXT_METADATA_TYPE, BLOB_CLOB),
+        CLOB_BLOB_FIELD, SINGLE_FIELD_NAMES, ACTUAL_FIELD_NAME,
+        "INVALID_COLUMN_NAME");
   }
 
   public void testFetchUrlFieldValues() {
     testFieldNames(
-        ImmutableMap.of("extMetadataType", "lob", "lobField", "LNAME"),
-        "fetchURLField", SINGLE_FIELD_NAMES, ACTUAL_FIELD_NAME,
+        ImmutableMap.of(EXT_METADATA_TYPE, BLOB_CLOB, CLOB_BLOB_FIELD, "LNAME"),
+        FETCH_URL_FIELD, SINGLE_FIELD_NAMES, ACTUAL_FIELD_NAME,
         "INVALID_COLUMN_NAME");
   }
 
   public void testDocumentURLFieldValues() {
-    testFieldNames(ImmutableMap.of("extMetadataType", "url"),
-        "documentURLField", SINGLE_FIELD_NAMES, ACTUAL_FIELD_NAME,
+    testFieldNames(ImmutableMap.of(EXT_METADATA_TYPE, COMPLETE_URL),
+        DOCUMENT_URL_FIELD, SINGLE_FIELD_NAMES, ACTUAL_FIELD_NAME,
         "INVALID_COLUMN_NAME");
   }
 
   public void testDocumentIdFieldValues() {
-    testFieldNames(ImmutableMap.of("extMetadataType", "docId",
-        "baseURL", "http://example.com/"), "documentIdField",
+    testFieldNames(ImmutableMap.of(EXT_METADATA_TYPE, DOC_ID,
+        BASE_URL, "http://example.com/"), DOCUMENT_ID_FIELD,
         SINGLE_FIELD_NAMES, ACTUAL_FIELD_NAME, "INVALID_COLUMN_NAME");
   }
 
   private void testOneFieldWithoutAnother(String oneField, String oneValue,
       String missingField) {
     ConfigureResponse response = validateConfig(
-        ImmutableMap.of("extMetadataType", "docId"), oneField, oneValue);
+        ImmutableMap.of(EXT_METADATA_TYPE, DOC_ID), oneField, oneValue);
     assertNotNull(response.getMessage());
     assertTrue(response.getMessage(), response.getMessage().startsWith(
         BUNDLE.getString("MISSING_ATTRIBUTES")));
@@ -406,12 +430,12 @@ public class DBConnectorTypeTest extends DBTestBase {
   }
 
   public void testDocumentIdFieldWithoutBaseUrl() {
-    testOneFieldWithoutAnother("documentIdField", "fname", "baseURL");
+    testOneFieldWithoutAnother(DOCUMENT_ID_FIELD, "fname", BASE_URL);
   }
 
   public void testBaseUrlWithoutDocumentIdField() {
-    testOneFieldWithoutAnother("baseURL", "http://example.com/",
-        "documentIdField");
+    testOneFieldWithoutAnother(BASE_URL, "http://example.com/",
+        DOCUMENT_ID_FIELD);
   }
 
   /**
@@ -420,7 +444,8 @@ public class DBConnectorTypeTest extends DBTestBase {
    */
   public void testParameterizedQueryAndSinglePrimaryKeys() {
     Map<String, String> newConfigMap = Maps.newHashMap(this.configMap);
-    newConfigMap.put("sqlQuery", "select * from TestEmpTable where id > #{value}");
+    newConfigMap.put(SQL_QUERY,
+        "select * from TestEmpTable where id > #{value}");
     ConfigureResponse configRes = this.connectorType.validateConfig(
         newConfigMap, Locale.ENGLISH, mdbConnectorFactory);
     if (configRes != null) {
@@ -431,7 +456,7 @@ public class DBConnectorTypeTest extends DBTestBase {
   /** Tests an authZ query with no #{username} placeholder. */
   public void testInvalidAuthZQuery() throws Exception {
     Map<String, String> newConfigMap = Maps.newHashMap(configMap);
-    newConfigMap.put("authZQuery", "choose the red pill");
+    newConfigMap.put(AUTHZ_QUERY, "choose the red pill");
     ConfigureResponse configRes = connectorType.validateConfig(
         newConfigMap, Locale.ENGLISH, mdbConnectorFactory);
     assertEquals(BUNDLE.getString("INVALID_AUTH_QUERY"),
@@ -449,7 +474,7 @@ public class DBConnectorTypeTest extends DBTestBase {
     // string-valued ${docIds} will work with H2. This should be
     // restored to test ${docIds} against id instead of lname once
     // that is fixed.
-    newConfigMap.put("authZQuery", "select id from TestEmpTable where "
+    newConfigMap.put(AUTHZ_QUERY, "select id from TestEmpTable where "
         + "lname = '#{username}' and lname IN (${docIds})");
     ConfigureResponse configRes = connectorType.validateConfig(
         newConfigMap, Locale.ENGLISH, mdbConnectorFactory);
@@ -461,7 +486,7 @@ public class DBConnectorTypeTest extends DBTestBase {
   public void testAuthZUpdateQuery() throws Exception {
     Map<String, String> newConfigMap = Maps.newHashMap(configMap);
     // TODO(jlacey): See TODO in testQuotedPlaceholdersAuthZQuery.
-    newConfigMap.put("authZQuery", "update TestEmpTable set dept = 42"
+    newConfigMap.put(AUTHZ_QUERY, "update TestEmpTable set dept = 42"
         + "where lname <> '#{username}' or not lname IN (${docIds})");
     ConfigureResponse configRes = connectorType.validateConfig(
         newConfigMap, Locale.ENGLISH, mdbConnectorFactory);
@@ -479,17 +504,94 @@ public class DBConnectorTypeTest extends DBTestBase {
     final ConfigureResponse configureResponse =
         connectorType.getConfigForm(Locale.ENGLISH);
     final String configForm = configureResponse.getFormSnippet();
-    assertExpectedFields(configForm);
+    assertExpectedFields(configForm, NO_EXT_METADATA);
   }
 
-  /**
-   * Test for getPopulatedConfigForm method.
+  /** Test for getPopulatedConfigForm.
+   *
+   * @param expected the expected pattern for the extMetadataType property;
+   *     multiple values may be selected (it's a bug)
+   * @param configured the configured value of the extMetadataType property
+   * @param propertyName another property name to configure
+   * @param propertyValue the value to give that other property
    */
-  public void testGetPopulatedConfigForm() {
-    final ConfigureResponse configureResponse =
-        connectorType.getPopulatedConfigForm(configMap, Locale.ENGLISH);
-    final String configForm = configureResponse.getFormSnippet();
-    assertExpectedFields(configForm);
+  private void testGetPopulatedConfigForm(String expected, String configured,
+      String propertyName, String propertyValue) {
+    Map<String, String> newConfigMap = Maps.newHashMap(configMap);
+    newConfigMap.put(EXT_METADATA_TYPE, configured);
+    newConfigMap.put(propertyName, propertyValue);
+    ConfigureResponse configureResponse =
+        connectorType.getPopulatedConfigForm(newConfigMap, Locale.ENGLISH);
+    String configForm = configureResponse.getFormSnippet();
+    assertExpectedFields(configForm, expected);
+  }
+
+  public void testGetPopulatedConfigForm_empty() {
+    testGetPopulatedConfigForm(NO_EXT_METADATA, "", XSLT, "");
+  }
+
+  public void testGetPopulatedConfigForm_empty_lob() {
+    testGetPopulatedConfigForm(NO_EXT_METADATA + "|" + BLOB_CLOB, "",
+        CLOB_BLOB_FIELD, "ignored");
+  }
+
+  public void testGetPopulatedConfigForm_empty_fetchUrl() {
+    testGetPopulatedConfigForm(NO_EXT_METADATA + "|" + BLOB_CLOB, "",
+        FETCH_URL_FIELD, "ignored");
+  }
+
+  public void testGetPopulatedConfigForm_empty_url() {
+    testGetPopulatedConfigForm(NO_EXT_METADATA + "|" + COMPLETE_URL, "",
+        DOCUMENT_URL_FIELD, "ignored");
+  }
+
+  public void testGetPopulatedConfigForm_empty_docId() {
+    testGetPopulatedConfigForm(NO_EXT_METADATA + "|" + DOC_ID, "",
+        DOCUMENT_ID_FIELD, "ignored");
+  }
+
+  public void testGetPopulatedConfigForm_empty_baseUrl() {
+    testGetPopulatedConfigForm(NO_EXT_METADATA + "|" + DOC_ID, "",
+        BASE_URL, "ignored");
+  }
+
+  public void testGetPopulatedConfigForm_noExt() {
+    testGetPopulatedConfigForm(NO_EXT_METADATA, NO_EXT_METADATA, XSLT, "");
+  }
+
+  public void testGetPopulatedConfigForm_lob() {
+    testGetPopulatedConfigForm(BLOB_CLOB, BLOB_CLOB,
+        CLOB_BLOB_FIELD, "ignored");
+  }
+
+  public void testGetPopulatedConfigForm_lob_empty() {
+    testGetPopulatedConfigForm("", BLOB_CLOB, CLOB_BLOB_FIELD, "");
+  }
+
+  public void testGetPopulatedConfigForm_lob_fetchUrl() {
+    testGetPopulatedConfigForm(BLOB_CLOB, BLOB_CLOB,
+        FETCH_URL_FIELD, "ignored");
+  }
+
+  public void testGetPopulatedConfigForm_url() {
+    testGetPopulatedConfigForm(COMPLETE_URL, COMPLETE_URL,
+        DOCUMENT_URL_FIELD, "ignored");
+  }
+
+  public void testGetPopulatedConfigForm_url_empty() {
+    testGetPopulatedConfigForm("", COMPLETE_URL, DOCUMENT_URL_FIELD, "");
+  }
+
+  public void testGetPopulatedConfigForm_docId() {
+    testGetPopulatedConfigForm(DOC_ID, DOC_ID, DOCUMENT_ID_FIELD, "ignored");
+  }
+
+  public void testGetPopulatedConfigForm_docId_empty() {
+    testGetPopulatedConfigForm("", DOC_ID, DOCUMENT_ID_FIELD, "");
+  }
+
+  public void testGetPopulatedConfigForm_docId_baseUrl() {
+    testGetPopulatedConfigForm(DOC_ID, DOC_ID, BASE_URL, "ignored");
   }
 
   /** Tests an empty config form for valid XHTML. */
@@ -511,80 +613,50 @@ public class DBConnectorTypeTest extends DBTestBase {
    *
    * @param configForm is html string of configuration form for database
    *        connector
+   * @param extMetadata the expected pattern of the extMetadataType radio button
    */
-  private void assertExpectedFields(final String configForm) {
-    LOG.info("Checking for Sql Query field..." + "\n" + configForm);
-    String strPattern = "<textarea .*name=\"sqlQuery\".*>";
-    Pattern pattern = Pattern.compile(strPattern);
-    Matcher match = pattern.matcher(configForm);
-    assertTrue(match.find());
+  private void assertExpectedFields(String configForm, String extMetadata) {
+    assertContainsTextArea(configForm, SQL_QUERY);
+    assertContainsInput(configForm, TEXT, DRIVER_CLASS_NAME);
+    assertContainsInput(configForm, PASSWORD, PASSWORD);
+    assertContainsInput(configForm, TEXT, PRIMARY_KEYS_STRING);
+    assertContainsInput(configForm, TEXT, LOGIN);
+    assertContainsTextArea(configForm, XSLT);
+    assertContainsTextArea(configForm, AUTHZ_QUERY);
+    assertContainsInput(configForm, TEXT, CONNECTION_URL);
+    assertContainsRadio(configForm, EXT_METADATA_TYPE, NO_EXT_METADATA,
+        extMetadata);
+    assertContainsRadio(configForm, EXT_METADATA_TYPE, COMPLETE_URL,
+        extMetadata);
+    assertContainsRadio(configForm, EXT_METADATA_TYPE, DOC_ID, extMetadata);
+    assertContainsRadio(configForm, EXT_METADATA_TYPE, BLOB_CLOB, extMetadata);
+    assertContainsInput(configForm, TEXT, LAST_MODIFIED_DATE_FIELD);
+  }
 
-    LOG.info("Checking for Driver Class Name field...");
-    strPattern = "<input.*size=\"50\" name=\"driverClassName\".*>";
-    pattern = Pattern.compile(strPattern);
-    match = pattern.matcher(configForm);
-    assertTrue(match.find());
+  private void assertContainsTextArea(String configForm, String name) {
+    assertContains(configForm, String.format(
+        "<textarea rows=\"10\" cols=\"50\" name=\"%s\" id=\"%s\">",
+        name, name));
+  }
 
-    LOG.info("Checking for Password field...");
-    strPattern = "<input.*type=\"password\".*size=\"50\" name=\"password\".*>";
-    pattern = Pattern.compile(strPattern);
-    match = pattern.matcher(configForm);
-    assertTrue(match.find());
+  private void assertContainsInput(String configForm, String type,
+      String name) {
+    assertContains(configForm, String.format(
+        "<input type=\"%s\" size=\"50\" name=\"%s\" id=\"%s\".*/>",
+        type, name, name));
+  }
 
-    LOG.info("Checking for Primary Keys String field...");
-    strPattern = "<input.*size=\"50\" name=\"primaryKeysString\".*>";
-    pattern = Pattern.compile(strPattern);
-    match = pattern.matcher(configForm);
-    assertTrue(match.find());
+  private void assertContainsRadio(String configForm, String name,
+      String value, String extMetadata) {
+    boolean selected = value.matches(extMetadata);
+    assertContains(configForm, String.format(
+        "<input type=\"radio\" name=\"%s\" value=\"%s\" id=\"%s_%s\"%s "
+        + "onclick=\".*\"/>",
+        name, value, name, value, (selected) ? " checked=\"checked\"" : ""));
+  }
 
-    LOG.info("Checking for login field...");
-    strPattern = "<input.*type=\"text\".*size=\"50\" name=\"login\".*>";
-    pattern = Pattern.compile(strPattern);
-    match = pattern.matcher(configForm);
-    assertTrue(match.find());
-
-    LOG.info("Checking for xslt field...");
-    strPattern = "<textarea .*name=\"xslt\".*>";
-    pattern = Pattern.compile(strPattern);
-    match = pattern.matcher(configForm);
-    assertTrue(match.find());
-
-    LOG.info("Checking for 'authZ Query' field...");
-    strPattern = "<textarea .*name=\"authZQuery\".*>";
-    pattern = Pattern.compile(strPattern);
-    match = pattern.matcher(configForm);
-    assertTrue(match.find());
-
-    LOG.info("Checking for Connection URL field...");
-    strPattern = "<input.*size=\"50\" name=\"connectionUrl\".*>";
-    pattern = Pattern.compile(strPattern);
-    match = pattern.matcher(configForm);
-    assertTrue(match.find());
-
-    LOG.info("Checking for radio buttons...");
-    strPattern = "<input.*type=\"radio\".*name=\"extMetadataType\" "
-        + "value=\"url\".*onclick=\".*\"/>";
-    pattern = Pattern.compile(strPattern);
-    match = pattern.matcher(configForm);
-    assertTrue(configForm, match.find());
-
-    strPattern = "<input type=\"radio\".*name=\"extMetadataType\" "
-        + "value=\"docId\".*onclick=\".*\"/>";
-    pattern = Pattern.compile(strPattern);
-    match = pattern.matcher(configForm);
-    assertTrue(match.find());
-
-    strPattern = "<input type=\"radio\".*name=\"extMetadataType\" "
-        + "value=\"lob\".*onclick=\".*\"/>";
-    pattern = Pattern.compile(strPattern);
-    match = pattern.matcher(configForm);
-    assertTrue(match.find());
-
-    LOG.info("Checking for Last Modified date Field...");
-    strPattern = "<input.*size=\"50\".*name=\"lastModifiedDate\".*"
-        + "id=\"lastModifiedDate\".*/>";
-    pattern = Pattern.compile(strPattern);
-    match = pattern.matcher(configForm);
-    assertTrue(match.find());
+  private void assertContains(String configForm, String pattern) {
+    assertTrue("Unable to find " + pattern + " in " + configForm,
+        Pattern.compile(pattern).matcher(configForm).find());
   }
 }

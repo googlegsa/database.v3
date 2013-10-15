@@ -35,7 +35,7 @@ import java.util.Map;
  */
 public abstract class DBTestBase extends TestCase {
 
-  protected Map<String, String> configMap = new HashMap<String, String>();
+  protected Map<String, String> configMap;
 
   public static final String CREATE_TEST_DB_TABLE = "com/google/enterprise/connector/db/config/createTable.sql";
   public static final String LOAD_TEST_DATA = "com/google/enterprise/connector/db/config/loadTestData.sql";
@@ -53,6 +53,8 @@ public abstract class DBTestBase extends TestCase {
   @Override
   protected void setUp() throws Exception {
     TestDirectoryManager testDirManager = new TestDirectoryManager(this);
+
+    configMap = new HashMap<String, String>();
     configMap.put("login", LanguageResource.getPropertyValue("login"));
     configMap.put("password", LanguageResource.getPropertyValue("password"));
     configMap.put("connectionUrl", LanguageResource.getPropertyValue("connectionUrl"));
@@ -71,6 +73,7 @@ public abstract class DBTestBase extends TestCase {
     configMap.put("lobField", "lob");
     configMap.put("fetchURLField", "fetchURL");
     configMap.put("extMetadataType", "");
+
     sqlSession = getDbClient().getSqlSession();
     dbConnection = sqlSession.getConnection();
   }
