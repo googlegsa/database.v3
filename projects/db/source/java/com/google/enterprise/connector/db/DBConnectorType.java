@@ -43,7 +43,7 @@ public class DBConnectorType implements ConnectorType {
   private static final String VALUE = "value";
   private static final String NAME = "name";
   private static final String ID = "id";
-  private static final String TEXT = "text";
+  public static final String TEXT = "text";
   private static final String DIV = "div";
   // Red asterisk for required fields.
   public static final String RED_ASTERISK = "*";
@@ -100,7 +100,7 @@ public class DBConnectorType implements ConnectorType {
   public static final String CLOB_BLOB_FIELD = "lobField";
   public static final String FETCH_URL_FIELD = "fetchURLField";
   public static final String NO_EXT_METADATA = "noExt";
-  private static final String EXT_METADATA_TYPE = "extMetadataType";
+  public static final String EXT_METADATA_TYPE = "extMetadataType";
 
   private static final String STYLESHEET_SCRIPT =
       "javascript:setDisabledProperties(false, true, true, true)";

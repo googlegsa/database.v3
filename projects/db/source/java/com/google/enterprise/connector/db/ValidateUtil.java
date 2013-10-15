@@ -576,24 +576,17 @@ public class ValidateUtil {
 
   public ConfigValidation validate(Map<String, String> config,
       ResourceBundle resource) {
-    ConfigValidation configValidation = new RequiredFields(config, resource);
-    boolean success = configValidation.validate();
-    if (success) {
-      configValidation = new TestDbFields(config, resource);
-      success = configValidation.validate();
-      if (success) {
-        configValidation = new XSLTCheck(config, resource);
-        success = configValidation.validate();
-        if (success) {
-          configValidation =
-              new QueryParameterAndPrimaryKeyCheck(config, resource);
-          success = configValidation.validate();
-          if (success) {
-            return null;
-          }
-        }
+    ConfigValidation[] configValidations = {
+      new RequiredFields(config, resource),
+      new TestDbFields(config, resource),
+      new XSLTCheck(config, resource),
+      new QueryParameterAndPrimaryKeyCheck(config, resource),
+    };
+    for (ConfigValidation configValidation : configValidations) {
+      if (!configValidation.validate()) {
+        return configValidation;
       }
     }
-    return configValidation;
+    return null;
   }
 }
