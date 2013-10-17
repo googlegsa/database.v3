@@ -55,9 +55,9 @@ abstract class DocumentBuilder {
   public static final String ROW_CHECKSUM = "google:sum";
 
   /**
-   * Detect the execution mode from the column names(Normal,
-   * CLOB, BLOB or External Metadata) of the DB Connector and returns the
-   * integer value representing execution mode
+   * Factory method that creates the configured DocumentBuilder
+   * instance. This method uses the same logic as
+   * DBConnectorType.getExtMetadataType and should be kept in sync.
    */
   public static DocumentBuilder getInstance(DBContext dbContext,
       TraversalContext traversalContext) {

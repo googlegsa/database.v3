@@ -17,6 +17,7 @@ package com.google.enterprise.connector.db;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Maps;
 import com.google.enterprise.connector.spi.ConfigureResponse;
 import com.google.enterprise.connector.spi.ConnectorFactory;
 import com.google.enterprise.connector.spi.ConnectorType;
@@ -102,13 +103,13 @@ public class DBConnectorType implements ConnectorType {
   public static final String NO_EXT_METADATA = "noExt";
   public static final String EXT_METADATA_TYPE = "extMetadataType";
 
-  private static final String STYLESHEET_SCRIPT =
+  public static final String STYLESHEET_SCRIPT =
       "javascript:setDisabledProperties(false, true, true, true)";
-  private static final String COMPLETE_URL_SCRIPT =
+  public static final String COMPLETE_URL_SCRIPT =
       "javascript:setDisabledProperties(true, false, true, true)";
-  private static final String DOC_ID_SCRIPT =
+  public static final String DOC_ID_SCRIPT =
       "javascript:setDisabledProperties(true, true, false, true)";
-  private static final String BLOB_CLOB_SCRIPT =
+  public static final String BLOB_CLOB_SCRIPT =
       "javascript:setDisabledProperties(true, true, true, false)";
 
   /** List of required fields. */
@@ -166,15 +167,21 @@ public class DBConnectorType implements ConnectorType {
   @Override
   public ConfigureResponse getConfigForm(Locale locale) {
     return getPopulatedConfigForm(
-        ImmutableMap.<String, String>of("extMetadataType", "noExt"), locale);
+        ImmutableMap.<String, String>of(EXT_METADATA_TYPE, NO_EXT_METADATA),
+        locale);
   }
 
   @Override
   public ConfigureResponse getPopulatedConfigForm(
       Map<String, String> configMap, Locale locale) {
     ConfigForm configForm;
+    // Update the map with the implied radio button option. We do this
+    // here rather than in ConfigForm because this is not done when
+    // validateConfig rejects a configuration.
+    Map<String, String> newConfigMap = Maps.newHashMap(configMap);
+    newConfigMap.put(EXT_METADATA_TYPE, getExtMetadataType(configMap));
     try {
-      configForm = new ConfigForm(configMap, locale);
+      configForm = new ConfigForm(newConfigMap, locale);
     } catch (MissingResourceException e) {
       LOG.log(Level.WARNING, "Failed to load language resource.", e);
       return new ConfigureResponse("Failed to load language resource: "
@@ -213,6 +220,34 @@ public class DBConnectorType implements ConnectorType {
     }
     return new ConfigureResponse(configValidation.getMessage(),
         configForm.getValidatedFormSnippet(configValidation));
+  }
+
+  /**
+   * Gets the implied extMetadataType value. This method uses the same
+   * logic as DocumentBuilder.getInstance and should be kept in sync.
+   * This method should only be used for getPopulatedConfigForm, and
+   * not for validateConfig (since we don't want to change the radio
+   * button setting back to "noExt" on an error when the form is
+   * redisplayed).
+   */
+  private static String getExtMetadataType(Map<String, String> configMap) {
+    String extMetaType = configMap.get(EXT_METADATA_TYPE);
+    if (!Util.isNullOrWhitespace(extMetaType)
+        && !extMetaType.equals(NO_EXT_METADATA)) {
+      if (extMetaType.equalsIgnoreCase(COMPLETE_URL)
+          && !Util.isNullOrWhitespace(configMap.get(DOCUMENT_URL_FIELD))) {
+        return COMPLETE_URL;
+      } else if (extMetaType.equalsIgnoreCase(DOC_ID)
+          && !Util.isNullOrWhitespace(configMap.get(DOCUMENT_ID_FIELD))) {
+        return DOC_ID;
+      } else if (extMetaType.equalsIgnoreCase(BLOB_CLOB)
+          && !Util.isNullOrWhitespace(configMap.get(CLOB_BLOB_FIELD))) {
+        return BLOB_CLOB;
+      }
+    }
+
+    // No matches found above.
+    return NO_EXT_METADATA;
   }
 
   private static class ConfigForm {
@@ -364,30 +399,16 @@ public class DBConnectorType implements ConnectorType {
       boolean isRadio = true;
       String label;
       if (XSLT.equals(key)) {
-        String extMetadataType = configMap.get(EXT_METADATA_TYPE);
-        boolean isChecked = Strings.isNullOrEmpty(extMetadataType)
-            || extMetadataType.equals(NO_EXT_METADATA);
-        appendRadio(buf, NO_EXT_METADATA, isChecked);
+        appendRadio(buf, NO_EXT_METADATA, STYLESHEET_SCRIPT);
         label = NO_EXT_METADATA;
       } else if (DOCUMENT_URL_FIELD.equals(key)) {
-        // Set isChecked flag true only if value of Document URL Field is not
-        // empty.
-        boolean isChecked = value != null && value.trim().length() > 0;
-        appendRadio(buf, COMPLETE_URL, isChecked);
+        appendRadio(buf, COMPLETE_URL, COMPLETE_URL_SCRIPT);
         label = COMPLETE_URL;
       } else if (DOCUMENT_ID_FIELD.equals(key)) {
-        String baseURL = configMap.get(BASE_URL);
-        // Set isChecked flag true if value of Document ID field is not empty or
-        // if user has entered value for base URL.
-        boolean isChecked = (value != null && value.trim().length() > 0)
-            || (baseURL != null && baseURL.trim().length() > 0);
-        appendRadio(buf, DOC_ID, isChecked);
+        appendRadio(buf, DOC_ID, DOC_ID_SCRIPT);
         label = DOC_ID;
       } else if (CLOB_BLOB_FIELD.equals(key)) {
-        String fetchURL = configMap.get(FETCH_URL_FIELD);
-        boolean isChecked = (value != null && value.trim().length() > 0)
-            || (fetchURL != null && fetchURL.trim().length() > 0);
-        appendRadio(buf, BLOB_CLOB, isChecked);
+        appendRadio(buf, BLOB_CLOB, BLOB_CLOB_SCRIPT);
         label = BLOB_CLOB;
       } else {
         isRadio = false;
@@ -465,8 +486,7 @@ public class DBConnectorType implements ConnectorType {
       }
     }
 
-    private void appendRadio(StringBuilder buf, String value, boolean isChecked)
-    {
+    private void appendRadio(StringBuilder buf, String value, String script) {
       buf.append("<div style='text-align:right; width:40px;");
       buf.append(" float:left; margin-right:5px'>");
       buf.append(OPEN_ELEMENT);
@@ -475,18 +495,10 @@ public class DBConnectorType implements ConnectorType {
       appendAttribute(buf, NAME, EXT_METADATA_TYPE);
       appendAttribute(buf, VALUE, value);
       appendAttribute(buf, ID, EXT_METADATA_TYPE + "_" + value);
-      if (isChecked) {
+      if (value.equals(configMap.get(EXT_METADATA_TYPE))) {
         appendAttribute(buf, CHECKED, CHECKED);
       }
-      if (NO_EXT_METADATA.equals(value)) {
-        appendAttribute(buf, ON_CLICK, STYLESHEET_SCRIPT);
-      } else if (COMPLETE_URL.equals(value)) {
-        appendAttribute(buf, ON_CLICK, COMPLETE_URL_SCRIPT);
-      } else if (DOC_ID.equals(value)) {
-        appendAttribute(buf, ON_CLICK, DOC_ID_SCRIPT);
-      } else if (BLOB_CLOB.equals(value)) {
-        appendAttribute(buf, ON_CLICK, BLOB_CLOB_SCRIPT);
-      }
+      appendAttribute(buf, ON_CLICK, script);
       buf.append(CLOSE_ELEMENT_SLASH);
       buf.append("</div>");
     }
