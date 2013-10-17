@@ -263,8 +263,11 @@ public class ValidateUtil {
      * matches one of the database column names, ignoring case, and
      * overwrites the property value in the configuration map with the
      * correct case.
+     *
+     * @return true if the propery value is valid
      */
-    private boolean validateFieldName(String propertyName, String messageKey) {
+    private boolean validateFieldName(String propertyName, String messageKey,
+        boolean isRequired) {
       String fieldName = config.get(propertyName);
       if (!Util.isNullOrWhitespace(fieldName)) {
         int index = Util.indexOfIgnoreCase(columnNames, fieldName.trim());
@@ -275,6 +278,11 @@ public class ValidateUtil {
         } else {
           config.put(propertyName, columnNames.get(index));
         }
+      } else if (isRequired) {
+        message = res.getString(MISSING_ATTRIBUTES) + ": "
+            + res.getString(propertyName);
+        problemFields.add(propertyName);
+        return false;
       }
       return true;
     }
@@ -282,56 +290,39 @@ public class ValidateUtil {
     /**
      * Validate the metadata property names.
      *
-     * @return true if external metadata related columns are there SQL crawl
-     *         query.
+     * @return true if external metadata related columns are valid
      */
     private boolean validateExternalMetadataFields() {
       boolean result;
 
+      // Note: This is not the implied value but the actual value from
+      // the submitted form.
+      String extMetadataType = config.get(DBConnectorType.EXT_METADATA_TYPE);
+
       // Validate Document URL field.
       result = validateFieldName(DBConnectorType.DOCUMENT_URL_FIELD,
-          INVALID_COLUMN_NAME);
+          INVALID_COLUMN_NAME,
+          DBConnectorType.COMPLETE_URL.equals(extMetadataType));
 
-      // Validate DocID and Base URL fields.
-      String documentIdField = config.get(DBConnectorType.DOCUMENT_ID_FIELD);
+      // Validate Base URL field.
       String baseURL = config.get(DBConnectorType.BASE_URL);
-
-      // Check if Base URL field exists without DocId Field or vice versa.
-      if (!Util.isNullOrWhitespace(baseURL)
-          && Util.isNullOrWhitespace(documentIdField)) {
+      if (DBConnectorType.DOC_ID.equals(extMetadataType)
+          && Util.isNullOrWhitespace(baseURL)) {
         result = false;
         message = res.getString(MISSING_ATTRIBUTES) + ": "
-            + res.getString(DBConnectorType.DOCUMENT_ID_FIELD);
-        problemFields.add(DBConnectorType.DOCUMENT_ID_FIELD);
-      } else if (!Util.isNullOrWhitespace(documentIdField)) {
-        if (Util.isNullOrWhitespace(baseURL)) {
-          result = false;
-          message = res.getString(MISSING_ATTRIBUTES) + ": "
-              + res.getString(DBConnectorType.BASE_URL);
-          problemFields.add(DBConnectorType.BASE_URL);
-        }
+            + res.getString(DBConnectorType.BASE_URL);
+        problemFields.add(DBConnectorType.BASE_URL);
       }
 
       // Validate document ID column name.
       if (!validateFieldName(DBConnectorType.DOCUMENT_ID_FIELD,
-          INVALID_COLUMN_NAME)) {
+          INVALID_COLUMN_NAME,
+          DBConnectorType.DOC_ID.equals(extMetadataType))) {
         result = false;
       }
 
       // Validate BLOB/CLOB and Fetch URL field.
       String blobClobField = config.get(DBConnectorType.CLOB_BLOB_FIELD);
-      String fetchURL = config.get(DBConnectorType.FETCH_URL_FIELD);
-
-      // Check if Fetch URL field exists without BLOB/CLOB Field.
-      if (!Util.isNullOrWhitespace(fetchURL)
-          && Util.isNullOrWhitespace(blobClobField)) {
-        result = false;
-        message = res.getString(MISSING_ATTRIBUTES) + ": "
-            + res.getString(DBConnectorType.CLOB_BLOB_FIELD);
-        problemFields.add(DBConnectorType.CLOB_BLOB_FIELD);
-      }
-
-      // Check for valid BLOB/CLOB column name.
       if (!Util.isNullOrWhitespace(blobClobField)) {
         int index = Util.indexOfIgnoreCase(columnNames, blobClobField.trim());
         if (index == -1) {
@@ -347,9 +338,14 @@ public class ValidateUtil {
         }
 
         if (!validateFieldName(DBConnectorType.FETCH_URL_FIELD,
-            INVALID_COLUMN_NAME)) {
+            INVALID_COLUMN_NAME, false)) {
           result = false;
         }
+      } else if (DBConnectorType.BLOB_CLOB.equals(extMetadataType)) {
+        result = false;
+        message = res.getString(MISSING_ATTRIBUTES) + ": "
+            + res.getString(DBConnectorType.CLOB_BLOB_FIELD);
+        problemFields.add(DBConnectorType.CLOB_BLOB_FIELD);
       }
 
       return result;
@@ -399,7 +395,7 @@ public class ValidateUtil {
 
       // Validate last modified date column name.
       success = validateFieldName(DBConnectorType.LAST_MODIFIED_DATE_FIELD,
-          INVALID_COLUMN_NAME);
+          INVALID_COLUMN_NAME, false);
       if (!success) {
         return success;
       }

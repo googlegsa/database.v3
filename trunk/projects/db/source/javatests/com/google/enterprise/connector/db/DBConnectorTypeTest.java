@@ -17,12 +17,15 @@ package com.google.enterprise.connector.db;
 import static com.google.enterprise.connector.db.DBConnectorType.AUTHZ_QUERY;
 import static com.google.enterprise.connector.db.DBConnectorType.BASE_URL;
 import static com.google.enterprise.connector.db.DBConnectorType.BLOB_CLOB;
+import static com.google.enterprise.connector.db.DBConnectorType.BLOB_CLOB_SCRIPT;
 import static com.google.enterprise.connector.db.DBConnectorType.CLOB_BLOB_FIELD;
 import static com.google.enterprise.connector.db.DBConnectorType.COMPLETE_URL;
+import static com.google.enterprise.connector.db.DBConnectorType.COMPLETE_URL_SCRIPT;
 import static com.google.enterprise.connector.db.DBConnectorType.CONNECTION_URL;
 import static com.google.enterprise.connector.db.DBConnectorType.DOCUMENT_ID_FIELD;
 import static com.google.enterprise.connector.db.DBConnectorType.DOCUMENT_URL_FIELD;
 import static com.google.enterprise.connector.db.DBConnectorType.DOC_ID;
+import static com.google.enterprise.connector.db.DBConnectorType.DOC_ID_SCRIPT;
 import static com.google.enterprise.connector.db.DBConnectorType.DRIVER_CLASS_NAME;
 import static com.google.enterprise.connector.db.DBConnectorType.EXT_METADATA_TYPE;
 import static com.google.enterprise.connector.db.DBConnectorType.FETCH_URL_FIELD;
@@ -32,6 +35,7 @@ import static com.google.enterprise.connector.db.DBConnectorType.NO_EXT_METADATA
 import static com.google.enterprise.connector.db.DBConnectorType.PASSWORD;
 import static com.google.enterprise.connector.db.DBConnectorType.PRIMARY_KEYS_STRING;
 import static com.google.enterprise.connector.db.DBConnectorType.SQL_QUERY;
+import static com.google.enterprise.connector.db.DBConnectorType.STYLESHEET_SCRIPT;
 import static com.google.enterprise.connector.db.DBConnectorType.TEXT;
 import static com.google.enterprise.connector.db.DBConnectorType.XSLT;
 
@@ -115,32 +119,12 @@ public class DBConnectorTypeTest extends DBTestBase {
   }
 
   /**
-   * If none of the sometimes-required fields are set, or actually if
-   * none of them are set for the given value of extMetadataType,
-   * that's current OK. The connector will fall back to noExt, that
-   * is, the stylesheet.
-   */
-  public void testSometimesRequiredFields() {
-    Map<String, String> newConfigMap = Maps.newHashMap(this.configMap);
-    newConfigMap.put(EXT_METADATA_TYPE, BLOB_CLOB);
-    // Remove the sometimes required fields.
-    for (String field : DBConnectorType.SOMETIMES_REQUIRED_FIELDS) {
-      newConfigMap.put(field, "");
-    }
-    ConfigureResponse configRes = connectorType.validateConfig(
-        newConfigMap, Locale.ENGLISH, mdbConnectorFactory);
-    if (configRes != null) {
-      fail(configRes.getMessage());
-    }
-  }
-
-  /**
    * Disabled fields are not submitted, so they won't appear in the
    * map at all.
    */
   public void testSometimesDisabledFields() {
     Map<String, String> newConfigMap = Maps.newHashMap(this.configMap);
-    newConfigMap.put(EXT_METADATA_TYPE, BLOB_CLOB);
+    newConfigMap.put(EXT_METADATA_TYPE, NO_EXT_METADATA);
     // Remove the sometimes disabled fields.
     for (String field : DBConnectorType.SOMETIMES_DISABLED_FIELDS) {
       newConfigMap.remove(field);
@@ -153,25 +137,40 @@ public class DBConnectorTypeTest extends DBTestBase {
   }
 
   public void testMissingBlobClob() {
-    testSometimesRequiredField(BLOB_CLOB, CLOB_BLOB_FIELD,
+    String formSnippet =
+        testSometimesRequiredField(BLOB_CLOB, CLOB_BLOB_FIELD, "", "");
+    assertExpectedFields(formSnippet, BLOB_CLOB);
+  }
+
+  public void testMissingBlobClobWithFetchUrl() {
+    String formSnippet = testSometimesRequiredField(BLOB_CLOB, CLOB_BLOB_FIELD,
         FETCH_URL_FIELD, "fetchURL");
+    assertExpectedFields(formSnippet, BLOB_CLOB);
+  }
+
+  public void testMissingDocumentUrl() {
+    String formSnippet =
+        testSometimesRequiredField(COMPLETE_URL, DOCUMENT_URL_FIELD, "", "");
+    assertExpectedFields(formSnippet, COMPLETE_URL);
   }
 
   public void testMissingDocumentId() {
-    testSometimesRequiredField(COMPLETE_URL, DOCUMENT_ID_FIELD,
+    String formSnippet = testSometimesRequiredField(DOC_ID, DOCUMENT_ID_FIELD,
         BASE_URL, "http://myhost/app/");
+    assertExpectedFields(formSnippet, DOC_ID);
   }
 
   public void testMissingBaseUrl() {
-    testSometimesRequiredField(COMPLETE_URL, BASE_URL,
+    String formSnippet = testSometimesRequiredField(DOC_ID, BASE_URL,
         DOCUMENT_ID_FIELD, "fname");
+    assertExpectedFields(formSnippet, DOC_ID);
   }
 
   /**
    * Test sometimes required fields that are required when other
    * fields are set.
    */
-  private void testSometimesRequiredField(String extMetadataType,
+  private String testSometimesRequiredField(String extMetadataType,
       String missing, String present, String value) {
     Map<String, String> newConfigMap = Maps.newHashMap(this.configMap);
     newConfigMap.put(EXT_METADATA_TYPE, extMetadataType);
@@ -187,6 +186,7 @@ public class DBConnectorTypeTest extends DBTestBase {
     String label = BUNDLE.getString(missing);
     int index = message.indexOf(label);
     assertFalse(message + " does not contain " + label, index == -1);
+    return configRes.getFormSnippet();
   }
 
   public void testValidConfig() {
@@ -531,27 +531,27 @@ public class DBConnectorTypeTest extends DBTestBase {
   }
 
   public void testGetPopulatedConfigForm_empty_lob() {
-    testGetPopulatedConfigForm(NO_EXT_METADATA + "|" + BLOB_CLOB, "",
+    testGetPopulatedConfigForm(NO_EXT_METADATA, "",
         CLOB_BLOB_FIELD, "ignored");
   }
 
   public void testGetPopulatedConfigForm_empty_fetchUrl() {
-    testGetPopulatedConfigForm(NO_EXT_METADATA + "|" + BLOB_CLOB, "",
+    testGetPopulatedConfigForm(NO_EXT_METADATA, "",
         FETCH_URL_FIELD, "ignored");
   }
 
   public void testGetPopulatedConfigForm_empty_url() {
-    testGetPopulatedConfigForm(NO_EXT_METADATA + "|" + COMPLETE_URL, "",
+    testGetPopulatedConfigForm(NO_EXT_METADATA, "",
         DOCUMENT_URL_FIELD, "ignored");
   }
 
   public void testGetPopulatedConfigForm_empty_docId() {
-    testGetPopulatedConfigForm(NO_EXT_METADATA + "|" + DOC_ID, "",
+    testGetPopulatedConfigForm(NO_EXT_METADATA, "",
         DOCUMENT_ID_FIELD, "ignored");
   }
 
   public void testGetPopulatedConfigForm_empty_baseUrl() {
-    testGetPopulatedConfigForm(NO_EXT_METADATA + "|" + DOC_ID, "",
+    testGetPopulatedConfigForm(NO_EXT_METADATA, "",
         BASE_URL, "ignored");
   }
 
@@ -565,11 +565,11 @@ public class DBConnectorTypeTest extends DBTestBase {
   }
 
   public void testGetPopulatedConfigForm_lob_empty() {
-    testGetPopulatedConfigForm("", BLOB_CLOB, CLOB_BLOB_FIELD, "");
+    testGetPopulatedConfigForm(NO_EXT_METADATA, BLOB_CLOB, CLOB_BLOB_FIELD, "");
   }
 
   public void testGetPopulatedConfigForm_lob_fetchUrl() {
-    testGetPopulatedConfigForm(BLOB_CLOB, BLOB_CLOB,
+    testGetPopulatedConfigForm(NO_EXT_METADATA, BLOB_CLOB,
         FETCH_URL_FIELD, "ignored");
   }
 
@@ -579,7 +579,8 @@ public class DBConnectorTypeTest extends DBTestBase {
   }
 
   public void testGetPopulatedConfigForm_url_empty() {
-    testGetPopulatedConfigForm("", COMPLETE_URL, DOCUMENT_URL_FIELD, "");
+    testGetPopulatedConfigForm(NO_EXT_METADATA, COMPLETE_URL,
+        DOCUMENT_URL_FIELD, "");
   }
 
   public void testGetPopulatedConfigForm_docId() {
@@ -587,11 +588,11 @@ public class DBConnectorTypeTest extends DBTestBase {
   }
 
   public void testGetPopulatedConfigForm_docId_empty() {
-    testGetPopulatedConfigForm("", DOC_ID, DOCUMENT_ID_FIELD, "");
+    testGetPopulatedConfigForm(NO_EXT_METADATA, DOC_ID, DOCUMENT_ID_FIELD, "");
   }
 
   public void testGetPopulatedConfigForm_docId_baseUrl() {
-    testGetPopulatedConfigForm(DOC_ID, DOC_ID, BASE_URL, "ignored");
+    testGetPopulatedConfigForm(NO_EXT_METADATA, DOC_ID, BASE_URL, "ignored");
   }
 
   /** Tests an empty config form for valid XHTML. */
@@ -625,11 +626,13 @@ public class DBConnectorTypeTest extends DBTestBase {
     assertContainsTextArea(configForm, AUTHZ_QUERY);
     assertContainsInput(configForm, TEXT, CONNECTION_URL);
     assertContainsRadio(configForm, EXT_METADATA_TYPE, NO_EXT_METADATA,
-        extMetadata);
+        extMetadata, STYLESHEET_SCRIPT);
     assertContainsRadio(configForm, EXT_METADATA_TYPE, COMPLETE_URL,
-        extMetadata);
-    assertContainsRadio(configForm, EXT_METADATA_TYPE, DOC_ID, extMetadata);
-    assertContainsRadio(configForm, EXT_METADATA_TYPE, BLOB_CLOB, extMetadata);
+        extMetadata, COMPLETE_URL_SCRIPT);
+    assertContainsRadio(configForm, EXT_METADATA_TYPE, DOC_ID,
+        extMetadata, DOC_ID_SCRIPT);
+    assertContainsRadio(configForm, EXT_METADATA_TYPE, BLOB_CLOB,
+        extMetadata, BLOB_CLOB_SCRIPT);
     assertContainsInput(configForm, TEXT, LAST_MODIFIED_DATE_FIELD);
   }
 
@@ -647,12 +650,13 @@ public class DBConnectorTypeTest extends DBTestBase {
   }
 
   private void assertContainsRadio(String configForm, String name,
-      String value, String extMetadata) {
+      String value, String extMetadata, String script) {
     boolean selected = value.matches(extMetadata);
     assertContains(configForm, String.format(
         "<input type=\"radio\" name=\"%s\" value=\"%s\" id=\"%s_%s\"%s "
-        + "onclick=\".*\"/>",
-        name, value, name, value, (selected) ? " checked=\"checked\"" : ""));
+        + "onclick=\"%s\"/>",
+        name, value, name, value, (selected) ? " checked=\"checked\"" : "",
+        Pattern.quote(script)));
   }
 
   private void assertContains(String configForm, String pattern) {
