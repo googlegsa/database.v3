@@ -103,14 +103,31 @@ public class DBConnectorType implements ConnectorType {
   public static final String NO_EXT_METADATA = "noExt";
   public static final String EXT_METADATA_TYPE = "extMetadataType";
 
-  public static final String STYLESHEET_SCRIPT =
-      "javascript:setDisabledProperties(false, true, true, true)";
-  public static final String COMPLETE_URL_SCRIPT =
-      "javascript:setDisabledProperties(true, false, true, true)";
-  public static final String DOC_ID_SCRIPT =
-      "javascript:setDisabledProperties(true, true, false, true)";
-  public static final String BLOB_CLOB_SCRIPT =
-      "javascript:setDisabledProperties(true, true, true, false)";
+  /** Maps the fields to the external metadata value that controls them. */
+  public static final Map<String, String> EXT_METADATA_TYPE_FIELDS =
+      ImmutableMap.<String, String>builder()
+      .put(XSLT, NO_EXT_METADATA)
+      .put(DOCUMENT_URL_FIELD, COMPLETE_URL)
+      .put(DOCUMENT_ID_FIELD, DOC_ID)
+      .put(BASE_URL, DOC_ID)
+      .put(CLOB_BLOB_FIELD, BLOB_CLOB)
+      .put(FETCH_URL_FIELD, BLOB_CLOB)
+      .build();
+
+  /**
+   * Maps the external metadata values to the onclick values for the
+   * corresponding radio buttons.
+   */
+  public static final Map<String, String> EXT_METADATA_TYPE_ONCLICKS =
+      ImmutableMap.of(
+          NO_EXT_METADATA,
+          "javascript:setDisabledProperties(false, true, true, true)",
+          COMPLETE_URL,
+          "javascript:setDisabledProperties(true, false, true, true)",
+          DOC_ID,
+          "javascript:setDisabledProperties(true, true, false, true)",
+          BLOB_CLOB,
+          "javascript:setDisabledProperties(true, true, true, false)");
 
   /** List of required fields. */
   public static final List<String> ALWAYS_REQUIRED_FIELDS = ImmutableList.of(
@@ -254,8 +271,6 @@ public class DBConnectorType implements ConnectorType {
     private static final String LOCALE_DB = "config/DbConnectorResources";
     private final ResourceBundle resource;
     private final Map<String, String> configMap;
-    private boolean isDocIdDisabled = false;
-    private boolean isLOBFieldDisable = false;
 
     public ConfigForm(Map<String, String> configMap, Locale locale) 
         throws MissingResourceException {
@@ -307,6 +322,7 @@ public class DBConnectorType implements ConnectorType {
         appendAttribute(buf, COLS, COLS_VALUE);
         appendAttribute(buf, NAME, key);
         appendAttribute(buf, ID, key);
+        appendDisabled(key, value, buf);
         buf.append(CLOSE_ELEMENT);
         if (null != value) {
           buf.append("<![CDATA[" + value + "]]>");
@@ -324,13 +340,10 @@ public class DBConnectorType implements ConnectorType {
         appendAttribute(buf, SIZE, SIZE_VALUE);
         appendAttribute(buf, NAME, key);
         appendAttribute(buf, ID, key);
-
         if (null != value) {
           appendAttribute(buf, VALUE, value);
         }
-
-        setReadOnly(key, value, buf);
-
+        appendDisabled(key, value, buf);
         buf.append(CLOSE_ELEMENT_SLASH);
       }
 
@@ -399,16 +412,16 @@ public class DBConnectorType implements ConnectorType {
       boolean isRadio = true;
       String label;
       if (XSLT.equals(key)) {
-        appendRadio(buf, NO_EXT_METADATA, STYLESHEET_SCRIPT);
+        appendRadio(buf, NO_EXT_METADATA);
         label = NO_EXT_METADATA;
       } else if (DOCUMENT_URL_FIELD.equals(key)) {
-        appendRadio(buf, COMPLETE_URL, COMPLETE_URL_SCRIPT);
+        appendRadio(buf, COMPLETE_URL);
         label = COMPLETE_URL;
       } else if (DOCUMENT_ID_FIELD.equals(key)) {
-        appendRadio(buf, DOC_ID, DOC_ID_SCRIPT);
+        appendRadio(buf, DOC_ID);
         label = DOC_ID;
       } else if (CLOB_BLOB_FIELD.equals(key)) {
-        appendRadio(buf, BLOB_CLOB, BLOB_CLOB_SCRIPT);
+        appendRadio(buf, BLOB_CLOB);
         label = BLOB_CLOB;
       } else {
         isRadio = false;
@@ -486,7 +499,7 @@ public class DBConnectorType implements ConnectorType {
       }
     }
 
-    private void appendRadio(StringBuilder buf, String value, String script) {
+    private void appendRadio(StringBuilder buf, String value) {
       buf.append("<div style='text-align:right; width:40px;");
       buf.append(" float:left; margin-right:5px'>");
       buf.append(OPEN_ELEMENT);
@@ -498,7 +511,7 @@ public class DBConnectorType implements ConnectorType {
       if (value.equals(configMap.get(EXT_METADATA_TYPE))) {
         appendAttribute(buf, CHECKED, CHECKED);
       }
-      appendAttribute(buf, ON_CLICK, script);
+      appendAttribute(buf, ON_CLICK, EXT_METADATA_TYPE_ONCLICKS.get(value));
       buf.append(CLOSE_ELEMENT_SLASH);
       buf.append("</div>");
     }
@@ -560,49 +573,12 @@ public class DBConnectorType implements ConnectorType {
           + "').style.visibility=getVisibility(" + disabled + ");\n";
     }
 
-    /**
-     * Set readOnly='true' for External Metadata fields like
-     * "Document URl Field", "Document Id Field" and "Base URL Field". "Base URL"
-     * and "Fetch URL" fields are set read-only , only when "Document ID Field"
-     * and "BLOB/CLOB Field" are read only respectively.
-     *
-     * @param key
-     * @param value
-     * @param buf
-     */
-    private void setReadOnly(String key, String value, StringBuilder buf) {
-      // Set fields non-editable only if they are empty.
-      if (value == null || value.trim().equals("")) {
-        if (DOCUMENT_URL_FIELD.equals(key)) {
-          // Set "Document URL Field" non-editable.
-          appendAttribute(buf, DISABLED, DISABLED);
-        } else if (DOCUMENT_ID_FIELD.equals(key)) {
-          // Set "Document Id Field" non-editable only if user has not entered
-          // value for base URL.
-          String baseURL = configMap.get(BASE_URL);
-          if (baseURL == null || baseURL.trim().length() == 0) {
-            appendAttribute(buf, DISABLED, DISABLED);
-            isDocIdDisabled = true;
-          }
-        } else if (BASE_URL.equals(key) && isDocIdDisabled) {
-          // Set "Base URL" field non-editable if "Document Id Field" field is
-          // non-editable.
-          appendAttribute(buf, DISABLED, DISABLED);
-          isDocIdDisabled = false;
-        } else if (CLOB_BLOB_FIELD.equals(key)) {
-          // Set "BLOB/CLOB Field" non-editable only if user has not entered value
-          // for fetch URL.
-          String fetchURL = configMap.get(FETCH_URL_FIELD);
-          if (fetchURL == null || fetchURL.trim().length() == 0) {
-            appendAttribute(buf, DISABLED, DISABLED);
-            isLOBFieldDisable = true;
-          }
-        } else if (FETCH_URL_FIELD.equals(key) && isLOBFieldDisable) {
-          // Set "Fetch URL" field not editable if "BLOB/CLOB Field" field is
-          // non-editable.
-          appendAttribute(buf, DISABLED, DISABLED);
-          isLOBFieldDisable = false;
-        }
+    /** Optionally append disabled attribute for External Metadata fields. */
+    private void appendDisabled(String key, String value, StringBuilder buf) {
+      String extMetadataType = EXT_METADATA_TYPE_FIELDS.get(key);
+      if (extMetadataType != null
+          && !extMetadataType.equals(configMap.get(EXT_METADATA_TYPE))) {
+        appendAttribute(buf, DISABLED, DISABLED);
       }
     }
   }

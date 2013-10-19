@@ -17,17 +17,16 @@ package com.google.enterprise.connector.db;
 import static com.google.enterprise.connector.db.DBConnectorType.AUTHZ_QUERY;
 import static com.google.enterprise.connector.db.DBConnectorType.BASE_URL;
 import static com.google.enterprise.connector.db.DBConnectorType.BLOB_CLOB;
-import static com.google.enterprise.connector.db.DBConnectorType.BLOB_CLOB_SCRIPT;
 import static com.google.enterprise.connector.db.DBConnectorType.CLOB_BLOB_FIELD;
 import static com.google.enterprise.connector.db.DBConnectorType.COMPLETE_URL;
-import static com.google.enterprise.connector.db.DBConnectorType.COMPLETE_URL_SCRIPT;
 import static com.google.enterprise.connector.db.DBConnectorType.CONNECTION_URL;
 import static com.google.enterprise.connector.db.DBConnectorType.DOCUMENT_ID_FIELD;
 import static com.google.enterprise.connector.db.DBConnectorType.DOCUMENT_URL_FIELD;
 import static com.google.enterprise.connector.db.DBConnectorType.DOC_ID;
-import static com.google.enterprise.connector.db.DBConnectorType.DOC_ID_SCRIPT;
 import static com.google.enterprise.connector.db.DBConnectorType.DRIVER_CLASS_NAME;
 import static com.google.enterprise.connector.db.DBConnectorType.EXT_METADATA_TYPE;
+import static com.google.enterprise.connector.db.DBConnectorType.EXT_METADATA_TYPE_FIELDS;
+import static com.google.enterprise.connector.db.DBConnectorType.EXT_METADATA_TYPE_ONCLICKS;
 import static com.google.enterprise.connector.db.DBConnectorType.FETCH_URL_FIELD;
 import static com.google.enterprise.connector.db.DBConnectorType.LAST_MODIFIED_DATE_FIELD;
 import static com.google.enterprise.connector.db.DBConnectorType.LOGIN;
@@ -35,7 +34,6 @@ import static com.google.enterprise.connector.db.DBConnectorType.NO_EXT_METADATA
 import static com.google.enterprise.connector.db.DBConnectorType.PASSWORD;
 import static com.google.enterprise.connector.db.DBConnectorType.PRIMARY_KEYS_STRING;
 import static com.google.enterprise.connector.db.DBConnectorType.SQL_QUERY;
-import static com.google.enterprise.connector.db.DBConnectorType.STYLESHEET_SCRIPT;
 import static com.google.enterprise.connector.db.DBConnectorType.TEXT;
 import static com.google.enterprise.connector.db.DBConnectorType.XSLT;
 
@@ -622,41 +620,78 @@ public class DBConnectorTypeTest extends DBTestBase {
     assertContainsInput(configForm, PASSWORD, PASSWORD);
     assertContainsInput(configForm, TEXT, PRIMARY_KEYS_STRING);
     assertContainsInput(configForm, TEXT, LOGIN);
-    assertContainsTextArea(configForm, XSLT);
     assertContainsTextArea(configForm, AUTHZ_QUERY);
     assertContainsInput(configForm, TEXT, CONNECTION_URL);
     assertContainsRadio(configForm, EXT_METADATA_TYPE, NO_EXT_METADATA,
-        extMetadata, STYLESHEET_SCRIPT);
+        extMetadata);
+    assertContainsTextArea(configForm, XSLT, extMetadata);
     assertContainsRadio(configForm, EXT_METADATA_TYPE, COMPLETE_URL,
-        extMetadata, COMPLETE_URL_SCRIPT);
-    assertContainsRadio(configForm, EXT_METADATA_TYPE, DOC_ID,
-        extMetadata, DOC_ID_SCRIPT);
-    assertContainsRadio(configForm, EXT_METADATA_TYPE, BLOB_CLOB,
-        extMetadata, BLOB_CLOB_SCRIPT);
+        extMetadata);
+    assertContainsInput(configForm, TEXT, DOCUMENT_URL_FIELD, extMetadata);
+    assertContainsRadio(configForm, EXT_METADATA_TYPE, DOC_ID, extMetadata);
+    assertContainsInput(configForm, TEXT, DOCUMENT_ID_FIELD, extMetadata);
+    assertContainsInput(configForm, TEXT, BASE_URL, extMetadata);
+    assertContainsRadio(configForm, EXT_METADATA_TYPE, BLOB_CLOB, extMetadata);
+    assertContainsInput(configForm, TEXT, CLOB_BLOB_FIELD, extMetadata);
+    assertContainsInput(configForm, TEXT, FETCH_URL_FIELD, extMetadata);
     assertContainsInput(configForm, TEXT, LAST_MODIFIED_DATE_FIELD);
   }
 
+  /** Asserts that the given enabled textarea is present in the form. */
   private void assertContainsTextArea(String configForm, String name) {
-    assertContains(configForm, String.format(
-        "<textarea rows=\"10\" cols=\"50\" name=\"%s\" id=\"%s\">",
-        name, name));
+    assertContainsTextArea(configForm, name, false);
   }
 
+  /**
+   * Asserts that the given textarea is present in the form, and that
+   * it is enabled when the selected extMetadataType radio button
+   * value matches the one governing this input.
+   */
+  private void assertContainsTextArea(String configForm, String name,
+      String extMetadataType) {
+    assertContainsTextArea(configForm, name,
+        !extMetadataType.equals(EXT_METADATA_TYPE_FIELDS.get(name)));
+  }
+
+  private void assertContainsTextArea(String configForm, String name,
+      boolean disabled) {
+    assertContains(configForm, String.format(
+        "<textarea rows=\"10\" cols=\"50\" name=\"%s\" id=\"%s\"%s>",
+        name, name, (disabled) ? " disabled=\"disabled\"" : ""));
+  }
+
+  /** Asserts that the given enabled input is present in the form. */
   private void assertContainsInput(String configForm, String type,
       String name) {
-    assertContains(configForm, String.format(
-        "<input type=\"%s\" size=\"50\" name=\"%s\" id=\"%s\".*/>",
-        type, name, name));
+    assertContainsInput(configForm, type, name, false);
+  }
+
+  /**
+   * Asserts that the given input is present in the form, and that
+   * it is enabled when the selected extMetadataType radio button
+   * value matches the one governing this input.
+   */
+  private void assertContainsInput(String configForm, String type,
+      String name, String extMetadataType) {
+    assertContainsInput(configForm, type, name,
+        !extMetadataType.equals(EXT_METADATA_TYPE_FIELDS.get(name)));
+  }
+
+  /** Helper method for the other two overloads. */
+  private void assertContainsInput(String configForm, String type,
+      String name, boolean disabled) {
+    assertContains(configForm, String.format("<input type=\"%s\" "
+        + "size=\"50\" name=\"%s\" id=\"%s\"( value=\".*\")?%s/>",
+            type, name, name, (disabled) ? " disabled=\"disabled\"" : ""));
   }
 
   private void assertContainsRadio(String configForm, String name,
-      String value, String extMetadata, String script) {
+      String value, String extMetadata) {
     boolean selected = value.matches(extMetadata);
-    assertContains(configForm, String.format(
-        "<input type=\"radio\" name=\"%s\" value=\"%s\" id=\"%s_%s\"%s "
-        + "onclick=\"%s\"/>",
+    assertContains(configForm, String.format("<input type=\"radio\" "
+        + "name=\"%s\" value=\"%s\" id=\"%s_%s\"%s onclick=\"%s\"/>",
         name, value, name, value, (selected) ? " checked=\"checked\"" : "",
-        Pattern.quote(script)));
+        Pattern.quote(EXT_METADATA_TYPE_ONCLICKS.get(value))));
   }
 
   private void assertContains(String configForm, String pattern) {
