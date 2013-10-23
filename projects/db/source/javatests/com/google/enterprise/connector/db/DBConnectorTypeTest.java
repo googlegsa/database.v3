@@ -33,6 +33,7 @@ import static com.google.enterprise.connector.db.DBConnectorType.LOGIN;
 import static com.google.enterprise.connector.db.DBConnectorType.NO_EXT_METADATA;
 import static com.google.enterprise.connector.db.DBConnectorType.PASSWORD;
 import static com.google.enterprise.connector.db.DBConnectorType.PRIMARY_KEYS_STRING;
+import static com.google.enterprise.connector.db.DBConnectorType.SOMETIMES_REQUIRED_FIELDS;
 import static com.google.enterprise.connector.db.DBConnectorType.SQL_QUERY;
 import static com.google.enterprise.connector.db.DBConnectorType.TEXT;
 import static com.google.enterprise.connector.db.DBConnectorType.XSLT;
@@ -673,8 +674,14 @@ public class DBConnectorTypeTest extends DBTestBase {
    */
   private void assertContainsInput(String configForm, String type,
       String name, String extMetadataType) {
-    assertContainsInput(configForm, type, name,
-        !extMetadataType.equals(EXT_METADATA_TYPE_FIELDS.get(name)));
+    boolean disabled =
+        !extMetadataType.equals(EXT_METADATA_TYPE_FIELDS.get(name));
+    assertContainsInput(configForm, type, name, disabled);
+    if (SOMETIMES_REQUIRED_FIELDS.contains(name)) {
+      assertContains(configForm,
+          String.format("<div id=\"%sStar\" [^/]+ visibility: %s;\">\\*</div>",
+          name, (disabled) ? "hidden" : "visible"));
+    }
   }
 
   /** Helper method for the other two overloads. */
