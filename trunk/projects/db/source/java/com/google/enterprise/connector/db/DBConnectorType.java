@@ -460,7 +460,8 @@ public class DBConnectorType implements ConnectorType {
         String style = "text-align: right; color: red; "
             + "font-weight: bold; margin-right: 0.3em;";
         if (SOMETIMES_REQUIRED_FIELDS.contains(key)) {
-          style = style + " visibility: hidden; float: right;";
+          style = String.format("%s float: right; visibility: %s;",
+              style, (isDisabled(key)) ? "hidden" : "visible");
         }
 
         buf.append(OPEN_ELEMENT);
@@ -573,11 +574,15 @@ public class DBConnectorType implements ConnectorType {
           + "').style.visibility=getVisibility(" + disabled + ");\n";
     }
 
+    private boolean isDisabled(String key) {
+      String extMetadataType = EXT_METADATA_TYPE_FIELDS.get(key);
+      return extMetadataType != null
+          && !extMetadataType.equals(configMap.get(EXT_METADATA_TYPE));
+    }
+
     /** Optionally append disabled attribute for External Metadata fields. */
     private void appendDisabled(String key, String value, StringBuilder buf) {
-      String extMetadataType = EXT_METADATA_TYPE_FIELDS.get(key);
-      if (extMetadataType != null
-          && !extMetadataType.equals(configMap.get(EXT_METADATA_TYPE))) {
+      if (isDisabled(key)) {
         appendAttribute(buf, DISABLED, DISABLED);
       }
     }
