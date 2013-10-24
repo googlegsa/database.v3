@@ -78,7 +78,7 @@ public class ValidateUtil {
     private final List<String> columnClasses = new ArrayList<String>();
 
     private static final String USERNAME_PLACEHOLDER = "#{username}";
-    private static final String DOCI_IDS_PLACEHOLDER = "${docIds}";
+    private static final String DOC_IDS_PLACEHOLDER = "${docIds}";
     private static final String KEY_VALUE_PLACEHOLDER = "#{value}";
 
     Statement stmt = null;
@@ -233,8 +233,8 @@ public class ValidateUtil {
     }
 
     /**
-     * Searches for expected placeholders(#username# and $docIds$) in
-     * AuthZ query and validates AuthZ query syntax.
+     * Searches for expected placeholders (#{username} and ${docIds}) in
+     * the AuthZ query and validates the AuthZ query syntax.
      *
      * @param authZQuery AuthZ query provided by connector admin.
      * @return true if AuthZ query has expected placeholders and valid syntax.
@@ -244,10 +244,10 @@ public class ValidateUtil {
 
       // Search for expected placeholders in authZquery.
       if (authZQuery.contains(USERNAME_PLACEHOLDER)
-          && authZQuery.contains(DOCI_IDS_PLACEHOLDER)) {
+          && authZQuery.contains(DOC_IDS_PLACEHOLDER)) {
         // Replace placeholders with empty values.
         authZQuery = authZQuery.replace(USERNAME_PLACEHOLDER, "''");
-        authZQuery = authZQuery.replace(DOCI_IDS_PLACEHOLDER, "''");
+        authZQuery = authZQuery.replace(DOC_IDS_PLACEHOLDER, "''");
         result = executeQueryAndRollback(stmt, authZQuery,
             INVALID_AUTH_QUERY, DBConnectorType.AUTHZ_QUERY);
       } else {

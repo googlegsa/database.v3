@@ -140,7 +140,7 @@ public class DBConnectorType implements ConnectorType {
   public static final List<String> SOMETIMES_DISABLED_FIELDS =
       ImmutableList.<String>builder()
       .addAll(SOMETIMES_REQUIRED_FIELDS)
-      .add(XSLT, FETCH_URL_FIELD, AUTHZ_QUERY)
+      .add(XSLT, FETCH_URL_FIELD)
       .build();
 
   public static final List<String> REQUIRED_FIELDS =
@@ -518,22 +518,16 @@ public class DBConnectorType implements ConnectorType {
     }
 
     /**
-     * Builds the JavaScript for making External metadata related
-     * fields (Document URL Field , Document Id Field , Base URL , BLOB/CLOB Field
-     * and Fetch URL Field) and "AuthZ Query" field editable/non-editable
-     * depending upon user selection. When user selects any of the external
-     * metadata radio button other fields becomes non-editable and previous value
-     * will be cleared. When user selects "Document URL Field" OR
-     * "Document Id Field" "AuthZ Query" will become non-editable.
+     * Builds the JavaScript for enabled and disabling the External
+     * metadata related fields (Stylesheet, Document URL Field,
+     * Document ID Field, Base URL, BLOB or CLOB Field and Display URL
+     * Field) depending upon user selection.
      *
-     * @return JavaScript for making fields editable/non-editable
-     *         depending upon context.
+     * @return JavaScript for disabled fields depending upon context
      */
     private static String getJavaScript() {
       // xslt, urlField, docIdField, lobField are boolean values for
-      // making disabling content definition fields. The authZ
-      // query currently applies only to content feeds (i.e.,
-      // stylesheet or BLOB/CLOB configurations.
+      // making disabling content definition fields.
       // Note: Keep this code in sync with SOMETIMES_DISABLED_FIELDS.
       String javascript =
           "function getVisibility(disabled) {\n"
@@ -547,7 +541,6 @@ public class DBConnectorType implements ConnectorType {
           + setDisabled(BASE_URL, "docIdField")
           + setDisabled(CLOB_BLOB_FIELD, "lobField")
           + setDisabled(FETCH_URL_FIELD, "lobField")
-          + setDisabled(AUTHZ_QUERY, "xslt && lobField")
           + setVisibility("documentURLField", "urlField")
           + setVisibility("documentIdField", "docIdField")
           + setVisibility("baseURL", "docIdField")
