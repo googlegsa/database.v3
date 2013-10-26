@@ -1,30 +1,116 @@
-Release Notes:
-===============
 
-Google Search Appliance Connector for Databases
+           Google Search Appliance Connector for Databases
+                            Release Notes
 
-This document contains the release notes for Google Search Appliance Connector for Databases.
-The following sections describe the release in detail and provide information that supplements
-the main documentation.  See the Issues Tab on the Code Site for the current list of known
-issues and workarounds.
+This document contains the release notes for Google Search Appliance
+Connector for Databases. The following sections describe the release
+in detail and provide information that supplements the main
+documentation.
 
 Web Site: http://code.google.com/p/google-enterprise-connector-database/
 
 
-Release 3.0.6, unreleased
-==============================
+Release 3.2.0, October 25, 2013
+===============================
 
 Introduction
 ------------
-This is a maintenance release that improves quality, reliability,
-and performance without adding any new functionality.
+This is a maintenance release that improves quality, reliability, and
+performance without adding any new functionality. All users of
+previous releases should upgrade to this release.
 
-Users of previous releases should check the "Version Compatibility" section
-below for instructions on how to use existing connector instances with this
-new release.
+Issues fixed since 3.0.0
+------------------------
+11377648 - The configuration form has been rearranged, some fields
+           relabeled for clarity, and the radio buttons controlling
+           the source of the document content (previously labeled
+           "External Metadata Indexing") have been revamped, with a
+           fourth radio button to control the use of the stylesheet
+           (previously implied), and to mark required fields.
+
+11376925 - Subclasses of DBConnectorType cannot use their own password
+           fields. Additional password fields are not masked.
+
+11341445 - [Connector Manager] A diffing connector could get into a
+           loop deleting all of the snapshot files on each pass, and
+           therefore feeding everything to the GSA for indexing on
+           each pass. At least the two most recent snapshot files are
+           now saved.
+
+11293325 - The Authorization SQL Query field should always be enabled.
+
+11123956 - Instantiation fails when database configuration properties
+           contain special XML characters.
+
+10846134 - Radio buttons are not displayed well in External Metadata
+           Indexing section. This section has also been renamed
+           Document Content.
+
+10598470 - Column name is case sensitive in the BLOB or CLOB Field.
+
+10117134 - Spaces in the configured primary key are valid but fail at
+           runtime.
+
+10097235 - Error message text is displayed twice for missing fields.
+
+9686515 - Fields enabled by the radio buttons cannot be edited with
+          Google Search Appliance 7.2.
+
+8489462 - Connector does not close connections on successful crawl and
+          connector restart.
+
+8489325 - SQL exception causes connector to delete all documents.
+
+8207127 - Reduce the memory footprint of DocumentHandle serialization.
+
+8161341 - Docid ordering problem with case and accents.
+
+8053932 - Use uncompressed content with metadata-only content feeds
+          for better performance with Google Search Appliance 6.14 and
+          earlier.
+
+7928861 - [Connector Manager] Avoid unordered snapshots in the
+          snapshot files. The diffing package fundamentally requires
+          ordered docids. For certain scenarios, this change will lead
+          to some documents being repeatedly treated as new documents.
+          Previously, some existing documents could be deleted from
+          the GSA index and never reindexed.
+
+7732455 - The Base64-encoded docids do not preserve order.
+
+7301553 - When recovering from feed errors, BLOB or CLOB fields are
+          missing and the last modified date is misformatted. This
+          change also removed the google:displayurl property from
+          metadata-and-URL feeds, and uses a configured BLOB or CLOB
+          Field even when it not a LOB type.
+
+7301552 - Reduce the size of the DB connector snapshot files.
+
+7301515 - Reduce the memory footprint of LOBs in iBATIS.
+
+7124264 - Log the primary key values for authorization results.
+          Previously only the Base64-encoded values were logged.
+
+5102212 - The Connector Hostname field was used only for the
+          dbconnector display URLs, and has been replaced by the
+          connector instance name.
+
+4529311 - SQL query validation fails with MetaMatrix JDBC driver due
+          to an incorrect use of transactions.
+
+4236197 - The Database Name field was used only for the dbconnector
+          display URLs, the result XML, and the stylesheet. It has
+          been replaced by the connector instance name. Custom
+          stylesheets will need to be updated accordingly.
 
 Version Compatibility
 ---------------------
+Connector instances created with versions earlier than 2.8.0 will not
+work with this version. Connector Manager version earlier than 3.2.2
+will not work correctly with this version of the connector.
+
+Java SE 5.0 is no longer supported. Java 6 or later is required.
+
 This version of the Connector includes an upgrade of its third party
 SQL Mapping Framework from iBatis v2.3.0 to MyBatis v3.1.1.
 As a result of the upgrade, the syntax for parameter substitutions in
@@ -37,10 +123,15 @@ For more information regarding the iBatis to MyBatis migration see:
 http://ibatis.apache.org
 http://code.google.com/p/mybatis
 
+The result XML element names have changed, so custom stylesheets will
+need to be updated to replace references to the configured Database
+Name with the connector instance name.
+
 Upgrade Instructions
 --------------------
-Due to the SQL parameter substitution syntax change, users should follow
-these additional steps when upgrading the connector:
+Due to the SQL and XML syntax changes, users should follow these
+additional steps when upgrading the connector:
+
   1) Before upgrading, stop the connector's traversal of the database by
      selecting Disable Traversal on the Connector's configuration page.
 
@@ -56,14 +147,21 @@ these additional steps when upgrading the connector:
 
   4) Restart Tomcat.
 
-  5) Go to the Connector's configuration page. Modify the parameter
-     substitutions if needed. In the SQL Query, change #value# to #{value}.
-     In the AuthZ Query, change $docids$ to ${docids}.  Finally, 
-     re-enable connector traversal and save the configuration.
+  5) Go to the Connector's configuration page. 
+
+     a) Modify the parameter substitutions if needed. In the Traversal
+        SQL Query, change #value# to #{value}. In the Authorization
+        SQL Query, change $docids$ to ${docids}. 
+
+     b) Edit the stylesheet if it is enabled. Change references to the
+        previously configured Database Name to the connector instance
+        name.
+
+     c) Re-enable connector traversal and save the configuration.
 
 
-Release 3.0.0, 17 October 2012
-==============================
+Release 3.0.0, October 17, 2012
+===============================
 
 Introduction
 ------------
