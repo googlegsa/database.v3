@@ -14,6 +14,7 @@
 
 package com.google.enterprise.connector.db;
 
+import com.google.common.base.Strings;
 import com.google.enterprise.connector.spi.ConnectorType;
 
 import org.apache.ibatis.datasource.unpooled.UnpooledDataSource;
@@ -45,12 +46,10 @@ public class ValidateUtil {
   private static final String TEST_PRIMARY_KEYS = "TEST_PRIMARY_KEYS";
   private static final String INVALID_COLUMN_NAME = "INVALID_COLUMN_NAME";
   private static final String INVALID_AUTH_QUERY = "INVALID_AUTH_QUERY";
-  private static final String FQDN_HOSTNAME = "FQDN_HOSTNAME";
   private static final String MISSING_ATTRIBUTES = "MISSING_ATTRIBUTES";
   private static final String REQ_FIELDS = "REQ_FIELDS";
   private static final String TEST_PRIMARY_KEYS_AND_KEY_VALUE_PLACEHOLDER =
       "TEST_PRIMARY_KEYS_AND_KEY_VALUE_PLACEHOLDER";
-  private static final String PRIMARY_KEYS_SEPARATOR = ",";
   // Red asterisk for required fields.
   public static final String RED_ASTERISK = "<font color=\"RED\">*</font>";
 
@@ -79,7 +78,7 @@ public class ValidateUtil {
     private final List<String> columnClasses = new ArrayList<String>();
 
     private static final String USERNAME_PLACEHOLDER = "#{username}";
-    private static final String DOCI_IDS_PLACEHOLDER = "${docIds}";
+    private static final String DOC_IDS_PLACEHOLDER = "${docIds}";
     private static final String KEY_VALUE_PLACEHOLDER = "#{value}";
 
     Statement stmt = null;
@@ -213,22 +212,17 @@ public class ValidateUtil {
             resultSet.close();
           }
 
-          String[] primaryKeys = config.get(DBConnectorType.PRIMARY_KEYS_STRING)
-              .split(PRIMARY_KEYS_SEPARATOR);
-          for (String key : primaryKeys) {
-            result = false;
-            for (String columnName : columnNames) {
-              if (key.trim().equalsIgnoreCase(columnName)) {
-                result = true;
-                break;
-              }
-            }
-            if (!result) {
-              LOG.info("One or more primary keys are invalid");
-              message = res.getString(TEST_PRIMARY_KEYS);
-              problemFields.add(DBConnectorType.PRIMARY_KEYS_STRING);
-              break;
-            }
+          String primaryKeys = config.get(DBConnectorType.PRIMARY_KEYS_STRING);
+          List<String> matchedColumns =
+              Util.getCanonicalPrimaryKey(primaryKeys, columnNames);
+          result = (matchedColumns != null);
+          if (result) {
+            config.put(DBConnectorType.PRIMARY_KEYS_STRING,
+                Util.PRIMARY_KEY_JOINER.join(matchedColumns));
+          } else {
+            LOG.info("One or more primary keys are invalid");
+            message = res.getString(TEST_PRIMARY_KEYS);
+            problemFields.add(DBConnectorType.PRIMARY_KEYS_STRING);
           }
         }
       } catch (SQLException e) {
@@ -239,8 +233,8 @@ public class ValidateUtil {
     }
 
     /**
-     * Searches for expected placeholders(#username# and $docIds$) in
-     * AuthZ query and validates AuthZ query syntax.
+     * Searches for expected placeholders (#{username} and ${docIds}) in
+     * the AuthZ query and validates the AuthZ query syntax.
      *
      * @param authZQuery AuthZ query provided by connector admin.
      * @return true if AuthZ query has expected placeholders and valid syntax.
@@ -250,10 +244,10 @@ public class ValidateUtil {
 
       // Search for expected placeholders in authZquery.
       if (authZQuery.contains(USERNAME_PLACEHOLDER)
-          && authZQuery.contains(DOCI_IDS_PLACEHOLDER)) {
+          && authZQuery.contains(DOC_IDS_PLACEHOLDER)) {
         // Replace placeholders with empty values.
         authZQuery = authZQuery.replace(USERNAME_PLACEHOLDER, "''");
-        authZQuery = authZQuery.replace(DOCI_IDS_PLACEHOLDER, "''");
+        authZQuery = authZQuery.replace(DOC_IDS_PLACEHOLDER, "''");
         result = executeQueryAndRollback(stmt, authZQuery,
             INVALID_AUTH_QUERY, DBConnectorType.AUTHZ_QUERY);
       } else {
@@ -265,105 +259,95 @@ public class ValidateUtil {
     }
 
     /**
+     * If a given property is specified, verifies that the value
+     * matches one of the database column names, ignoring case, and
+     * overwrites the property value in the configuration map with the
+     * correct case.
+     *
+     * @return true if the propery value is valid
+     */
+    private boolean validateFieldName(String propertyName, String messageKey,
+        boolean isRequired) {
+      String fieldName = config.get(propertyName);
+      if (!Util.isNullOrWhitespace(fieldName)) {
+        int index = Util.indexOfIgnoreCase(columnNames, fieldName.trim());
+        if (index == -1) {
+          message = res.getString(messageKey);
+          problemFields.add(propertyName);
+          return false;
+        } else {
+          config.put(propertyName, columnNames.get(index));
+        }
+      } else if (isRequired) {
+        message = res.getString(MISSING_ATTRIBUTES) + ": "
+            + res.getString(propertyName);
+        problemFields.add(propertyName);
+        return false;
+      }
+      return true;
+    }
+
+    /**
      * Validate the metadata property names.
      *
-     * @return true if external metadata related columns are there SQL crawl
-     *         query.
+     * @return true if external metadata related columns are valid
      */
     private boolean validateExternalMetadataFields() {
-      boolean result = true;
+      boolean result;
+
+      // Note: This is not the implied value but the actual value from
+      // the submitted form.
+      String extMetadataType = config.get(DBConnectorType.EXT_METADATA_TYPE);
 
       // Validate Document URL field.
-      String documentURLField = config.get(DBConnectorType.DOCUMENT_URL_FIELD);
-      if (documentURLField != null && documentURLField.trim().length() > 0) {
-        if (!columnNames.contains(documentURLField.trim())) {
-          result = false;
-          message = res.getString(INVALID_COLUMN_NAME);
-          problemFields.add(DBConnectorType.DOCUMENT_URL_FIELD);
-        }
-      }
+      result = validateFieldName(DBConnectorType.DOCUMENT_URL_FIELD,
+          INVALID_COLUMN_NAME,
+          DBConnectorType.COMPLETE_URL.equals(extMetadataType));
 
-      // Validate DocID and Base URL fields.
-      String documentIdField = config.get(DBConnectorType.DOCUMENT_ID_FIELD);
+      // Validate Base URL field.
       String baseURL = config.get(DBConnectorType.BASE_URL);
-
-      // Check if Base URL field exists without DocId Field.
-      if ((baseURL != null && baseURL.trim().length() > 0)
-          && (documentIdField == null || documentIdField.trim().length() == 0)) {
+      if (DBConnectorType.DOC_ID.equals(extMetadataType)
+          && Util.isNullOrWhitespace(baseURL)) {
         result = false;
         message = res.getString(MISSING_ATTRIBUTES) + ": "
-            + res.getString(DBConnectorType.DOCUMENT_ID_FIELD);
-        problemFields.add(DBConnectorType.DOCUMENT_ID_FIELD);
+            + res.getString(DBConnectorType.BASE_URL);
+        problemFields.add(DBConnectorType.BASE_URL);
       }
 
       // Validate document ID column name.
-      if (documentIdField != null && documentIdField.trim().length() > 0) {
-        if (!columnNames.contains(documentIdField)) {
-          result = false;
-          message = res.getString(INVALID_COLUMN_NAME);
-          problemFields.add(DBConnectorType.DOCUMENT_ID_FIELD);
-        }
-        if (baseURL == null || baseURL.trim().length() == 0) {
-          result = false;
-          message = res.getString(MISSING_ATTRIBUTES) + ": "
-              + res.getString(DBConnectorType.BASE_URL);
-          problemFields.add(DBConnectorType.BASE_URL);
-        }
+      if (!validateFieldName(DBConnectorType.DOCUMENT_ID_FIELD,
+          INVALID_COLUMN_NAME,
+          DBConnectorType.DOC_ID.equals(extMetadataType))) {
+        result = false;
       }
 
       // Validate BLOB/CLOB and Fetch URL field.
       String blobClobField = config.get(DBConnectorType.CLOB_BLOB_FIELD);
-      String fetchURL = config.get(DBConnectorType.FETCH_URL_FIELD);
+      if (!Util.isNullOrWhitespace(blobClobField)) {
+        int index = Util.indexOfIgnoreCase(columnNames, blobClobField.trim());
+        if (index == -1) {
+          result = false;
+          message = res.getString(INVALID_COLUMN_NAME);
+          problemFields.add(DBConnectorType.CLOB_BLOB_FIELD);
+        } else {
+          config.put(DBConnectorType.CLOB_BLOB_FIELD, columnNames.get(index));
+          LOG.log(Level.CONFIG,
+              "BLOB or CLOB column {0} type is {1}, class name {2}.",
+              new Object[] { columnNames.get(index), columnTypes.get(index),
+                             columnClasses.get(index) });
+        }
 
-      // Check if Fetch URL field exists without BLOB/CLOB Field.
-      if ((fetchURL != null && fetchURL.trim().length() > 0)
-          && (blobClobField == null || blobClobField.trim().length() == 0)) {
+        if (!validateFieldName(DBConnectorType.FETCH_URL_FIELD,
+            INVALID_COLUMN_NAME, false)) {
+          result = false;
+        }
+      } else if (DBConnectorType.BLOB_CLOB.equals(extMetadataType)) {
         result = false;
         message = res.getString(MISSING_ATTRIBUTES) + ": "
             + res.getString(DBConnectorType.CLOB_BLOB_FIELD);
         problemFields.add(DBConnectorType.CLOB_BLOB_FIELD);
       }
 
-      // Check for valid BLOB/CLOB column name.
-      if (blobClobField != null && blobClobField.trim().length() > 0) {
-        int index = columnNames.indexOf(blobClobField);
-        if (index == -1) {
-          result = false;
-          message = res.getString(INVALID_COLUMN_NAME);
-          problemFields.add(DBConnectorType.CLOB_BLOB_FIELD);
-        } else {
-          LOG.log(Level.CONFIG,
-              "BLOB or CLOB column {0} type is {1}, class name {2}.",
-              new Object[] { blobClobField, columnTypes.get(index),
-                             columnClasses.get(index) });
-        }
-
-        if (fetchURL != null && fetchURL.trim().length() > 0
-            && !columnNames.contains(fetchURL)) {
-          result = false;
-          message = res.getString(INVALID_COLUMN_NAME);
-          problemFields.add(DBConnectorType.FETCH_URL_FIELD);
-        }
-      }
-
-      return result;
-    }
-
-    /**
-     * Validates the name of last modified date column.
-     *
-     * @return true if result set contains the last modified date column entered
-     *         by connector admin, false otherwise.
-     */
-    private boolean validateLastModifiedField() {
-      boolean result = true;
-      String lastModifiedDateField =
-          config.get(DBConnectorType.LAST_MODIFIED_DATE_FIELD);
-      if (!columnNames.contains(lastModifiedDateField)) {
-        result = false;
-        message = res.getString(INVALID_COLUMN_NAME);
-        problemFields.add(DBConnectorType.LAST_MODIFIED_DATE_FIELD);
-      }
       return result;
     }
 
@@ -410,18 +394,15 @@ public class ValidateUtil {
       }
 
       // Validate last modified date column name.
-      String lastModDateColumn =
-          config.get(DBConnectorType.LAST_MODIFIED_DATE_FIELD);
-      if (lastModDateColumn != null && lastModDateColumn.trim().length() > 0) {
-        success = validateLastModifiedField();
-        if (!success) {
-          return success;
-        }
+      success = validateFieldName(DBConnectorType.LAST_MODIFIED_DATE_FIELD,
+          INVALID_COLUMN_NAME, false);
+      if (!success) {
+        return success;
       }
 
       String authZQuery = config.get(DBConnectorType.AUTHZ_QUERY);
       // Validate authZ query if connector admin has provided one.
-      if (authZQuery != null && authZQuery.trim().length() > 0) {
+      if (!Util.isNullOrWhitespace(authZQuery)) {
         success = validateAuthZQuery(authZQuery);
       }
 
@@ -453,61 +434,9 @@ public class ValidateUtil {
   }
 
   /**
-   * Tests if any of the attributes are missing.
-   */
-  private class MissingAttributes implements ConfigValidation {
-    private final Map<String, String> config;
-    private String message = "";
-    private boolean success = false;
-    private List<String> problemFields;
-    private final ResourceBundle res;
-
-    public MissingAttributes(Map<String, String> config, ResourceBundle res) {
-      this.config = config;
-      this.res = res;
-    }
-
-    public String getMessage() {
-      return message;
-    }
-
-    public List<String> getProblemFields() {
-      return problemFields;
-    }
-
-    public boolean validate() {
-      List<String> missingAttributes = new ArrayList<String>();
-      for (String configKey : DBConnectorType.configKeys) {
-        if (!config.containsKey(configKey)
-            && !configKey.equalsIgnoreCase(DBConnectorType.EXT_METADATA)) {
-          missingAttributes.add(configKey);
-        }
-      }
-      if (missingAttributes.isEmpty()) {
-        success = true;
-      } else {
-        StringBuilder buf = new StringBuilder();
-        buf.append(res.getString(MISSING_ATTRIBUTES) + ": ");
-        boolean first = true;
-        for (String attribute : missingAttributes) {
-          if (!first) {
-            buf.append(", ");
-          }
-          first = false;
-          buf.append(res.getString(attribute));
-        }
-        message = buf.toString();
-        problemFields = missingAttributes;
-      }
-      return success;
-    }
-  }
-
-  /**
    * Tests if any of the required fields are missing.
    */
   private static class RequiredFields implements ConfigValidation {
-    private List<String> missingFields = new ArrayList<String>();
     private final Map<String, String> config;
     private String message = "";
     private boolean success = false;
@@ -528,7 +457,9 @@ public class ValidateUtil {
     }
 
     public boolean validate() {
-      for (String field : DBConnectorType.requiredFields) {
+      List<String> missingFields = new ArrayList<String>();
+      for (String field : DBConnectorType.ALWAYS_REQUIRED_FIELDS) {
+        // TODO(jlacey): Util.isNullOrWhitespace with tests.
         if (config.get(field).equals("")) {
           missingFields.add(field);
         }
@@ -563,9 +494,7 @@ public class ValidateUtil {
   private static class XSLTCheck implements ConfigValidation {
     private final Map<String, String> config;
     private String message = "";
-    private boolean success = false;
     private List<String> problemFields = new ArrayList<String>();
-    private StringBuilder xslt;
     private final ResourceBundle res;
 
     public XSLTCheck(Map<String, String> config, ResourceBundle res) {
@@ -582,24 +511,18 @@ public class ValidateUtil {
     }
 
     public boolean validate() {
-      xslt = new StringBuilder(config.get(DBConnectorType.XSLT));
-      if (xslt != null) {
-        String XSLT_RECORD_TITLE_ELEMENT2;
-        int index2;
-        XSLT_RECORD_TITLE_ELEMENT2 = "<td><xsl:value-of select=\"title\"/>";
-        index2 = xslt.indexOf(XSLT_RECORD_TITLE_ELEMENT2);
-
-        if (index2 != -1) {
-          success = false;
-          message = res.getString("XSLT_VALIDATE");
-          problemFields.add(DBConnectorType.XSLT);
-        } else {
-          success = true;
-        }
+      boolean success;
+      String xslt = Strings.nullToEmpty(config.get(DBConnectorType.XSLT));
+      int index = xslt.indexOf("<td><xsl:value-of select=\"title\"/>");
+      if (index != -1) {
+        success = false;
+        message = res.getString("XSLT_VALIDATE");
+        problemFields.add(DBConnectorType.XSLT);
+      } else {
+        success = true;
       }
       return success;
     }
-
   }
 
   /**
@@ -614,8 +537,6 @@ public class ValidateUtil {
     private boolean success = false;
     private List<String> problemFields = new ArrayList<String>();
     private static final String KEY_VALUE_PLACEHOLDER = "#{value}";
-    private String[] primaryKeys;
-    private String sqlCrawlQuery;
 
     public QueryParameterAndPrimaryKeyCheck(Map<String, String> config,
         ResourceBundle res) {
@@ -632,11 +553,11 @@ public class ValidateUtil {
     }
 
     public boolean validate() {
-      primaryKeys = config.get(DBConnectorType.PRIMARY_KEYS_STRING).split(PRIMARY_KEYS_SEPARATOR);
-      sqlCrawlQuery = config.get(DBConnectorType.SQL_QUERY);
-      // This check is required when configuring connector using parameterized
-      // crawl query to assure that single primary key is used .
-      if (primaryKeys.length > 1
+      // We have already validated the primary key, we just need to
+      // see if it has more than one column.
+      String primaryKeys = config.get(DBConnectorType.PRIMARY_KEYS_STRING);
+      String sqlCrawlQuery = config.get(DBConnectorType.SQL_QUERY);
+      if (primaryKeys.indexOf(Util.PRIMARY_KEY_SEPARATOR) != -1
           && sqlCrawlQuery.contains(KEY_VALUE_PLACEHOLDER)) {
         success = false;
         message = res.getString(TEST_PRIMARY_KEYS_AND_KEY_VALUE_PLACEHOLDER);
@@ -649,73 +570,19 @@ public class ValidateUtil {
     }
   }
 
-  /**
-   * Validation Class to check whether HostName is valid.
-   */
-  private static class HostNameFQDNCheck implements ConfigValidation {
-    private final Map<String, String> config;
-    private String message = "";
-    private boolean success = false;
-    private List<String> problemFields = new ArrayList<String>();
-    private String hostName;
-    private final ResourceBundle res;
-
-    public HostNameFQDNCheck(Map<String, String> config, ResourceBundle res) {
-      this.config = config;
-      this.res = res;
-    }
-
-    public String getMessage() {
-      return message;
-    }
-
-    public List<String> getProblemFields() {
-      return problemFields;
-    }
-
-    public boolean validate() {
-      hostName = config.get(DBConnectorType.HOSTNAME);
-      if (hostName.contains(".")) {
-        success = true;
-      } else {
-        message = res.getString(FQDN_HOSTNAME);
-        problemFields.add(DBConnectorType.HOSTNAME);
-      }
-      return success;
-    }
-  }
-
   public ConfigValidation validate(Map<String, String> config,
       ResourceBundle resource) {
-    boolean success = false;
-
-    ConfigValidation configValidation = new MissingAttributes(config, resource);
-    success = configValidation.validate();
-    if (success) {
-      configValidation = new RequiredFields(config, resource);
-      success = configValidation.validate();
-      if (success) {
-        configValidation = new TestDbFields(config, resource);
-        success = configValidation.validate();
-        if (success) {
-          configValidation = new HostNameFQDNCheck(config, resource);
-          success = configValidation.validate();
-
-          if (success) {
-            configValidation = new XSLTCheck(config, resource);
-            success = configValidation.validate();
-            if (success) {
-              configValidation = new QueryParameterAndPrimaryKeyCheck(config,
-                  resource);
-              success = configValidation.validate();
-              if (success) {
-                return configValidation;
-              }
-            }
-          }
-        }
+    ConfigValidation[] configValidations = {
+      new RequiredFields(config, resource),
+      new TestDbFields(config, resource),
+      new XSLTCheck(config, resource),
+      new QueryParameterAndPrimaryKeyCheck(config, resource),
+    };
+    for (ConfigValidation configValidation : configValidations) {
+      if (!configValidation.validate()) {
+        return configValidation;
       }
     }
-    return configValidation;
+    return null;
   }
 }

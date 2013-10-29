@@ -14,6 +14,9 @@
 
 package com.google.enterprise.connector.db;
 
+import com.google.common.base.Joiner;
+import com.google.common.base.Splitter;
+import com.google.common.collect.ImmutableList;
 import com.google.common.io.ByteStreams;
 import com.google.enterprise.connector.util.InputStreamFactory;
 
@@ -23,81 +26,78 @@ import java.io.InputStream;
 import java.io.Reader;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.Map;
-import java.util.Set;
+import java.util.List;
 import java.util.logging.Logger;
 
-/**
- * Utility class for {@code DocumentBuilder} and {@code XmlUtils}.
- */
+/** Byte array and string utilities. */
 public class Util {
   private static final Logger LOG = Logger.getLogger(Util.class.getName());
 
-  public static final String PRIMARY_KEYS_SEPARATOR = ",";
+  public static final String PRIMARY_KEY_SEPARATOR = ",";
+
+  public static final Splitter PRIMARY_KEY_SPLITTER =
+      Splitter.on(PRIMARY_KEY_SEPARATOR).trimResults();
+
+  public static final Joiner PRIMARY_KEY_JOINER =
+      Joiner.on(PRIMARY_KEY_SEPARATOR);
+
   public static final String CHECKSUM_ALGO = "SHA1";
 
   private static final char[] HEX_CHARS = "0123456789abcdef".toCharArray();
-  private static final String DATABASE_TITLE_PREFIX =
-      "Database Connector Result";
 
   // This class should not be initialized.
   private Util() {
   }
 
-  /**
-   * Generates the title of the DB document.
-   *
-   * @param primaryKeys primary keys of the database.
-   * @param row row corresponding to the document.
-   * @return title String.
-   */
-  public static String getTitle(String[] primaryKeys, Map<String, Object> row)
-      throws DBException {
-    StringBuilder title = new StringBuilder();
-    title.append(DATABASE_TITLE_PREFIX).append(" ");
+  /** Gets whether a value is null, empty, or contains only whitespace. */
+  public static boolean isNullOrWhitespace(String value) {
+    return value == null || value.trim().isEmpty();
+  }
 
-    if (row != null && (primaryKeys != null && primaryKeys.length > 0)) {
-      Set<String> keySet = row.keySet();
-      for (String primaryKey : primaryKeys) {
-        /*
-         * Primary key value is mapped to the value of key of map row before
-         * getting record. We need to do this because GSA admin may entered
-         * primary key value which differed in case from column name.
-         */
-        for (String key : keySet) {
-          if (primaryKey.equalsIgnoreCase(key)) {
-            primaryKey = key;
-            break;
-          }
-        }
-        if (!keySet.contains(primaryKey)) {
-          String msg = "Primary Key does not match any of the column names.";
-          LOG.info(msg);
-          throw new DBException(msg);
-        }
-        Object keyValue = row.get(primaryKey);
-        String strKeyValue;
-        if (keyValue == null || keyValue.toString().trim().length() == 0) {
-          strKeyValue = "";
-        } else {
-          strKeyValue = keyValue.toString();
-        }
-        title.append(primaryKey).append("=");
-        title.append(strKeyValue).append(" ");
+  /**
+   * Trims leading and trailing whitespace from the given string.
+   *
+   * @return null if the value is null, empty, or contains only
+   *     whitespace, and the trimmed value otherwise.
+   */
+  public static String nullOrTrimmed(String value) {
+    return (isNullOrWhitespace(value)) ? null : value.trim();
+  }
+
+  public static int indexOfIgnoreCase(List<String> values, String target) {
+    for (int i = 0; i < values.size(); i++) {
+      if (values.get(i).equalsIgnoreCase(target)) {
+        return i;
       }
-    } else {
-      String msg = "";
-      if (row != null && (primaryKeys != null && primaryKeys.length > 0)) {
-        msg = "Row is null and primary key array is empty.";
-      } else if (row != null) {
-        msg = "Hash map row is null.";
-      } else {
-        msg = "Primary key array is empty or null.";
-      }
-      LOG.info(msg);
-      throw new DBException(msg);
     }
-    return title.toString();
+    return -1;
+  }
+
+  public static String findIgnoreCase(Iterable<String> values, String target) {
+    for (String value : values) {
+      if (value.equalsIgnoreCase(target)) {
+        return value;
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Gets the case-preserving values of the primary key column names
+   * from the actual column names.
+   */
+  public static ImmutableList<String> getCanonicalPrimaryKey(
+      String configNames, Iterable<String> actualNames) {
+    ImmutableList.Builder<String> canonicalNames = ImmutableList.builder();
+    for (String configName : PRIMARY_KEY_SPLITTER.split(configNames)) {
+      String result = findIgnoreCase(actualNames, configName.trim());
+      if (result == null) {
+        return null;
+      } else {
+        canonicalNames.add(result);
+      }
+    }
+    return canonicalNames.build();
   }
 
   /**

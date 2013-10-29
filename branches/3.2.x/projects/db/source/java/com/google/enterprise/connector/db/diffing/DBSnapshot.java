@@ -138,8 +138,8 @@ public class DBSnapshot
       // If we can't get the document handle, return null to indicate no
       // change. The most likely source of errors is the XSLT transform.
       // See the similar log message in RepositoryHandler.getDocList.
-      LOG.warning("Cannot convert database record to snapshot for "
-          + "record " + getDocumentId() + "\n" + e);
+      LOG.log(Level.WARNING, "Cannot convert database record to snapshot "
+          + "for record " + getDocumentId(), e);
       return null;
     }
   }

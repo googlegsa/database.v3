@@ -63,7 +63,6 @@ public class JsonDocumentTest extends TestCase {
 
   public void testFindProperty() throws Exception {
     Map<String, Object> rowMap = TestUtils.getStandardDBRow();
-    String[] primaryKeys = TestUtils.getStandardPrimaryKeys();
     try {
       ProductionTraversalContext context = new ProductionTraversalContext();
       JsonDocument.setTraversalContext(context);
@@ -82,8 +81,8 @@ public class JsonDocumentTest extends TestCase {
       assertEquals(SpiConstants.ContentEncoding.BASE64BINARY.toString(),
           Value.getSingleValueString(
               doc, SpiConstants.PROPNAME_CONTENT_ENCODING));
-      assertTrue(content.contains("id=1"));
-      assertTrue(content.contains("lastName=last_01"));
+      assertTrue(content, content.contains("id=1"));
+      assertTrue(content, content.contains("lastName=last_01"));
 
       assertEquals("text/html", Value.getSingleValueString(doc,
           SpiConstants.PROPNAME_MIMETYPE));
