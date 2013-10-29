@@ -15,6 +15,7 @@
 package com.google.enterprise.connector.db.diffing;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.ImmutableList;
 import com.google.enterprise.connector.db.DBConnectorType;
 import com.google.enterprise.connector.db.DBContext;
 import com.google.enterprise.connector.db.DBException;
@@ -53,33 +54,28 @@ abstract class DocumentBuilder {
 
   public static final String ROW_CHECKSUM = "google:sum";
 
-  /* TODO: Move this method to Util? */
-  private static boolean isNonBlank(String value) {
-    return value != null && value.trim().length() > 0;
-  }
-
   /**
-   * Detect the execution mode from the column names(Normal,
-   * CLOB, BLOB or External Metadata) of the DB Connector and returns the
-   * integer value representing execution mode
+   * Factory method that creates the configured DocumentBuilder
+   * instance. This method uses the same logic as
+   * DBConnectorType.getExtMetadataType and should be kept in sync.
    */
   public static DocumentBuilder getInstance(DBContext dbContext,
       TraversalContext traversalContext) {
     String extMetaType = dbContext.getExtMetadataType();
-    if (isNonBlank(extMetaType)
+    if (!Util.isNullOrWhitespace(extMetaType)
         && !extMetaType.equals(DBConnectorType.NO_EXT_METADATA)) {
       if (extMetaType.equalsIgnoreCase(DBConnectorType.COMPLETE_URL)
-          && isNonBlank(dbContext.getDocumentURLField())) {
+          && dbContext.getDocumentURLField() != null) {
         LOG.info("DB Connector is running in External Metadata feed mode with "
             + "complete document URL");
         return new UrlDocumentBuilder(dbContext, UrlType.COMPLETE_URL);
       } else if (extMetaType.equalsIgnoreCase(DBConnectorType.DOC_ID)
-          && isNonBlank(dbContext.getDocumentIdField())) {
+          && dbContext.getDocumentIdField() != null) {
         LOG.info("DB Connector is running in External Metadata feed mode with "
             + "Base URL and document ID");
         return new UrlDocumentBuilder(dbContext, UrlType.BASE_URL);
       } else if (extMetaType.equalsIgnoreCase(DBConnectorType.BLOB_CLOB)
-          && isNonBlank(dbContext.getLobField())) {
+          && dbContext.getLobField() != null) {
         LOG.info(
             "DB Connector is running in Content Feed Mode for BLOB/CLOB data");
         return new LobDocumentBuilder(dbContext, traversalContext);
@@ -95,19 +91,11 @@ abstract class DocumentBuilder {
   }
 
   protected final DBContext dbContext;
-
-  protected final String dbName;
-  protected final String[] primaryKeys;
-  protected final String hostname;
+  protected final String connectorName;
 
   protected DocumentBuilder(DBContext dbContext) {
     this.dbContext = dbContext;
-
-    this.dbName = dbContext.getDbName();
-    // TODO: Split this on the way into DBContext?
-    this.primaryKeys =
-        dbContext.getPrimaryKeys().split(Util.PRIMARY_KEYS_SEPARATOR);
-    this.hostname = dbContext.getHostname();
+    this.connectorName = dbContext.getConnectorName();
   }
 
   // PUBLIC TEMPLATE METHODS
@@ -122,9 +110,12 @@ abstract class DocumentBuilder {
    */
   public DocumentSnapshot getDocumentSnapshot(Map<String, Object> row)
       throws DBException {
-    String docId = getDocId(row);
-    ContentHolder contentHolder = getContentHolder(row, docId);
-    DocumentHolder docHolder = getDocumentHolder(row, docId, contentHolder);
+    ImmutableList<String> primaryKey =
+        dbContext.getPrimaryKeyColumns(row.keySet());
+    String docId = getDocId(row, primaryKey);
+    ContentHolder contentHolder = getContentHolder(row, primaryKey, docId);
+    DocumentHolder docHolder =
+        getDocumentHolder(row, primaryKey, docId, contentHolder);
     String jsonString = getJsonString(docId, contentHolder.getChecksum());
     return new DBSnapshot(dbContext, docId, jsonString, docHolder);
   }
@@ -148,7 +139,7 @@ abstract class DocumentBuilder {
    * @return a non-null holder for the document content
    */
   protected abstract ContentHolder getContentHolder(Map<String, Object> row,
-      String docId) throws DBException;
+      List<String> primaryKey, String docId) throws DBException;
 
   /** Constructs the SPI document with its required properties. */
   /*
@@ -176,14 +167,17 @@ abstract class DocumentBuilder {
     private final DocumentBuilder builder;
 
     public final Map<String, Object> row;
+    public final ImmutableList<String> primaryKey;
     public final String docId;
     public final ContentHolder contentHolder;
 
     public DocumentHolder(DocumentBuilder builder, Map<String, Object> row,
-        String docId, ContentHolder contentHolder) {
+        ImmutableList<String> primaryKey, String docId,
+        ContentHolder contentHolder) {
       this.builder = builder;
 
       this.row = row;
+      this.primaryKey = primaryKey;
       this.docId = docId;
       this.contentHolder = contentHolder;
     }
@@ -195,21 +189,21 @@ abstract class DocumentBuilder {
 
   // UTILITY METHODS FOR THE SUBCLASSES
 
-  protected final String getChecksum(Map<String, Object> row, String xslt)
-      throws DBException {
+  protected final String getChecksum(Map<String, Object> row,
+      List<String> primaryKey, String xslt) throws DBException {
     // TODO: Look into which encoding/charset to use for getBytes().
-    return Util.getChecksum(getXmlDoc(row, xslt).getBytes());
+    return Util.getChecksum(getXmlDoc(row, primaryKey, xslt).getBytes());
   }
 
   /** Get XML representation of document (exclude the LOB column). */
-  protected final String getXmlDoc(Map<String, Object> row, String xslt)
-      throws DBException {
-    return XmlUtils.getXMLRow(dbName, row, primaryKeys, xslt, dbContext, true);
+  protected final String getXmlDoc(Map<String, Object> row,
+      List<String> primaryKey, String xslt) throws DBException {
+    return XmlUtils.getXMLRow(connectorName, row, primaryKey, xslt, dbContext,
+        true);
   }
 
-  protected final String getDisplayUrl(String hostname, String dbName,
-      String docId) {
-    return String.format("dbconnector://%s/%s/%s", hostname, dbName, docId);
+  protected final String getDisplayUrl(String docId) {
+    return String.format("dbconnector://%s.localhost/%s", connectorName, docId);
   }
 
   /**
@@ -222,7 +216,7 @@ abstract class DocumentBuilder {
   protected final void skipLastModified(List<String> skipColumns,
       DBContext dbContext) {
     String lastModColumn = dbContext.getLastModifiedDate();
-    if (lastModColumn != null && lastModColumn.trim().length() > 0) {
+    if (lastModColumn != null) {
       skipColumns.add(lastModColumn);
     }
   }
@@ -234,10 +228,9 @@ abstract class DocumentBuilder {
    */
   protected final void setLastModified(Map<String, Object> row,
       JsonObjectUtil jsonObjectUtil, DBContext dbContext) {
-    if (dbContext == null) {
+    if (dbContext == null || dbContext.getLastModifiedDate() == null) {
       return;
     }
-    // set last modified date
     Object lastModified = row.get(dbContext.getLastModifiedDate());
     if (lastModified != null && (lastModified instanceof Timestamp)) {
       jsonObjectUtil.setLastModifiedDate(SpiConstants.PROPNAME_LASTMODIFIED,
@@ -266,8 +259,8 @@ abstract class DocumentBuilder {
 
   // CONCRETE CONSTRUCTION METHODS USED BY THIS CLASS
 
-  private final String getDocId(Map<String, Object> row) throws DBException {
-    return DocIdUtil.generateDocId(primaryKeys, row);
+  private String getDocId(Map<String, Object> row, List<String> primaryKey) {
+    return DocIdUtil.generateDocId(primaryKey, row);
   }
 
   @VisibleForTesting
@@ -284,7 +277,8 @@ abstract class DocumentBuilder {
   }
 
   private DocumentHolder getDocumentHolder(Map<String, Object> row,
-      String docId, ContentHolder contentHolder) {
-    return new DocumentHolder(this, row, docId, contentHolder);
+      ImmutableList<String> primaryKey, String docId,
+      ContentHolder contentHolder) {
+    return new DocumentHolder(this, row, primaryKey, docId, contentHolder);
   }
 }

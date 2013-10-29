@@ -14,6 +14,8 @@
 
 package com.google.enterprise.connector.db;
 
+import com.google.common.collect.ImmutableList;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -37,7 +39,7 @@ public class TestUtils {
   }
 
   public static Map<String, Object> getStandardDBRow() {
-    return getRow(1, "first_01", "last_01", "01@google.com");
+    return getRow(1, "first_01", "last_01", "01@example.com");
   }
 
   /**
@@ -55,20 +57,17 @@ public class TestUtils {
     return rowMap;
   }
 
-  public static String[] getStandardPrimaryKeys() {
-    String[] primaryKeys = new String[2];
-    primaryKeys[0] = "id";
-    primaryKeys[1] = "lastName";
-    return primaryKeys;
+  public static List<String> getStandardPrimaryKeys() {
+    return ImmutableList.of("id", "lastName");
   }
 
   public static List<Map<String, Object>> getDBRows() {
     final List<Map<String, Object>> rows;
     rows = new ArrayList<Map<String, Object>>();
-    rows.add(getRow(1, "first_01", "last_01", "01@google.com"));
-    rows.add(getRow(2, "first_02", "last_02", "02@google.com"));
-    rows.add(getRow(3, "first_03", "last_03", "03@google.com"));
-    rows.add(getRow(4, "first_04", "last_04", "04@google.com"));
+    rows.add(getRow(1, "first_01", "last_01", "01@example.com"));
+    rows.add(getRow(2, "first_02", "last_02", "02@example.com"));
+    rows.add(getRow(3, "first_03", "last_03", "03@example.com"));
+    rows.add(getRow(4, "first_04", "last_04", "04@example.com"));
     return rows;
   }
 

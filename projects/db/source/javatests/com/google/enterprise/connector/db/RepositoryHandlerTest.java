@@ -14,9 +14,7 @@
 
 package com.google.enterprise.connector.db;
 
-import com.google.enterprise.connector.db.diffing.JsonDocument;
 import com.google.enterprise.connector.db.diffing.RepositoryHandler;
-import com.google.enterprise.connector.spi.RepositoryException;
 import com.google.enterprise.connector.spi.SimpleTraversalContext;
 import com.google.enterprise.connector.util.diffing.DocumentSnapshot;
 import com.google.enterprise.connector.util.diffing.SnapshotRepositoryRuntimeException;
@@ -54,17 +52,54 @@ public class RepositoryHandlerTest extends DBTestBase {
     assertNotNull(repositoryHandler);
   }
 
-  public void testExecuteQueryAndAddDocsForParameterizedQuery() {
-    // Testing the connector for parameterized crawl query
+  /** Testing the connector for parameterized crawl query. */
+  private void testParameterizedQuery(
+      String primaryKey, String expectedDocid) {
     String sqlQuery = "SELECT * FROM TestEmpTable where id > #value#";
     DBContext dbContext = getDbContext();
     dbContext.setSqlQuery(sqlQuery);
+    dbContext.setPrimaryKeys(primaryKey);
     dbContext.setParameterizedQueryFlag(true);
     RepositoryHandler repositoryHandler = getObjectUnderTest(dbContext);
     List<DocumentSnapshot> snapshotList =
         repositoryHandler.executeQueryAndAddDocs();
     DocumentSnapshot snapshot = snapshotList.iterator().next();
-    assertEquals("B/1", snapshot.getDocumentId());
+    assertEquals(expectedDocid, snapshot.getDocumentId());
+  }
+
+  public void testParameterizedQueryUppercaseKey() {
+    testParameterizedQuery("ID", "B/1");
+  }
+
+  public void testParameterizedQueryLowercaseKey() {
+    testParameterizedQuery("id", "B/1");
+  }
+
+  public void testParameterizedQueryWhitespaceKey() {
+    testParameterizedQuery("  id  ", "B/1");
+  }
+
+  public void testParameterizedQueryMultiColumnKey() {
+    testParameterizedQuery("id,fname", "BF/1/kiran");
+  }
+
+  public void testParameterizedQueryStringKey() {
+    try {
+      testParameterizedQuery("fname", "ignored");
+      fail("Expected a NumberFormatException");
+    } catch (NumberFormatException expected) {
+    }
+  }
+
+  public void testParameterizedQueryInvalidKey() {
+    try {
+      testParameterizedQuery("invalid", "ignored");
+      fail("Expected an exception");
+    } catch (SnapshotRepositoryRuntimeException expected) {
+      assertNotNull(expected.getMessage(), expected.getCause());
+      assertEquals(expected.getCause().getMessage(), DBException.class,
+          expected.getCause().getClass());
+    }
   }
 
   public void testExecuteQueryAndAddDocs() {

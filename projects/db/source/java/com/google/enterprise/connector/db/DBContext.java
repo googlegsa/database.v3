@@ -14,27 +14,24 @@
 
 package com.google.enterprise.connector.db;
 
+import com.google.common.collect.ImmutableList;
 import com.google.enterprise.connector.util.MimeTypeDetector;
 
 import java.text.Collator;
-import java.util.Locale;
-import java.util.logging.Logger;
+import java.util.Set;
 
 /**
  * An encapsulation of all the config needed for a working Database Connector
  * instance.
  */
 public class DBContext implements ValueOrdering {
-  private static final Logger LOG = Logger.getLogger(DBContext.class.getName());
-
   private final MimeTypeDetector mimeTypeDetector = new MimeTypeDetector();
 
   private DBClient client;
   private String connectionUrl;
-  private String hostname;
+  private String connectorName;
   private String login;
   private String password;
-  private String dbName;
   private String sqlQuery;
   private String authZQuery;
   private String googleConnectorWorkDir;
@@ -56,43 +53,6 @@ public class DBContext implements ValueOrdering {
   private Collator collator;
 
   public DBContext() {
-  }
-
-  /** Constructor for the tests. */
-  public DBContext(String connectionUrl, String hostname,
-      String driverClassName, String login, String password, String dbName,
-      String sqlQuery, String googleConnectorWorkDir, String primaryKeysString,
-      String xslt, String authZQuery, String lastModifiedDate,
-      String documentTitle, String documentURLField, String documentIdField,
-      String baseURL, String lobField, String fetchURLField,
-      String extMetadataType) throws DBException {
-
-    this.client = new DBClient();
-    this.connectionUrl = connectionUrl;
-    this.hostname = hostname;
-    this.driverClassName = driverClassName;
-    this.login = login;
-    this.password = password;
-    this.dbName = dbName;
-    this.sqlQuery = sqlQuery;
-    this.googleConnectorWorkDir = googleConnectorWorkDir;
-    this.primaryKeys = primaryKeysString;
-    this.xslt = xslt;
-    this.authZQuery = authZQuery;
-    this.extMetadataType = extMetadataType;
-    this.documentURLField = documentURLField;
-    this.documentIdField = documentIdField;
-    this.baseURL = baseURL;
-    this.lobField = lobField;
-    this.fetchURLField = fetchURLField;
-    this.lastModifiedDate = lastModifiedDate;
-
-    this.collator = Collator.getInstance(Locale.US);
-    this.collator.setStrength(Collator.IDENTICAL);
-
-    // Since we're not Spring-instantiated here, we need to explicitly
-    // call the init method.
-    init();
   }
 
   public void init() throws DBException {
@@ -120,10 +80,6 @@ public class DBContext implements ValueOrdering {
     this.parameterizedQueryFlag = parameterizedQueryFlag;
   }
 
-  public static Logger getLog() {
-    return LOG;
-  }
-
   public void setClient(DBClient client) {
     this.client = client;
   }
@@ -132,8 +88,8 @@ public class DBContext implements ValueOrdering {
     this.connectionUrl = connectionUrl;
   }
 
-  public void setHostname(String hostname) {
-    this.hostname = hostname;
+  public void setGoogleConnectorName(String connectorName) {
+    this.connectorName = connectorName;
   }
 
   public void setLogin(String login) {
@@ -142,10 +98,6 @@ public class DBContext implements ValueOrdering {
 
   public void setPassword(String password) {
     this.password = password;
-  }
-
-  public void setDbName(String dbName) {
-    this.dbName = dbName;
   }
 
   public void setSqlQuery(String sqlQuery) {
@@ -160,8 +112,8 @@ public class DBContext implements ValueOrdering {
     this.googleConnectorWorkDir = googleConnectorWorkDir;
   }
 
-  public void setPrimaryKeys(String primaryKeys) {
-    this.primaryKeys = primaryKeys;
+  public void setPrimaryKeys(String primaryKeysString) {
+    this.primaryKeys = primaryKeysString;
   }
 
   public void setXslt(String xslt) {
@@ -173,11 +125,11 @@ public class DBContext implements ValueOrdering {
   }
 
   public void setDocumentURLField(String documentURLField) {
-    this.documentURLField = documentURLField;
+    this.documentURLField = Util.nullOrTrimmed(documentURLField);
   }
 
   public void setDocumentIdField(String documentIdField) {
-    this.documentIdField = documentIdField;
+    this.documentIdField = Util.nullOrTrimmed(documentIdField);
   }
 
   public void setBaseURL(String baseURL) {
@@ -185,15 +137,15 @@ public class DBContext implements ValueOrdering {
   }
 
   public void setLobField(String lobField) {
-    this.lobField = lobField;
+    this.lobField = Util.nullOrTrimmed(lobField);
   }
 
   public void setFetchURLField(String fetchURLField) {
-    this.fetchURLField = fetchURLField;
+    this.fetchURLField = Util.nullOrTrimmed(fetchURLField);
   }
 
   public void setLastModifiedDate(String lastModifiedDate) {
-    this.lastModifiedDate = lastModifiedDate;
+    this.lastModifiedDate = Util.nullOrTrimmed(lastModifiedDate);
   }
 
   public int getNumberOfRows() {
@@ -201,12 +153,7 @@ public class DBContext implements ValueOrdering {
   }
 
   public void setNumberOfRows(int numberOfRows) {
-    try {
-      this.numberOfRows = numberOfRows;
-    } catch (NumberFormatException e) {
-      LOG.warning("Number Format Exception while setting number of rows to be "
-          + "fetched\n" + e.toString());
-    }
+    this.numberOfRows = numberOfRows;
   }
 
   public Integer getMinValue() {
@@ -214,12 +161,7 @@ public class DBContext implements ValueOrdering {
   }
 
   public void setMinValue(Integer minValue) {
-    try {
-      this.minValue = minValue;
-    } catch (NumberFormatException e) {
-      LOG.warning("Number Format Exception while setting minvalue of number of "
-          + "rows to be fetched\n" + e.toString());
-    }
+    this.minValue = minValue;
   }
 
   public String getGoogleConnectorWorkDir() {
@@ -238,8 +180,8 @@ public class DBContext implements ValueOrdering {
     return connectionUrl;
   }
 
-  public String getHostname() {
-    return hostname;
+  public String getConnectorName() {
+    return connectorName;
   }
 
   public String getSqlQuery() {
@@ -250,8 +192,20 @@ public class DBContext implements ValueOrdering {
     return authZQuery;
   }
 
-  public String getPrimaryKeys() {
-    return primaryKeys;
+  /*
+   * This must have a different name or access from setPrimaryKeys to
+   * avoid a Spring bean introspection error with string vs list.
+   */
+  public ImmutableList<String> getPrimaryKeyColumns(Set<String> columnNames)
+      throws DBException {
+    ImmutableList<String> matchedColumns =
+        Util.getCanonicalPrimaryKey(primaryKeys, columnNames);
+    if (matchedColumns == null) {
+      throw new DBException(
+          "Primary Key does not match any of the column names.");
+    } else {
+      return matchedColumns;
+    }
   }
 
   public String getXslt() {
@@ -264,10 +218,6 @@ public class DBContext implements ValueOrdering {
 
   public String getPassword() {
     return password;
-  }
-
-  public String getDbName() {
-    return dbName;
   }
 
   public String getDriverClassName() {
