@@ -1,0 +1,429 @@
+
+           Google Search Appliance Connector for Databases
+                            Release Notes
+
+This document contains the release notes for Google Search Appliance
+Connector for Databases. The following sections describe the release
+in detail and provide information that supplements the main
+documentation.
+
+Web Site: http://code.google.com/p/google-enterprise-connector-database/
+
+
+Release 3.2.0, October 25, 2013
+===============================
+
+Introduction
+------------
+This is a maintenance release that improves quality, reliability, and
+performance without adding any new functionality. All users of
+previous releases should upgrade to this release.
+
+Issues fixed since 3.0.0
+------------------------
+11377648 - The configuration form has been rearranged, some fields
+           relabeled for clarity, and the radio buttons controlling
+           the source of the document content (previously labeled
+           "External Metadata Indexing") have been revamped, with a
+           fourth radio button to control the use of the stylesheet
+           (previously implied), and to mark required fields.
+
+11376925 - Subclasses of DBConnectorType cannot use their own password
+           fields. Additional password fields are not masked.
+
+11341445 - [Connector Manager] A diffing connector could get into a
+           loop deleting all of the snapshot files on each pass, and
+           therefore feeding everything to the GSA for indexing on
+           each pass. At least the two most recent snapshot files are
+           now saved.
+
+11293325 - The Authorization SQL Query field should always be enabled.
+
+11123956 - Instantiation fails when database configuration properties
+           contain special XML characters.
+
+10846134 - Radio buttons are not displayed well in External Metadata
+           Indexing section. This section has also been renamed
+           Document Content.
+
+10598470 - Column name is case sensitive in the BLOB or CLOB Field.
+
+10117134 - Spaces in the configured primary key are valid but fail at
+           runtime.
+
+10097235 - Error message text is displayed twice for missing fields.
+
+9686515 - Fields enabled by the radio buttons cannot be edited with
+          Google Search Appliance 7.2.
+
+8489462 - Connector does not close connections on successful crawl and
+          connector restart.
+
+8489325 - SQL exception causes connector to delete all documents.
+
+8207127 - Reduce the memory footprint of DocumentHandle serialization.
+
+8161341 - Docid ordering problem with case and accents.
+
+8053932 - Use uncompressed content with metadata-only content feeds
+          for better performance with Google Search Appliance 6.14 and
+          earlier.
+
+7928861 - [Connector Manager] Avoid unordered snapshots in the
+          snapshot files. The diffing package fundamentally requires
+          ordered docids. For certain scenarios, this change will lead
+          to some documents being repeatedly treated as new documents.
+          Previously, some existing documents could be deleted from
+          the GSA index and never reindexed.
+
+7732455 - The Base64-encoded docids do not preserve order.
+
+7301553 - When recovering from feed errors, BLOB or CLOB fields are
+          missing and the last modified date is misformatted. This
+          change also removed the google:displayurl property from
+          metadata-and-URL feeds, and uses a configured BLOB or CLOB
+          Field even when it not a LOB type.
+
+7301552 - Reduce the size of the DB connector snapshot files.
+
+7301515 - Reduce the memory footprint of LOBs in iBATIS.
+
+7124264 - Log the primary key values for authorization results.
+          Previously only the Base64-encoded values were logged.
+
+5102212 - The Connector Hostname field was used only for the
+          dbconnector display URLs, and has been replaced by the
+          connector instance name.
+
+4529311 - SQL query validation fails with MetaMatrix JDBC driver due
+          to an incorrect use of transactions.
+
+4236197 - The Database Name field was used only for the dbconnector
+          display URLs, the result XML, and the stylesheet. It has
+          been replaced by the connector instance name. Custom
+          stylesheets will need to be updated accordingly.
+
+Version Compatibility
+---------------------
+Connector instances created with versions earlier than 2.8.0 will not
+work with this version. Connector Manager version earlier than 3.2.2
+will not work correctly with this version of the connector.
+
+Java SE 5.0 is no longer supported. Java 6 or later is required.
+
+This version of the Connector includes an upgrade of its third party
+SQL Mapping Framework from iBatis v2.3.0 to MyBatis v3.1.1.
+As a result of the upgrade, the syntax for parameter substitutions in
+SQL queries changed slightly.  Specifically, the value substitution in
+the Parameterized SQL Query changes from "#value#" to "#{value}";
+and the docids substitution in the Authorization Query changes from
+"$docids$" to "${docids}".
+
+For more information regarding the iBatis to MyBatis migration see:
+http://ibatis.apache.org
+http://code.google.com/p/mybatis
+
+The result XML element names have changed, so custom stylesheets will
+need to be updated to replace references to the configured Database
+Name with the connector instance name.
+
+Upgrade Instructions
+--------------------
+Due to the SQL and XML syntax changes, users should follow these
+additional steps when upgrading the connector:
+
+  1) Before upgrading, stop the connector's traversal of the database by
+     selecting Disable Traversal on the Connector's configuration page.
+
+  2) Shut down Tomcat.
+
+  3) Upgrade the connector.  If manually upgrading, you MUST remove the
+     older iBatis jar file from the installation.  Delete the file
+     ${TOMCAT}/webapps/connector-manager/WEB-INF/lib/ibatis-2.3.0-677.jar
+     (where ${TOMCAT} represents the Apache Tomcat directory in your
+     connector installation directory).  You SHOULD also remove these
+     other third party jars which are no longer used: commons-codec-1.4.jar,
+     joda-time.jar, log4j-1.2.9.jar.
+
+  4) Restart Tomcat.
+
+  5) Go to the Connector's configuration page. 
+
+     a) Modify the parameter substitutions if needed. In the Traversal
+        SQL Query, change #value# to #{value}. In the Authorization
+        SQL Query, change $docids$ to ${docids}. 
+
+     b) Edit the stylesheet if it is enabled. Change references to the
+        previously configured Database Name to the connector instance
+        name.
+
+     c) Re-enable connector traversal and save the configuration.
+
+
+Release 3.0.0, October 17, 2012
+===============================
+
+Introduction
+------------
+This is a maintenance release that improves quality, reliability,
+and performance without adding any new functionality.
+Users of previous releases should check the "Version Compatibility" section
+below for instructions on how to use existing data with this new release.
+
+Version Compatibility
+---------------------
+Connector instances created with versions earlier than 2.8.0 will not work with
+this version.
+Connector Manager version earlier than 3.0.0 will not work correctly with this
+version of the connector.
+
+Platform Support
+------------------
+The connector can be installed and run on both 32-bit & 64-bit Windows and Linux
+environments.
+
+Issues fixed from last release:
+-------------------------------
+Issue 7051418: Reduce the memory footprint of LOBs in the change queue.
+               This also fixes a problem where the MIME type of LOBs would
+               not be determined correctly.
+
+Issue 6513826: Add less verbose logging level for MBean messages.
+               Also less verbose logging for the MimeUtil third party library.
+
+Issue 6948912: Connector sends many small feeds which slow down the GSA.
+
+
+
+Release 2.8.4, January 12, 2012
+=====================================
+
+Introduction
+------------
+This is a maintenance release that improves quality, reliability, and performance without adding any new functionality. Users of previous releases should check the "Version Compatibility" section
+below for instructions on how to use existing data with this new release.
+
+Version Compatibility
+---------------------
+Connector instances created with versions earlier than 2.8.0 will not work with this version. Connector Manager version earlier than 2.8.0 will not work correctly with this version of the connector.
+
+Platform Support
+------------------
+The connector can be installed and run on both 32-bit & 64-bit Windows and Linux environments.
+
+Issues fixed from last release:
+-------------------------------
+Issue 5434245: DB Connector performance drops after crawling 1Million records
+Issue 5213855: Connector fails when SQL contains certain characters (<, >).
+Issue 5440752: Database connector sends delete feeds when the Database is not reachable or shutdown
+
+Supported databases
+------------------------
+This version of the GSA connector for databases is certified against following databases:
+
+1. MySQL 5.2.3
+2. Oracle Database 11g Enterprise Edition.
+3. MS SQL server 2005
+4. IBM DB2/NT SQL09050
+
+Known Limitations
+------------------
+Issue 14: Connector configuration gets saved for an invalid AuthZ query.
+Issue 15: Connector instance getting saved even when invalid Database name is given.
+
+
+Release 2.8.0, July 12, 2011
+=====================================
+
+Introduction
+------------
+This is a maintenance release that improves quality, reliability, and performance without adding any new functionality. Users of previous releases should check the "Version Compatibility" section
+below for instructions on how to use existing data with this new release.
+
+Version Compatibility
+---------------------
+Connector instances created with earlier versions will not work with this version. Connector Manager version earlier than 2.8.0 will not work correctly with this version of the connector.
+
+Summary of Changes / Features
+-----------------------------
+1. Removed support for Document Title" property.
+
+Platform Support
+------------------
+The connector can be installed and run on both 32-bit & 64-bit Windows and Linux environments.
+
+Issues fixed from last release:
+-------------------------------
+Issue 3076164: The Database Connector generates a title column automatically overriding any existing column called title in the default XSLT.
+Issue 3008923: Required fields are not distinguisable on DB Connector config page in GSA Admin console.
+
+Supported databases
+------------------------
+This version of the GSA connector for databases is certified against following databases:
+
+1. MySQL 5.2.3
+2. Oracle Database 10g Enterprise Edition Release 10.2.0.4.0
+3. MS SQL server 2005
+4. IBM DB2/NT SQL09050
+
+Known Limitations
+------------------
+Issue 14: Connector configuration gets saved for an invalid AuthZ query.
+Issue 15: Connector instance getting saved even when invalid Database name is given.
+
+Release 2.6.0, BETA June 30,2010
+====================================
+
+Introduction
+------------
+This is a major release with new features. Users of previous releases should check the "Version Compatibility" section
+below for instructions on how to use existing data with this new release.
+
+New features
+-------------
+1. Added support for crawling external metadata using DB Connector
+2. Added support for authZ in DB Connector.
+3. Added support for BLOB/CLOB data types.
+4. Added support for "Last Modified Date" and "Document Title" properties.
+   User can designate column for "Last Modified Date" and "Document Title" on configuration form.
+
+Version Compatibility
+---------------------
+Connector instances created with earlier versions will not work with this version. Connector Manager version earlier than 2.4.x will not work correctly with this version of the connector.
+
+Platform Support
+------------------
+The connector can be installed and run on both 32-bit & 64-bit Windows and Linux environments.
+
+Certified Against
+-------------------
+
+32-bit:
+-------
+Microsoft Windows Server 2008
+Windows Server Standard Service Pack 2
+Processor: Intel(R) Xeon(R) CPU    E5504 @ 2.00 GHz 2.00 GHz
+Memory (RAM): 2.00 GB
+System Type: 32-bit Operating System
+
+Microsoft Windows Server 2003
+Enterprise Edition
+Intel(R) Xeon(R) CPU
+E5504 @ 2.00GHz, 2.00 GB of RAM
+
+Red Hat Linux 5 (32-bit)
+Intel(R) Xeon(R) CPU
+E5504 @ 2.00GHz, 2.00 GB of RAM
+
+64-bit:
+--------
+Microsoft Windows Server 2008
+Windows Server Standard Service Pack 2
+Processor: Intel(R) Xeon(R) CPU    E5620 @ 2.40 GHz 2.39 GHz
+Memory (RAM): 4.00 GB
+System Type: 64-bit Operating System
+
+Microsoft Windows Server 2008 R2
+Enterprise x64 Edition
+Intel(R) Xeon(R) CPU
+E5504 @ 2.00GHz, 4.00 GB of RAM
+
+
+Microsoft Windows Server 2003
+Enterprise x64 Edition
+Intel(R) Xeon(R) CPU
+E5504 @ 2.00GHz, 2.00 GB of RAM
+
+Supported databases
+------------------------
+This version of the GSA connector for databases is certified against following databases:
+
+1. MySQL 5.2.3
+2. Oracle Database 10g Enterprise Edition Release 10.2.0.4.0
+3. MS SQL server 2005
+4. IBM DB2/NT SQL09050
+
+Known Limitations
+------------------
+Issue 14: Connector configuration gets saved for an invalid AuthZ query.
+Issue 15: Connector instance getting saved even when invalid Database name is given.
+
+Release 1.0.2, ALPHA March 29,2010
+===========================================
+
+Introduction
+----------------
+This is a maintenance release that improves quality, reliability, and performance without adding any new functionality.
+All users of 1.0.1, ALPHA release should upgrade to this release.
+
+Version Compatibility
+---------------------
+This version works with Connector Manager version 2.4.4.
+Versions lower than 2.4.4 of the Connector Manager will not work correctly with this version of the connector.
+
+Platform Support
+------------------
+The connector can be installed on x86/x64 Windows and Linux environments.
+
+This version of the GSA connector for databses is certified against following databases:
+
+1. MySQL 5.2.3
+2. Oracle Database 10g Enterprise Edition Release 10.2.0.4.0
+3. MS SQL server 2005
+4. IBM DB2/NT SQL09050
+
+Issues fixed from last release
+-------------------------------
+1. Issue 2: On Windows, the path to the IbatisSqlMap.xml file is not resolved correctly and hence no crawling is initiated.
+2. Issue 4: "NullPointerException" is thrown when the column name is different from the value entered as primary key or they are
+            in different case, during connector configuration.
+3. Issue 6: Connector does not honor the retry delay time and starts next crawl cycle immediately.
+4. Issue 7: Database user password is visible in log file.
+5. Issue 8: Text box size in database connector configuration form is increased.
+6. Issue 9: JUnit test cases (e.g. XmlUtilsTest.testGetXmlRowEmptyStylesheet) fail due to differences in HashMap ordering
+7. Issue 12: Same DocID is generated for different records in the database table when the column name is differed in case
+            from the value entered as primary key during connector configuration.
+8. Issue 13: JUnit Test Case GlobalStateTest fails due to difference in actual string and expected because of spaces and invisible characters.
+
+Known Issues
+-------------
+
+1. Issue 1: Connector does not support serve time authentication and authorization.
+2. Issue 11: Connector does not support BLOB and CLOB data types in the database.
+
+Release 1.0.1, ALPHA December 2, 2009
+==========================
+
+Introduction
+------------
+This is an initial release with new features.
+
+
+Version Compatibility
+---------------------
+This version works with Connector Manager version 2.0.0 or later. Earlier versions of
+the Connector Manager will not work correctly with this version of the connector.
+
+Platform Support
+------------------
+The connector can be installed and run on both 32-bit & 64-bit Windows and Linux environments
+
+Issues fixed from last release:
+---------------------------------
+1. The connector was made JRE/JDK 1.5 complaint
+2. The path of the resource bundles was corrected to point to the correct directory
+
+
+------------------------------------------------------------------------------------------------------------------------------------------------
+Release 1.0.0, ALPHA October 20, 2009
+==========================
+
+Introduction
+------------
+This is an initial release with new features.
+
+
+Version Compatibility
+---------------------
+This version works with Connector Manager version 2.0.0 or later. Earlier versions of
+the Connector Manager will not work correctly with this version of the connector.
