@@ -16,6 +16,8 @@ package com.google.enterprise.connector.db.diffing;
 
 import com.google.enterprise.connector.db.Util;
 
+import com.google.enterprise.connector.util.Base16;
+
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
@@ -44,7 +46,7 @@ public class DigestContentHolder extends ContentHolder {
   @Override
   public synchronized String getChecksum() {
     if (checksum == null) {
-      checksum = Util.asHex(digest.digest());
+      checksum = Base16.lowerCase().encode(digest.digest());
     }
     return checksum;
   }
