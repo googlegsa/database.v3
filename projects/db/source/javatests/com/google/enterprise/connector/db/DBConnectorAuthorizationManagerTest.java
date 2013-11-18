@@ -24,7 +24,7 @@ import java.util.Collection;
 public class DBConnectorAuthorizationManagerTest extends DBTestBase {
   private DBConnectorAuthorizationManager authZmanager = null;
 
-  /* @Override */
+  @Override
   protected void setUp() throws Exception {
     super.setUp();
     /*
@@ -116,7 +116,7 @@ public class DBConnectorAuthorizationManagerTest extends DBTestBase {
     }
   }
 
-  /* @Override */
+  @Override
   protected void tearDown() throws Exception {
     // drop database table under test
     runDBScript(DROP_USER_DOC_MAP_TABLE);
