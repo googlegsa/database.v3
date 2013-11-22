@@ -326,10 +326,12 @@ public class DocIdUtilTest extends TestCase {
       this.collator = collator;
     }
 
+    @Override
     public boolean nullsAreSortedLow() {
       return sortsLow;
     }
 
+    @Override
     public Collator getCollator() {
       return collator;
     }

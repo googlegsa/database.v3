@@ -204,6 +204,7 @@ public class DBConnectorTypeTest extends DBTestBase {
   private void assertEmptyResultSet(String sqlQuery) throws SQLException {
     assertFalse(applyResultSet("select id from TestEmpTable where dept = 42",
         new DBClient.SqlFunction<ResultSet, Boolean>() {
+          @Override
           public Boolean apply(ResultSet resultSet) throws SQLException {
             return resultSet.next();
           }

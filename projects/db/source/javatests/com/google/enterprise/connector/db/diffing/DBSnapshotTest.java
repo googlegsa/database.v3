@@ -48,10 +48,10 @@ public class DBSnapshotTest extends TestCase {
         docId, new ContentHolder("hello, world", checksum, mimeType));
 
     valueOrdering = new ValueOrdering() {
-        public boolean nullsAreSortedLow() {
+        @Override public boolean nullsAreSortedLow() {
           return true;
         }
-        public Collator getCollator() {
+        @Override public Collator getCollator() {
           return Collator.getInstance(Locale.US);
         }
       };

@@ -43,25 +43,13 @@ public class DBConnectorAuthorizationManagerTest extends DBTestBase {
    * Test method authorizeDocids.
    */
   public void testAuthorizeDocids() {
-
     /*
      * Create AuthenticationIdentity for user-name "user1"
      */
     AuthenticationIdentity authNIdentity = new AuthenticationIdentity() {
-
-      private String userName = "user1";
-
-      public String getUsername() {
-        return userName;
-      }
-
-      public String getPassword() {
-        return null;
-      }
-
-      public String getDomain() {
-        return null;
-      }
+      @Override public String getUsername() { return "user1"; }
+      @Override public String getPassword() { return null; }
+      @Override public String getDomain() { return null; }
     };
 
     Collection<String> docIds = new ArrayList<String>();

@@ -14,6 +14,7 @@
 
 package com.google.enterprise.connector.db.diffing;
 
+import com.google.common.base.Charsets;
 import com.google.enterprise.connector.db.DBContext;
 import com.google.enterprise.connector.db.DBException;
 import com.google.enterprise.connector.db.InputStreamFactories;
@@ -22,7 +23,6 @@ import com.google.enterprise.connector.spi.SpiConstants;
 import com.google.enterprise.connector.util.Base64;
 import com.google.enterprise.connector.util.InputStreamFactory;
 
-import java.io.UnsupportedEncodingException;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
@@ -57,14 +57,10 @@ class MetadataDocumentBuilder extends DocumentBuilder {
         (Map<String, Object>) holder.getContent();
     String xml = XmlUtils.getXMLRow(connectorName, row, primaryKey, xslt,
         dbContext, false);
-    try {
-      byte[] original = xml.getBytes("UTF8");
-      byte[] output = Base64.encode(
-          original, 0, original.length, Base64.ALPHABET, Integer.MAX_VALUE);
-      return InputStreamFactories.newInstance(output);
-    } catch (UnsupportedEncodingException e) {
-      throw new AssertionError(e);
-    }
+    byte[] original = xml.getBytes(Charsets.UTF_8);
+    byte[] output = Base64.encode(
+        original, 0, original.length, Base64.ALPHABET, Integer.MAX_VALUE);
+    return InputStreamFactories.newInstance(output);
   }
 
   /**

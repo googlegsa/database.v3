@@ -30,7 +30,6 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.UnsupportedEncodingException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -69,12 +68,7 @@ public class InputStreamFactories {
    * using UTF-8.
    */
   public static final InputStreamFactory fromBase64String(String content) {
-    byte[] bytes;
-    try {
-      bytes = content.getBytes("UTF8");
-    } catch (UnsupportedEncodingException e) {
-      throw new AssertionError(e);
-    }
+    byte[] bytes = content.getBytes(Charsets.UTF_8);
     byte[] decodedBytes;
     try {
       decodedBytes = Base64.decode(bytes);

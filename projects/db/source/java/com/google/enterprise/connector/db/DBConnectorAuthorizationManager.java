@@ -40,6 +40,7 @@ public class DBConnectorAuthorizationManager implements AuthorizationManager {
     this.dbClient = dbContext.getClient();
   }
 
+  @Override
   public Collection<AuthorizationResponse> authorizeDocids(
       Collection<String> docIds, AuthenticationIdentity identity)
       throws RepositoryException {
