@@ -354,6 +354,7 @@ public class ValidateUtil {
      *
      * @return true if every validation method return true else return false.
      */
+    @Override
     public boolean validate() {
       password = config.get(DBConnectorType.PASSWORD);
       login = config.get(DBConnectorType.LOGIN);
@@ -421,10 +422,12 @@ public class ValidateUtil {
       return success;
     }
 
+    @Override
     public String getMessage() {
       return message;
     }
 
+    @Override
     public List<String> getProblemFields() {
       return problemFields;
     }
@@ -445,14 +448,17 @@ public class ValidateUtil {
       this.res = res;
     }
 
+    @Override
     public String getMessage() {
       return message;
     }
 
+    @Override
     public List<String> getProblemFields() {
       return problemFields;
     }
 
+    @Override
     public boolean validate() {
       List<String> missingFields = new ArrayList<String>();
       for (String field : DBConnectorType.ALWAYS_REQUIRED_FIELDS) {
@@ -499,14 +505,17 @@ public class ValidateUtil {
       this.res = res;
     }
 
+    @Override
     public String getMessage() {
       return message;
     }
 
+    @Override
     public List<String> getProblemFields() {
       return problemFields;
     }
 
+    @Override
     public boolean validate() {
       boolean success;
       String xslt = Strings.nullToEmpty(config.get(DBConnectorType.XSLT));
@@ -541,14 +550,17 @@ public class ValidateUtil {
       this.res = res;
     }
 
+    @Override
     public String getMessage() {
       return message;
     }
 
+    @Override
     public List<String> getProblemFields() {
       return problemFields;
     }
 
+    @Override
     public boolean validate() {
       // We have already validated the primary key, we just need to
       // see if it has more than one column.

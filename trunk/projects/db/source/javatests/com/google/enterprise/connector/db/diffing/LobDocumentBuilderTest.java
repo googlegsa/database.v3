@@ -62,9 +62,10 @@ public class LobDocumentBuilderTest extends DocumentBuilderFixture {
     MimeTypeDetector.setTraversalContext(context);
 
     FieldNameBean bean = new FieldNameBean(dbContext) {
-        public String get() { return primaryKeyColumn; }
-        public void set(String value) { dbContext.setPrimaryKeys(value); }
-        public List<String> getNameVariations() {
+        @Override public String get() { return primaryKeyColumn; }
+        @Override public void set(String value) {
+          dbContext.setPrimaryKeys(value); }
+        @Override public List<String> getNameVariations() {
           return ImmutableList.of("id", "Id", "ID", "  id", " iD  "); } };
 
     // We don't care about the property value testing, just test docid.
@@ -97,6 +98,7 @@ public class LobDocumentBuilderTest extends DocumentBuilderFixture {
     Object docid = 2;
     String expectedDocid = "B/" + docid;
     Object clobContent = new SerialClob("hello, world".toCharArray()) {
+        @Override
         public String toString() { throw new IllegalStateException(); } };
     String originalName = dbContext.getLobField();
     Map<String, Object> row =

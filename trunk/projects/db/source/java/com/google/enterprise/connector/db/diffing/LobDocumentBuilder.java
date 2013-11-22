@@ -248,7 +248,7 @@ class LobDocumentBuilder extends DocumentBuilder {
    */
   private Map<String, Object> getRowForXmlDoc(Map<String, Object> row) {
     return Maps.filterKeys(row, new Predicate<String>() {
-        public boolean apply(String key) {
+        @Override public boolean apply(String key) {
           return !dbContext.getLobField().equals(key);
         }
       });
