@@ -14,7 +14,6 @@
 
 package com.google.enterprise.connector.db;
 
-import com.google.enterprise.connector.spi.RepositoryException;
 import com.google.enterprise.connector.traversal.ProductionTraversalContext;
 
 import junit.framework.TestCase;

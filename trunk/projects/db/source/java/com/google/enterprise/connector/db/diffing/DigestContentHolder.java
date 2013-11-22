@@ -15,7 +15,6 @@
 package com.google.enterprise.connector.db.diffing;
 
 import com.google.enterprise.connector.db.Util;
-
 import com.google.enterprise.connector.util.Base16;
 
 import java.security.MessageDigest;

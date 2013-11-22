@@ -15,7 +15,6 @@
 package com.google.enterprise.connector.db;
 
 import com.google.enterprise.connector.db.diffing.DigestContentHolder;
-import com.google.enterprise.connector.util.InputStreamFactory;
 import com.google.enterprise.connector.util.MimeTypeDetector;
 
 import org.apache.ibatis.type.BaseTypeHandler;

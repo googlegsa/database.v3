@@ -14,7 +14,6 @@
 
 package com.google.enterprise.connector.db.diffing;
 
-import com.google.common.base.Function;
 import com.google.enterprise.connector.db.DBException;
 import com.google.enterprise.connector.db.DocIdUtil;
 import com.google.enterprise.connector.db.ValueOrdering;
