@@ -14,20 +14,16 @@
 
 package com.google.enterprise.connector.db.testing;
 
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.enterprise.connector.db.DBClient;
 import com.google.enterprise.connector.db.DBContext;
-import com.google.enterprise.connector.db.DBException;
 
 import java.io.UnsupportedEncodingException;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.logging.Logger;
-
-import javax.sql.DataSource;
 
 /**
  * A stub client that does not rely on live data in a database and

@@ -14,8 +14,8 @@
 
 package com.google.enterprise.connector.db;
 
-import java.sql.CallableStatement;
 import java.sql.Blob;
+import java.sql.CallableStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.logging.Level;
