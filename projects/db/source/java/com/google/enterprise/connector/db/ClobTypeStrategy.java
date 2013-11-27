@@ -45,6 +45,16 @@ public class ClobTypeStrategy implements LobTypeHandler.Strategy {
       clob.free();
     } catch (SQLException e) {
       LOGGER.log(Level.WARNING, "Error freeing the CLOB", e);
+    } catch (UnsupportedOperationException e) {
+      // Check for JDBC drivers that don't support this JDBC 4.0 method.
+      // This is an unusual exception to throw, but worth catching since
+      // it's a RuntimeException that will otherwise terminate the monitor.
+      LOGGER.log(Level.WARNING,
+          "Error freeing the CLOB, try a newer JDBC 4.0 driver", e);
+    } catch (LinkageError e) {
+      // Check for JDBC drivers that were not compiled against Java 6.
+      LOGGER.log(Level.WARNING,
+          "Error freeing the CLOB, try a newer JDBC 4.0 driver", e);
     }
     return bytes;
   }
