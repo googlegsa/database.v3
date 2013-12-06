@@ -37,6 +37,11 @@ public class BlobTypeStrategy implements LobTypeHandler.Strategy {
   }
 
   private byte[] getBytes(Blob blob) throws SQLException {
+    if (blob == null) {
+      LOGGER.log(Level.FINEST, "BLOB handler called with null BLOB");
+      return new byte[0];
+    }
+
     LOGGER.log(Level.FINEST, "BLOB handler called with BLOB of length {0}",
         blob.length());
     byte[] bytes = blob.getBytes(1, (int) blob.length());

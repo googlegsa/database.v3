@@ -144,7 +144,7 @@ class LobDocumentBuilder extends DocumentBuilder {
     // Get the value of large object from map representing a row.
     Object largeObject = row.get(dbContext.getLobField());
 
-    // Custom LOB TypeHandler creates a partitial ContentHolder.
+    // Custom LOB TypeHandler creates a partial ContentHolder.
     // Finish up calculating the checksum and return the ContentHolder.
     if (largeObject instanceof DigestContentHolder) {
       DigestContentHolder holder = (DigestContentHolder) largeObject;

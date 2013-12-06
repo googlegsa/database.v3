@@ -38,6 +38,11 @@ public class CharTypeStrategy implements LobTypeHandler.Strategy {
   }
 
   private byte[] getBytes(String value) throws SQLException {
+    if (value == null) {
+      LOGGER.log(Level.FINEST, "LONGVARCHAR handler called with null string");
+      return new byte[0];
+    }
+
     LOGGER.log(Level.FINEST,
         "LONGVARCHAR handler called with string of length {0}", value.length());
     return value.getBytes(Charsets.UTF_8);
