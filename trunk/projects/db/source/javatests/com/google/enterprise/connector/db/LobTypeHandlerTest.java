@@ -22,21 +22,26 @@ import static org.easymock.EasyMock.replay;
 import static org.easymock.EasyMock.verify;
 
 import com.google.common.base.Charsets;
+import com.google.enterprise.connector.db.diffing.DigestContentHolder;
+import com.google.enterprise.connector.util.InputStreamFactory;
 
 import junit.framework.TestCase;
 
+import java.io.IOException;
 import java.io.StringReader;
 import java.sql.Blob;
 import java.sql.Clob;
 import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
+import java.sql.Types;
 
 public class LobTypeHandlerTest extends TestCase {
   private static final String CONTENT = "hello, world";
   private static final long CONTENT_LENGTH = CONTENT.length();
 
   /** Tests the type strategy when Blob.free throws an exception. */
-  private void testBlob(LobTypeHandler.Strategy objectUnderTest,
+  private void testBlobAndThrow(LobTypeHandler.Strategy objectUnderTest,
       final Throwable throwable) throws SQLException {
     byte[] content = CONTENT.getBytes(Charsets.UTF_8);
     Blob blob = createMock(Blob.class);
@@ -54,7 +59,7 @@ public class LobTypeHandlerTest extends TestCase {
   }
 
   /** Tests the type strategy when Clob.free throws an exception. */
-  private void testClob(LobTypeHandler.Strategy objectUnderTest,
+  private void testClobAndThrow(LobTypeHandler.Strategy objectUnderTest,
       final Throwable throwable) throws SQLException {
     StringReader content = new StringReader(CONTENT);
     Clob clob = createMock(Clob.class);
@@ -79,18 +84,67 @@ public class LobTypeHandlerTest extends TestCase {
   }
 
   public void testBlobFreeUnsupported() throws SQLException {
-    testBlob(new BlobTypeStrategy(), new UnsupportedOperationException());
+    testBlobAndThrow(new BlobTypeStrategy(),
+        new UnsupportedOperationException());
   }
 
   public void testBlobFreeLinkageError() throws SQLException {
-    testBlob(new BlobTypeStrategy(), new AbstractMethodError());
+    testBlobAndThrow(new BlobTypeStrategy(), new AbstractMethodError());
   }
 
   public void testClobFreeUnsupported() throws SQLException {
-    testClob(new ClobTypeStrategy(), new UnsupportedOperationException());
+    testClobAndThrow(new ClobTypeStrategy(),
+        new UnsupportedOperationException());
   }
 
   public void testClobFreeLinkageError() throws SQLException {
-    testClob(new ClobTypeStrategy(), new AbstractMethodError());
+    testClobAndThrow(new ClobTypeStrategy(), new AbstractMethodError());
+  }
+
+  /**
+   * Tests null values of the given type.
+   *
+   * @param rs a mock ResultSet that returns null values for the given type
+   * @param jdbcType the column type ({@code Types.BLOB}, etc.)
+   */
+  private void testNull(ResultSet rs, int jdbcType)
+      throws SQLException, IOException {
+    ResultSetMetaData rsmd = createMock(ResultSetMetaData.class);
+    expect(rsmd.getColumnType(anyInt())).andReturn(jdbcType).atLeastOnce();
+    expect(rs.getMetaData()).andReturn(rsmd).atLeastOnce();
+    replay(rsmd, rs);
+
+    DigestContentHolder holder = new LobTypeHandler().getNullableResult(rs, 1);
+    verify(rsmd, rs);
+
+    // SQL NULLs are rendered as empty byte arrays for easier handling.
+    Object content = holder.getContent();
+    assertTrue(content.getClass().toString(),
+        content instanceof InputStreamFactory);
+    assertEquals(-1, ((InputStreamFactory) content).getInputStream().read());
+  }
+
+  public void testNullBlob() throws SQLException, IOException {
+    ResultSet rs = createMock(ResultSet.class);
+    expect(rs.getBlob(anyInt())).andReturn(null).atLeastOnce();
+    testNull(rs, Types.BLOB);
+  }
+
+  public void testNullClob() throws SQLException, IOException {
+    ResultSet rs = createMock(ResultSet.class);
+    expect(rs.getClob(anyInt())).andReturn(null).atLeastOnce();
+    testNull(rs, Types.CLOB);
+  }
+
+  public void testNullBinary() throws SQLException, IOException {
+    ResultSet rs = createMock(ResultSet.class);
+    expect(rs.getBytes(anyInt())).andReturn(null).atLeastOnce();
+    testNull(rs, Types.VARBINARY);
+  }
+
+  public void testNullChar() throws SQLException, IOException {
+    ResultSet rs = createMock(ResultSet.class);
+    expect(rs.getString(anyInt())).andReturn(null).atLeastOnce();
+    testNull(rs, Types.VARCHAR);
   }
 }

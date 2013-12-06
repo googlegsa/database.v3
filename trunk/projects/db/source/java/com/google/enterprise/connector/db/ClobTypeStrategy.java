@@ -37,6 +37,11 @@ public class ClobTypeStrategy implements LobTypeHandler.Strategy {
   }
 
   private byte[] getBytes(Clob clob) throws SQLException {
+    if (clob == null) {
+      LOGGER.log(Level.FINEST, "CLOB handler called with null CLOB");
+      return new byte[0];
+    }
+
     LOGGER.log(Level.FINEST, "CLOB handler called with CLOB of length {0}",
         clob.length());
     byte[] bytes =
