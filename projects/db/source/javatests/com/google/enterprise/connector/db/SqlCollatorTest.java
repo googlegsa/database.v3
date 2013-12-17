@@ -28,8 +28,7 @@ public class SqlCollatorTest extends DBTestBase {
   private DBClient dbClient;
   private SqlCollator dbCollator;
 
-  @Override
-  protected void setUp() throws Exception {
+  public void setUp() throws Exception {
     super.setUp();
     dbContext = getDbContext();
     dbClient = getDbClient();

@@ -14,9 +14,9 @@
 
 package com.google.enterprise.connector.db;
 
-import junit.framework.TestCase;
-
 import java.io.StringReader;
+
+import junit.framework.TestCase;
 
 public class UtilTest extends TestCase {
 

@@ -36,11 +36,6 @@ public class BinaryTypeStrategy implements LobTypeHandler.Strategy {
   }
 
   private byte[] getBytes(byte[] value) throws SQLException {
-    if (value == null) {
-      LOGGER.log(Level.FINEST, "LONGVARBINARY handler called with null byte[]");
-      return new byte[0];
-    }
-
     LOGGER.log(Level.FINEST,
         "LONGVARBINARY handler called with byte[] of length {0}", value.length);
     return value;

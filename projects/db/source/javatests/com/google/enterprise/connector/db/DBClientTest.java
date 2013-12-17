@@ -14,12 +14,15 @@
 
 package com.google.enterprise.connector.db;
 
+import com.google.enterprise.connector.spi.RepositoryException;
+
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Writer;
 import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 

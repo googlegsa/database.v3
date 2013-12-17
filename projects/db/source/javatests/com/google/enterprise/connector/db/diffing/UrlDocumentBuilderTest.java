@@ -15,9 +15,10 @@
 package com.google.enterprise.connector.db.diffing;
 
 import com.google.common.collect.ImmutableMap;
-import com.google.enterprise.connector.db.diffing.UrlDocumentBuilder.UrlType;
 import com.google.enterprise.connector.spi.SpiConstants;
+import com.google.enterprise.connector.db.diffing.UrlDocumentBuilder.UrlType;
 
+import java.util.HashMap;
 import java.util.Map;
 
 public class UrlDocumentBuilderTest extends DocumentBuilderFixture {

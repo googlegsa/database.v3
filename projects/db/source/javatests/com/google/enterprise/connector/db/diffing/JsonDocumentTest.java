@@ -24,9 +24,9 @@ import com.google.enterprise.connector.spi.Value;
 import com.google.enterprise.connector.traversal.ProductionTraversalContext;
 import com.google.enterprise.connector.util.Base64;
 
-import junit.framework.TestCase;
-
 import java.util.Map;
+
+import junit.framework.TestCase;
 
 public class JsonDocumentTest extends TestCase {
 

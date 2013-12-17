@@ -14,6 +14,7 @@
 
 package com.google.enterprise.connector.db.diffing;
 
+import com.google.common.collect.Iterators;
 import com.google.enterprise.connector.util.diffing.DocumentSnapshot;
 import com.google.enterprise.connector.util.diffing.SnapshotRepository;
 import com.google.enterprise.connector.util.diffing.SnapshotRepositoryRuntimeException;

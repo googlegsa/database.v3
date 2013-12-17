@@ -19,6 +19,7 @@ import com.google.enterprise.connector.db.DBException;
 import com.google.enterprise.connector.spi.SpiConstants;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;

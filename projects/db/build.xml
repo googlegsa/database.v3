@@ -185,8 +185,7 @@
       <fileset dir="${build-prod.dir}" includes="config/**" />
       <fileset dir="${build-prod.dir}" includes="*.properties" />
       <manifest>
-        <attribute name="Implementation-Title"
-                   value="Google Search Appliance Connector for Databases" />
+        <attribute name="Implementation-Title" value="Database Connector" />
         <attribute name="Implementation-Version"
                    value="${version} (build ${svn.branch.version} ${TODAY})"/>
         <attribute name="Implementation-Vendor" value="Google Inc." />

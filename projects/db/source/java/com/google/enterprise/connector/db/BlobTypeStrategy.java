@@ -14,8 +14,8 @@
 
 package com.google.enterprise.connector.db;
 
-import java.sql.Blob;
 import java.sql.CallableStatement;
+import java.sql.Blob;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.logging.Level;
@@ -37,11 +37,6 @@ public class BlobTypeStrategy implements LobTypeHandler.Strategy {
   }
 
   private byte[] getBytes(Blob blob) throws SQLException {
-    if (blob == null) {
-      LOGGER.log(Level.FINEST, "BLOB handler called with null BLOB");
-      return new byte[0];
-    }
-
     LOGGER.log(Level.FINEST, "BLOB handler called with BLOB of length {0}",
         blob.length());
     byte[] bytes = blob.getBytes(1, (int) blob.length());
@@ -49,16 +44,6 @@ public class BlobTypeStrategy implements LobTypeHandler.Strategy {
       blob.free();
     } catch (SQLException e) {
       LOGGER.log(Level.WARNING, "Error freeing the BLOB", e);
-    } catch (UnsupportedOperationException e) {
-      // Check for JDBC drivers that don't support this JDBC 4.0 method.
-      // This is an unusual exception to throw, but worth catching since
-      // it's a RuntimeException that will otherwise terminate the monitor.
-      LOGGER.log(Level.WARNING,
-          "Error freeing the BLOB, try a newer JDBC 4.0 driver", e);
-    } catch (LinkageError e) {
-      // Check for JDBC drivers that were not compiled against Java 6.
-      LOGGER.log(Level.WARNING,
-          "Error freeing the BLOB, try a newer JDBC 4.0 driver", e);
     }
     return bytes;
   }

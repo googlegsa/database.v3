@@ -24,8 +24,8 @@ import java.sql.Date;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.text.Collator;
-import java.util.HashMap;
 import java.util.List;
+import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
@@ -326,12 +326,10 @@ public class DocIdUtilTest extends TestCase {
       this.collator = collator;
     }
 
-    @Override
     public boolean nullsAreSortedLow() {
       return sortsLow;
     }
 
-    @Override
     public Collator getCollator() {
       return collator;
     }

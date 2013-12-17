@@ -24,7 +24,7 @@ import java.util.Collection;
 public class DBConnectorAuthorizationManagerTest extends DBTestBase {
   private DBConnectorAuthorizationManager authZmanager = null;
 
-  @Override
+  /* @Override */
   protected void setUp() throws Exception {
     super.setUp();
     /*
@@ -43,13 +43,25 @@ public class DBConnectorAuthorizationManagerTest extends DBTestBase {
    * Test method authorizeDocids.
    */
   public void testAuthorizeDocids() {
+
     /*
      * Create AuthenticationIdentity for user-name "user1"
      */
     AuthenticationIdentity authNIdentity = new AuthenticationIdentity() {
-      @Override public String getUsername() { return "user1"; }
-      @Override public String getPassword() { return null; }
-      @Override public String getDomain() { return null; }
+
+      private String userName = "user1";
+
+      public String getUsername() {
+        return userName;
+      }
+
+      public String getPassword() {
+        return null;
+      }
+
+      public String getDomain() {
+        return null;
+      }
     };
 
     Collection<String> docIds = new ArrayList<String>();
@@ -104,7 +116,7 @@ public class DBConnectorAuthorizationManagerTest extends DBTestBase {
     }
   }
 
-  @Override
+  /* @Override */
   protected void tearDown() throws Exception {
     // drop database table under test
     runDBScript(DROP_USER_DOC_MAP_TABLE);

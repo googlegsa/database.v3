@@ -21,6 +21,9 @@ import static org.easymock.EasyMock.same;
 import static org.easymock.EasyMock.verify;
 
 import com.google.enterprise.connector.db.ValueOrdering;
+import com.google.enterprise.connector.spi.Document;
+import com.google.enterprise.connector.spi.RepositoryException;
+import com.google.enterprise.connector.spi.SpiConstants;
 import com.google.enterprise.connector.util.diffing.DocumentHandle;
 import com.google.enterprise.connector.util.diffing.DocumentSnapshot;
 
@@ -48,10 +51,10 @@ public class DBSnapshotTest extends TestCase {
         docId, new ContentHolder("hello, world", checksum, mimeType));
 
     valueOrdering = new ValueOrdering() {
-        @Override public boolean nullsAreSortedLow() {
+        public boolean nullsAreSortedLow() {
           return true;
         }
-        @Override public Collator getCollator() {
+        public Collator getCollator() {
           return Collator.getInstance(Locale.US);
         }
       };

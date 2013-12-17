@@ -16,8 +16,9 @@ package com.google.enterprise.connector.db;
 
 import com.google.common.base.Objects;
 
-import java.text.CollationKey;
 import java.text.Collator;
+import java.text.CollationKey;
+import java.util.Comparator;
 
 /**
  * An implementation of {@code java.text.Collator} that uses a SQL query

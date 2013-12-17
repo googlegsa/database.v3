@@ -28,8 +28,8 @@ import com.google.enterprise.connector.spi.TraversalContext;
 import com.google.enterprise.connector.util.diffing.DocumentHandle;
 import com.google.enterprise.connector.util.diffing.DocumentSnapshot;
 
-import org.json.JSONException;
 import org.json.JSONObject;
+import org.json.JSONException;
 
 import java.sql.Timestamp;
 import java.util.List;

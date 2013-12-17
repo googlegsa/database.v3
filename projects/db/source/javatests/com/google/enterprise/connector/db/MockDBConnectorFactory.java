@@ -19,14 +19,14 @@ import com.google.enterprise.connector.spi.ConnectorFactory;
 import com.google.enterprise.connector.spi.RepositoryException;
 import com.google.enterprise.connector.util.diffing.DiffingConnector;
 
-import junit.framework.Assert;
-
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.PropertyPlaceholderConfigurer;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.beans.factory.xml.XmlBeanDefinitionReader;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
+
+import junit.framework.Assert;
 
 import java.util.Arrays;
 import java.util.Map;

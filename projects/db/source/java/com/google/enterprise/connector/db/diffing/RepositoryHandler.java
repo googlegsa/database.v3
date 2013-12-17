@@ -19,6 +19,7 @@ import com.google.common.collect.Lists;
 import com.google.enterprise.connector.db.DBClient;
 import com.google.enterprise.connector.db.DBContext;
 import com.google.enterprise.connector.db.DBException;
+import com.google.enterprise.connector.db.Util;
 import com.google.enterprise.connector.spi.TraversalContext;
 import com.google.enterprise.connector.util.diffing.DocumentSnapshot;
 import com.google.enterprise.connector.util.diffing.SnapshotRepositoryRuntimeException;

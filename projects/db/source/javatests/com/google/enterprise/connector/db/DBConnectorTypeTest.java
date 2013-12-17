@@ -43,16 +43,23 @@ import com.google.common.collect.Maps;
 import com.google.enterprise.connector.spi.ConfigureResponse;
 import com.google.enterprise.connector.util.XmlParseUtil;
 
+import junit.framework.TestCase;
+
 import org.apache.ibatis.session.SqlSession;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.sql.Statement;
+import java.sql.SQLException;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Locale;
 import java.util.Map;
 import java.util.ResourceBundle;
+import java.util.Set;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
@@ -204,7 +211,6 @@ public class DBConnectorTypeTest extends DBTestBase {
   private void assertEmptyResultSet(String sqlQuery) throws SQLException {
     assertFalse(applyResultSet("select id from TestEmpTable where dept = 42",
         new DBClient.SqlFunction<ResultSet, Boolean>() {
-          @Override
           public Boolean apply(ResultSet resultSet) throws SQLException {
             return resultSet.next();
           }
