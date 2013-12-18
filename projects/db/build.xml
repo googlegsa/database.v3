@@ -212,9 +212,14 @@
     </javadoc>
   </target>
 
-  <target name="download_db_connector" depends="jar_prod">
+  <target name="init-package" depends="svn.svn-branch">
+    <property name="downloads.prefix" value="connector-db-${svn.branch}" />
+    <property name="repackage.prefix" value="connector-db-${version}"/>
+  </target>
+
+  <target name="download_db_connector" depends="jar_prod,init-package">
     <property name="connector-db-src.zip"
-      value="${downloads.dir}/connector-db-${svn.branch}-src.zip" />
+      value="${downloads.dir}/${downloads.prefix}-src.zip" />
     <zip destfile="${connector-db-src.zip}">
       <zipfileset dir="."
         prefix="connector-db-${version}/projects/database-connector"
@@ -232,12 +237,19 @@
     <copy todir="${license-zip.dir}">
       <fileset dir="${license-prod.dir}" />
     </copy>
-    <zip destfile="${downloads.dir}/connector-db-${svn.branch}.zip">
+    <zip destfile="${downloads.dir}/${downloads.prefix}.zip">
       <zipfileset dir="${zip.dir}" />
       <zipfileset dir="." includes="RELEASE_NOTES" />
     </zip>
     <checksum algorithm="SHA-1"
-              file="${downloads.dir}/connector-db-${svn.branch}.zip" />
+              file="${downloads.dir}/${downloads.prefix}.zip" />
+  </target>
+
+  <target name="repackage" depends="init-package"
+          description="Repackage release candidate files for release.">
+    <repackage-downloads downloads.dir="${downloads.dir}"
+                         downloads.prefix="${downloads.prefix}"
+                         repackage.prefix="${repackage.prefix}" />
   </target>
 
   <target name="clean" description="Deletes all build files.">
