@@ -19,6 +19,7 @@ import static org.easymock.EasyMock.createMock;
 import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.replay;
 
+import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.io.ByteStreams;
@@ -31,9 +32,13 @@ import com.google.enterprise.connector.spi.RepositoryException;
 import com.google.enterprise.connector.spi.SkippedDocumentException;
 import com.google.enterprise.connector.spi.SpiConstants;
 import com.google.enterprise.connector.spi.Value;
+import com.google.enterprise.connector.spiimpl.BinaryValue;
 import com.google.enterprise.connector.traversal.FileSizeLimitInfo;
 import com.google.enterprise.connector.traversal.MimeTypeMap;
+import com.google.enterprise.connector.util.InputStreamFactory;
 import com.google.enterprise.connector.util.MimeTypeDetector;
+
+import org.easymock.IAnswer;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -53,13 +58,20 @@ import java.util.Set;
 import javax.sql.rowset.serial.SerialClob;
 
 public class LobDocumentBuilderTest extends DocumentBuilderFixture {
+  @Override
+  protected void setUp() throws Exception {
+    super.setUp();
+
+    // Connector manager does this in production.
+    MimeTypeDetector.setTraversalContext(context);
+  }
+
   public void testPrimaryKeySkipped() throws Exception {
     Object docid = 2;
     String expectedDocid = "B/" + docid;
     Object clobContent = "hello, world";
     Map<String, Object> row = ImmutableMap.of(
         primaryKeyColumn, docid, dbContext.getLobField(), clobContent);
-    MimeTypeDetector.setTraversalContext(context);
 
     FieldNameBean bean = new FieldNameBean(dbContext) {
         @Override public String get() { return primaryKeyColumn; }
@@ -79,7 +91,6 @@ public class LobDocumentBuilderTest extends DocumentBuilderFixture {
     String originalName = dbContext.getLobField();
     Map<String, Object> row =
         ImmutableMap.of(primaryKeyColumn, 2, originalName, clobContent);
-    MimeTypeDetector.setTraversalContext(context);
 
     testFieldName("lobField", new LobDocumentBuilder(dbContext, context),
         row, SpiConstants.PROPNAME_CONTENT, clobContent);
@@ -103,7 +114,6 @@ public class LobDocumentBuilderTest extends DocumentBuilderFixture {
     String originalName = dbContext.getLobField();
     Map<String, Object> row =
         ImmutableMap.of(primaryKeyColumn, docid, originalName, clobContent);
-    MimeTypeDetector.setTraversalContext(context);
 
     // We don't care about the property value testing, just test docid.
     testFieldName("lobField", new LobDocumentBuilder(dbContext, context),
@@ -115,7 +125,6 @@ public class LobDocumentBuilderTest extends DocumentBuilderFixture {
     String originalName = dbContext.getFetchURLField();
     Map<String, Object> row =
         ImmutableMap.of(primaryKeyColumn, 2, originalName, expectedUrl);
-    MimeTypeDetector.setTraversalContext(context);
 
     testFieldName("fetchURLField", new LobDocumentBuilder(dbContext, context),
         row, SpiConstants.PROPNAME_DISPLAYURL, expectedUrl);
@@ -143,7 +152,6 @@ public class LobDocumentBuilderTest extends DocumentBuilderFixture {
       }
     };
     row.put(primaryKeyColumn, docid);
-    MimeTypeDetector.setTraversalContext(context);
 
     testFieldName("fetchURLField", builder, row,
         SpiConstants.PROPNAME_DISPLAYURL, expectedUrl);
@@ -159,6 +167,14 @@ public class LobDocumentBuilderTest extends DocumentBuilderFixture {
     return rowMap;
   }
 
+  public void testDigestContentHolderClobDocument() throws Exception {
+    String clobContent = getClobContent();
+    testCLOBDataScenarios(
+        DigestContentHolder.getInstance(clobContent.getBytes(Charsets.UTF_8),
+            new MimeTypeDetector()),
+        clobContent);
+  }
+
   public void testStringClobDocument() throws Exception {
     String clobContent = getClobContent();
     testCLOBDataScenarios(clobContent, clobContent);
@@ -170,13 +186,15 @@ public class LobDocumentBuilderTest extends DocumentBuilderFixture {
   }
 
   public void testSqlClobDocument() throws Exception {
-    String clobContent = getClobContent();
+    final String clobContent = getClobContent();
     long clobLength = clobContent.length();
-    StringReader clobReader = new StringReader(clobContent);
+    // The Clob is reused and should return a new stream each time.
+    IAnswer<StringReader> stream = new IAnswer<StringReader>() {
+      public StringReader answer() { return new StringReader(clobContent); } };
 
     Clob clob = createMock(Clob.class);
     expect(clob.length()).andReturn(clobLength).anyTimes();
-    expect(clob.getCharacterStream()).andReturn(clobReader).anyTimes();
+    expect(clob.getCharacterStream()).andAnswer(stream).anyTimes();
     replay(clob);
 
     testCLOBDataScenarios(clob, clobContent);
@@ -188,6 +206,20 @@ public class LobDocumentBuilderTest extends DocumentBuilderFixture {
     return MockClient.getClob(100000);
   }
 
+  private void assertEmptyContent(JsonDocument doc)
+      throws IOException, RepositoryException {
+    // SQL NULLs are rendered as empty byte arrays for easier handling.
+    Value value = Value.getSingleValue(doc, SpiConstants.PROPNAME_CONTENT);
+    assertTrue(value.getClass().toString(), value instanceof BinaryValue);
+    assertEquals(-1, ((BinaryValue) value).getInputStream().read());
+  }
+
+  private void assertEmptyContent(InputStreamFactory factory)
+      throws IOException, RepositoryException {
+    // SQL NULLs are rendered as empty byte arrays for easier handling.
+    assertEquals(-1, factory.getInputStream().read());
+  }
+
   /**
    * Test scenarios for CLOB data types.
    */
@@ -196,7 +228,6 @@ public class LobDocumentBuilderTest extends DocumentBuilderFixture {
     Map<String, Object> rowMap = getLargeObjectRow();
     rowMap.put(dbContext.getLobField(), clobValue);
 
-    MimeTypeDetector.setTraversalContext(context);
     FileSizeLimitInfo fileSizeLimitInfo = new FileSizeLimitInfo();
     fileSizeLimitInfo.setMaxDocumentSize(5);
     context.setFileSizeLimitInfo(fileSizeLimitInfo);
@@ -206,7 +237,7 @@ public class LobDocumentBuilderTest extends DocumentBuilderFixture {
     // As the size of the document is more than supported, clobDoc should have
     // null value.
     assertNotNull(clobDoc);
-    assertNull(Value.getSingleValue(clobDoc, SpiConstants.PROPNAME_CONTENT));
+    assertEmptyContent(clobDoc);
 
     // Increase the maximum supported size of the document.
     fileSizeLimitInfo.setMaxDocumentSize(1024 * 1024);
@@ -244,6 +275,13 @@ public class LobDocumentBuilderTest extends DocumentBuilderFixture {
     return rowMap;
   }
 
+  public void testDigestContentHolderBlobDocument() throws Exception {
+    byte[] blobContent = getBlobContent();
+    testBLOBDataScenarios(
+        DigestContentHolder.getInstance(blobContent, new MimeTypeDetector()),
+        blobContent);
+  }
+
   public void testByteArrayBlobDocument() throws Exception {
     byte[] blobContent = getBlobContent();
     testBLOBDataScenarios(blobContent, blobContent);
@@ -272,7 +310,6 @@ public class LobDocumentBuilderTest extends DocumentBuilderFixture {
     String fetchURL = "http://myhost:8030/app?dpc_id=120";
     rowMap.put(dbContext.getFetchURLField(), fetchURL);
 
-    MimeTypeDetector.setTraversalContext(context);
     FileSizeLimitInfo fileSizeLimitInfo = new FileSizeLimitInfo();
     fileSizeLimitInfo.setMaxDocumentSize(5);
     context.setFileSizeLimitInfo(fileSizeLimitInfo);
@@ -282,7 +319,7 @@ public class LobDocumentBuilderTest extends DocumentBuilderFixture {
 
     // The BLOB to too large.
     assertNotNull(blobDoc);
-    assertNull(Value.getSingleValue(blobDoc, SpiConstants.PROPNAME_CONTENT));
+    assertEmptyContent(blobDoc);
 
     // Increase the maximum supported size of the document.
     fileSizeLimitInfo.setMaxDocumentSize(1024 * 1024);
@@ -323,8 +360,12 @@ public class LobDocumentBuilderTest extends DocumentBuilderFixture {
     context.setMimeTypeMap(mimeTypeMap);
     JsonDocument.setTraversalContext(context);
 
-    JsonDocument blobDoc =
-        getJsonDocument(new LobDocumentBuilder(dbContext, context), rowMap);
+    DocumentBuilder docBuilder = new LobDocumentBuilder(dbContext, context);
+    ContentHolder holder = docBuilder.getContentHolder(rowMap,
+        ImmutableList.of(primaryKeyColumn), "1");
+    assertEmptyContent((InputStreamFactory) holder.getContent());
+
+    JsonDocument blobDoc = getJsonDocument(docBuilder, rowMap);
     Property docContent = blobDoc.findProperty(SpiConstants.PROPNAME_CONTENT);
     // Document content should have null value.
     assertNull(docContent);
@@ -342,8 +383,12 @@ public class LobDocumentBuilderTest extends DocumentBuilderFixture {
     context.setMimeTypeMap(mimeTypeMap);
     JsonDocument.setTraversalContext(context);
 
-    JsonDocument blobDoc =
-        getJsonDocument(new LobDocumentBuilder(dbContext, context), rowMap);
+    DocumentBuilder docBuilder = new LobDocumentBuilder(dbContext, context);
+    ContentHolder holder = docBuilder.getContentHolder(rowMap,
+        ImmutableList.of(primaryKeyColumn), "1");
+    assertEmptyContent((InputStreamFactory) holder.getContent());
+
+    JsonDocument blobDoc = getJsonDocument(docBuilder, rowMap);
     try {
       blobDoc.findProperty(SpiConstants.PROPNAME_CONTENT);
       fail("Expected SkippedDocumentException, but got none.");
