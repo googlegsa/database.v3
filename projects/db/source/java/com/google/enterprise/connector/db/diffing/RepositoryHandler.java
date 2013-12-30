@@ -41,9 +41,9 @@ public class RepositoryHandler {
   private final DBClient dbClient;
   private final TraversalContextManager traversalContextManager;
   private final QueryStrategy queryStrategy;
-  private final DocumentBuilder docBuilder;
 
   private TraversalContext traversalContext;
+  private DocumentBuilder docBuilder;
 
   public static RepositoryHandler makeRepositoryHandlerFromConfig(
       DBContext dbContext, TraversalContextManager traversalContextManager) {
@@ -58,7 +58,6 @@ public class RepositoryHandler {
 
     queryStrategy = (dbContext.isParameterizedQueryFlag())
         ? new ParameterizedQueryStrategy() : new PartialQueryStrategy();
-    docBuilder = DocumentBuilder.getInstance(dbContext, traversalContext);
   }
 
   private interface QueryStrategy {
@@ -183,6 +182,7 @@ public class RepositoryHandler {
       LOG.info("Setting Traversal Context");
       traversalContext = traversalContextManager.getTraversalContext();
       JsonDocument.setTraversalContext(traversalContext);
+      docBuilder = DocumentBuilder.getInstance(dbContext, traversalContext);
     }
 
     return getDocList(rows);
