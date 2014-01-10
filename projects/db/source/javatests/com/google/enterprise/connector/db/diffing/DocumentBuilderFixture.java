@@ -28,7 +28,6 @@ import com.google.enterprise.connector.traversal.ProductionTraversalContext;
 
 import junit.framework.Assert;
 import junit.framework.Test;
-import junit.framework.TestSuite;
 
 import java.beans.IntrospectionException;
 import java.beans.PropertyDescriptor;

@@ -15,7 +15,6 @@
 package com.google.enterprise.connector.db.diffing;
 
 import com.google.enterprise.connector.db.Util;
-
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
