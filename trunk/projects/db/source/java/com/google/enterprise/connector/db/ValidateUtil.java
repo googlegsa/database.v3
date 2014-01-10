@@ -114,6 +114,8 @@ public class ValidateUtil {
         } catch (SQLException e) {
           LOG.log(Level.WARNING, "Caught SQLException while testing connection",
                   e);
+        }
+        if (conn == null) {
           message = res.getString(TEST_CONNECTIVITY);
           problemFields.add(DBConnectorType.DRIVER_CLASS_NAME);
           problemFields.add(DBConnectorType.LOGIN);
@@ -168,16 +170,24 @@ public class ValidateUtil {
         String messageKey, String fieldId) {
       boolean result = false;
       try {
-        try {
-          result = stmt.execute(query);
-        } catch (SQLException e) {
-          LOG.log(Level.WARNING, "Caught SQLException while testing "
-              + res.getString(messageKey), e);
+        ResultSet resultSet = stmt.executeQuery(query);
+        if (resultSet != null) {
+          try {
+            // Copy column names.
+            ResultSetMetaData rsMeta = resultSet.getMetaData();
+            for (int i = 1; i <= rsMeta.getColumnCount(); i++) {
+              columnNames.add(rsMeta.getColumnLabel(i));
+              columnTypes.add(rsMeta.getColumnType(i));
+              columnClasses.add(rsMeta.getColumnClassName(i));
+            }
+            result = true;
+          } finally {
+            resultSet.close();
+          }
         }
-        if (!result) {
-          message = res.getString(messageKey);
-          problemFields.add(fieldId);
-        }
+      } catch (SQLException e) {
+        LOG.log(Level.WARNING, "Caught SQLException while testing "
+            + res.getString(messageKey), e);
       } finally {
         try {
           conn.rollback();
@@ -185,6 +195,10 @@ public class ValidateUtil {
           LOG.log(Level.WARNING,
               "Caught Exception while rolling back transaction", e);
         }
+      }
+      if (!result) {
+        message = res.getString(messageKey);
+        problemFields.add(fieldId);
       }
       return result;
     }
@@ -194,38 +208,20 @@ public class ValidateUtil {
      */
     private boolean validatePrimaryKeyColumns() {
       boolean result = false;
-      try {
-        ResultSet resultSet = stmt.getResultSet();
-        if (resultSet != null) {
-          // Copy column names.
-          try {
-            ResultSetMetaData rsMeta = resultSet.getMetaData();
-            for (int i = 1; i <= rsMeta.getColumnCount(); i++) {
-              columnNames.add(rsMeta.getColumnLabel(i));
-              columnTypes.add(rsMeta.getColumnType(i));
-              columnClasses.add(rsMeta.getColumnClassName(i));
-            }
-          } finally {
-            resultSet.close();
-          }
 
-          String primaryKeys = config.get(DBConnectorType.PRIMARY_KEYS_STRING);
-          List<String> matchedColumns =
-              Util.getCanonicalPrimaryKey(primaryKeys, columnNames);
-          result = (matchedColumns != null);
-          if (result) {
-            config.put(DBConnectorType.PRIMARY_KEYS_STRING,
-                Util.PRIMARY_KEY_JOINER.join(matchedColumns));
-          } else {
-            LOG.info("One or more primary keys are invalid");
-            message = res.getString(TEST_PRIMARY_KEYS);
-            problemFields.add(DBConnectorType.PRIMARY_KEYS_STRING);
-          }
-        }
-      } catch (SQLException e) {
-        LOG.log(Level.WARNING, "Caught SQLException while testing primary keys",
-                e);
+      String primaryKeys = config.get(DBConnectorType.PRIMARY_KEYS_STRING);
+      List<String> matchedColumns =
+          Util.getCanonicalPrimaryKey(primaryKeys, columnNames);
+      result = (matchedColumns != null);
+      if (result) {
+        config.put(DBConnectorType.PRIMARY_KEYS_STRING,
+            Util.PRIMARY_KEY_JOINER.join(matchedColumns));
+      } else {
+        LOG.info("One or more primary keys are invalid");
+        message = res.getString(TEST_PRIMARY_KEYS);
+        problemFields.add(DBConnectorType.PRIMARY_KEYS_STRING);
       }
+
       return result;
     }
 
@@ -356,6 +352,7 @@ public class ValidateUtil {
      */
     @Override
     public boolean validate() {
+      LOG.finest("ENTRY");
       password = config.get(DBConnectorType.PASSWORD);
       login = config.get(DBConnectorType.LOGIN);
       connectionUrl = config.get(DBConnectorType.CONNECTION_URL);
@@ -364,30 +361,35 @@ public class ValidateUtil {
       // Test JDBC driver class.
       boolean success = testDriverClass();
       if (!success) {
+        LOG.finest("RETURN false FROM testDriverClass");
         return success;
       }
 
       // Test Database connectivity.
       success = testDBConnectivity();
       if (!success) {
+        LOG.finest("RETURN false FROM testDBConnectivity");
         return success;
       }
 
       // Validate SQL crawl Query.
       success = validateSQLCrawlQuery();
       if (!success) {
+        LOG.finest("RETURN false FROM validateSQLCrawlQuery");
         return success;
       }
 
       // Validate primary key column names.
       success = validatePrimaryKeyColumns();
       if (!success) {
+        LOG.finest("RETURN false FROM validatePrimaryKeyColumns");
         return success;
       }
 
       // Validate external metadata fields.
       success = validateExternalMetadataFields();
       if (!success) {
+        LOG.finest("RETURN false FROM validateExternalMetadataFields");
         return success;
       }
 
@@ -395,6 +397,7 @@ public class ValidateUtil {
       success = validateFieldName(DBConnectorType.LAST_MODIFIED_DATE_FIELD,
           INVALID_COLUMN_NAME, false);
       if (!success) {
+        LOG.finest("RETURN false FROM validateFieldName");
         return success;
       }
 
@@ -402,6 +405,9 @@ public class ValidateUtil {
       // Validate authZ query if connector admin has provided one.
       if (!Util.isNullOrWhitespace(authZQuery)) {
         success = validateAuthZQuery(authZQuery);
+        if (!success) {
+          LOG.finest("RETURN false FROM validateAuthZQuery");
+        }
       }
 
       // Close database connection, result set and statement.
@@ -419,6 +425,7 @@ public class ValidateUtil {
         LOG.log(Level.WARNING, "Caught SQLException closing connection", e);
       }
 
+      LOG.log(Level.FINEST, "RETURN {0}", success);
       return success;
     }
 
@@ -460,6 +467,7 @@ public class ValidateUtil {
 
     @Override
     public boolean validate() {
+      LOG.finest("ENTRY");
       List<String> missingFields = new ArrayList<String>();
       for (String field : DBConnectorType.ALWAYS_REQUIRED_FIELDS) {
         // TODO(jlacey): Util.isNullOrWhitespace with tests.
@@ -483,6 +491,7 @@ public class ValidateUtil {
         message = buf.toString();
         problemFields = missingFields;
       }
+      LOG.log(Level.FINEST, "RETURN {0}", success);
       return success;
     }
   }
@@ -517,6 +526,7 @@ public class ValidateUtil {
 
     @Override
     public boolean validate() {
+      LOG.finest("ENTRY");
       boolean success;
       String xslt = Strings.nullToEmpty(config.get(DBConnectorType.XSLT));
       int index = xslt.indexOf("<td><xsl:value-of select=\"title\"/>");
@@ -527,6 +537,7 @@ public class ValidateUtil {
       } else {
         success = true;
       }
+      LOG.log(Level.FINEST, "RETURN {0}", success);
       return success;
     }
   }
@@ -562,6 +573,7 @@ public class ValidateUtil {
 
     @Override
     public boolean validate() {
+      LOG.finest("ENTRY");
       // We have already validated the primary key, we just need to
       // see if it has more than one column.
       String primaryKeys = config.get(DBConnectorType.PRIMARY_KEYS_STRING);
@@ -575,6 +587,7 @@ public class ValidateUtil {
       } else {
         success = true;
       }
+      LOG.log(Level.FINEST, "RETURN {0}", success);
       return success;
     }
   }
