@@ -14,20 +14,16 @@
 
 package com.google.enterprise.connector.db.testing;
 
-import com.google.common.collect.ImmutableMap;
+import com.google.common.base.Charsets;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.enterprise.connector.db.DBClient;
 import com.google.enterprise.connector.db.DBContext;
-import com.google.enterprise.connector.db.DBException;
 
-import java.io.UnsupportedEncodingException;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.logging.Logger;
-
-import javax.sql.DataSource;
 
 /**
  * A stub client that does not rely on live data in a database and
@@ -37,19 +33,11 @@ public class MockClient extends DBClient {
   private static final Logger LOG =
       Logger.getLogger(MockClient.class.getName());
 
-  // TODO: String.getBytes(Charsets.UTF_8) requires Java 6.
-  private static final byte[] PDF_PREFIX;
-
-  static {
-    try {
-      // TODO: We could work harder to make this valid PDF.
-      // Include two consecutive nulls to force MimeTypeDetector to
-      // think it's binary rather than text/plain.
-      PDF_PREFIX = "%PDF-1.3\n%\0\0\n".getBytes("UTF-8");
-    } catch (UnsupportedEncodingException e) {
-      throw new AssertionError(e);
-    }
-  }
+  // TODO: We could work harder to make this valid PDF.
+  // Include two consecutive nulls to force MimeTypeDetector to
+  // think it's binary rather than text/plain.
+  private static final byte[] PDF_PREFIX =
+      "%PDF-1.3\n%\0\0\n".getBytes(Charsets.UTF_8);
 
   /**
    * Generates a byte array of a given size, filled with either zeroes

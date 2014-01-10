@@ -19,12 +19,9 @@ import com.google.common.collect.Maps;
 import com.google.enterprise.connector.db.DBContext;
 import com.google.enterprise.connector.db.DBException;
 import com.google.enterprise.connector.db.InputStreamFactories;
-import com.google.enterprise.connector.db.InputStreamFactories.ContentLengthInputStreamFactory;
 import com.google.enterprise.connector.db.Util;
-import com.google.enterprise.connector.db.XmlUtils;
 import com.google.enterprise.connector.spi.SpiConstants;
 import com.google.enterprise.connector.spi.TraversalContext;
-import com.google.enterprise.connector.spi.Value;
 import com.google.enterprise.connector.util.InputStreamFactory;
 
 import java.io.CharArrayReader;
@@ -35,8 +32,6 @@ import java.sql.Blob;
 import java.sql.Clob;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -149,7 +144,7 @@ class LobDocumentBuilder extends DocumentBuilder {
     // Get the value of large object from map representing a row.
     Object largeObject = row.get(dbContext.getLobField());
 
-    // Custom LOB TypeHandler creates a partitial ContentHolder.
+    // Custom LOB TypeHandler creates a partial ContentHolder.
     // Finish up calculating the checksum and return the ContentHolder.
     if (largeObject instanceof DigestContentHolder) {
       DigestContentHolder holder = (DigestContentHolder) largeObject;
@@ -253,7 +248,7 @@ class LobDocumentBuilder extends DocumentBuilder {
    */
   private Map<String, Object> getRowForXmlDoc(Map<String, Object> row) {
     return Maps.filterKeys(row, new Predicate<String>() {
-        public boolean apply(String key) {
+        @Override public boolean apply(String key) {
           return !dbContext.getLobField().equals(key);
         }
       });

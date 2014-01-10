@@ -17,7 +17,6 @@ package com.google.enterprise.connector.db;
 import com.google.enterprise.connector.util.Base64;
 import com.google.enterprise.connector.util.Base64DecoderException;
 
-import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -31,7 +30,6 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 

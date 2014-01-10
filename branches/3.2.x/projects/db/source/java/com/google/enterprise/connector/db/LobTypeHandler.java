@@ -14,8 +14,8 @@
 
 package com.google.enterprise.connector.db;
 
+import com.google.common.base.Preconditions;
 import com.google.enterprise.connector.db.diffing.DigestContentHolder;
-import com.google.enterprise.connector.util.InputStreamFactory;
 import com.google.enterprise.connector.util.MimeTypeDetector;
 
 import org.apache.ibatis.type.BaseTypeHandler;
@@ -66,8 +66,10 @@ public class LobTypeHandler extends BaseTypeHandler<DigestContentHolder> {
       Logger.getLogger(LobTypeHandler.class.getName());
 
   public interface Strategy {
+    /** @return a non-null byte array */
     byte[] getBytes(ResultSet rs, int columnIndex) throws SQLException;
 
+    /** @return a non-null byte array */
     byte[] getBytes(CallableStatement rs, int columnIndex) throws SQLException;
   }
 
@@ -158,6 +160,7 @@ public class LobTypeHandler extends BaseTypeHandler<DigestContentHolder> {
 
   private DigestContentHolder getContentHolder(byte[] contentBytes)
       throws SQLException {
+    Preconditions.checkNotNull(contentBytes);
     DigestContentHolder contentHolder = new DigestContentHolder(
         InputStreamFactories.newInstance(contentBytes),
         mimeTypeDetector.getMimeType(null, contentBytes));

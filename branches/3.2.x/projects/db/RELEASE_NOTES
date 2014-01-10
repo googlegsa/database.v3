@@ -19,6 +19,21 @@ This is a maintenance release that improves quality, reliability, and
 performance without adding any new functionality. All users of
 previous releases should upgrade to this release.
 
+New Issues in 3.2.0
+-------------------
+11519723 - Null BLOB or CLOB field values throw a NullPointerException.
+           Workaround: Use a CASE or COALESCE expression in the select
+           list to avoid NULL values in the BLOB or CLOB field. For
+           example, if the field name is "content", use the following
+           expressions in the select list instead:
+
+           Oracle BLOB: coalesce(content, empty_blob()) as content
+           Oracle CLOB: coalesce(content, empty_clob()) as content
+           SQL Server:  coalesce(content, '') as content
+
+           The column alias value is arbitrary, but must match the
+           configured BLOB or CLOB Field value.
+
 Issues fixed since 3.0.0
 ------------------------
 11377648 - The configuration form has been rearranged, some fields
