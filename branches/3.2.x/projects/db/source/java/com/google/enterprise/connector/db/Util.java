@@ -18,6 +18,7 @@ import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
 import com.google.common.io.ByteStreams;
+import com.google.enterprise.connector.util.Base16;
 import com.google.enterprise.connector.util.InputStreamFactory;
 
 import java.io.ByteArrayOutputStream;
@@ -42,8 +43,6 @@ public class Util {
       Joiner.on(PRIMARY_KEY_SEPARATOR);
 
   public static final String CHECKSUM_ALGO = "SHA1";
-
-  private static final char[] HEX_CHARS = "0123456789abcdef".toCharArray();
 
   // This class should not be initialized.
   private Util() {
@@ -117,22 +116,7 @@ public class Util {
     for (byte[] buf : bufs) {
       digest.update(buf);
     }
-    return asHex(digest.digest());
-  }
-
-  /**
-   * Utility method to convert a byte[] to hex string.
-   *
-   * @param buf
-   * @return hex string.
-   */
-  public static String asHex(byte[] buf) {
-    char[] chars = new char[2 * buf.length];
-    for (int i = 0; i < buf.length; ++i) {
-      chars[2 * i] = HEX_CHARS[(buf[i] & 0xF0) >>> 4];
-      chars[2 * i + 1] = HEX_CHARS[buf[i] & 0x0F];
-    }
-    return new String(chars);
+    return Base16.lowerCase().encode(digest.digest());
   }
 
   /**

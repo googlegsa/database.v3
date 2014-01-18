@@ -18,11 +18,11 @@ import com.google.common.base.Predicate;
 import com.google.common.collect.Maps;
 import com.google.enterprise.connector.db.DBContext;
 import com.google.enterprise.connector.db.DBException;
-import com.google.enterprise.connector.db.InputStreamFactories;
 import com.google.enterprise.connector.db.Util;
 import com.google.enterprise.connector.spi.SpiConstants;
 import com.google.enterprise.connector.spi.TraversalContext;
 import com.google.enterprise.connector.util.InputStreamFactory;
+import com.google.enterprise.connector.util.MimeTypeDetector;
 
 import java.io.CharArrayReader;
 import java.io.InputStream;
@@ -46,10 +46,19 @@ class LobDocumentBuilder extends DocumentBuilder {
 
   private final TraversalContext context;
 
+  /**
+   * Maximum document size that connector manager supports, or the
+   * maximum size of a byte array (~2 GB), whichever is smaller.
+   */
+  private final long maxDocSize;
+
+  private final MimeTypeDetector mimeTypeDetector = new MimeTypeDetector();
+
   protected LobDocumentBuilder(DBContext dbContext, TraversalContext context) {
     super(dbContext);
 
     this.context = context;
+    this.maxDocSize = Math.min(context.maxDocumentSize(), Integer.MAX_VALUE);
   }
 
   private byte[] getBinaryContent(Object largeObject, String docId)
@@ -58,32 +67,13 @@ class LobDocumentBuilder extends DocumentBuilder {
     // If the largeObject is of type java.sql.Blob or byte array means large
     // object is of type BLOB, else it is CLOB.
     byte[] binaryContent;
-    // Maximum document size that connector manager supports.
-    // We may support less, due to the constraints of Util.getBytes().
-    long maxDocSize = Math.min(context.maxDocumentSize(), Integer.MAX_VALUE);
 
     if (largeObject instanceof byte[]) {
       binaryContent = (byte[]) largeObject;
       int length = binaryContent.length;
-      // Check if the size of document exceeds Max document size that
-      // Connector Manager supports. Skip document if it exceeds.
-      if (length > maxDocSize) {
-        LOG.warning("Size of the document '" + docId
-            + "' is larger than supported");
-        return null;
-      }
-
       LOG.info("BLOB Data found");
     } else if (largeObject instanceof Blob) {
       long length = ((Blob) largeObject).length();
-      // Check if the size of document exceeds Max document size that
-      // Connector Manager supports. Skip document if it exceeds.
-      if (length > maxDocSize) {
-        LOG.warning("Size of the document '" + docId
-            + "' is larger than supported");
-        return null;
-      }
-
       try {
         binaryContent = ((Blob) largeObject).getBytes(1, (int) length);
       } catch (SQLException e) {
@@ -117,20 +107,10 @@ class LobDocumentBuilder extends DocumentBuilder {
         clobReader = new StringReader(value);
       }
 
-      if (clobReader != null && length <= maxDocSize) {
+      if (clobReader != null) {
         binaryContent = Util.getBytes((int) length, clobReader);
-        length = binaryContent.length;
       } else {
-        // No content or content obviously too large.
         binaryContent = null;
-      }
-
-      // Check if the size of document exceeds Max document size that
-      // Connector Manager supports. Skip document if it exceeds.
-      if (length > maxDocSize) {
-        LOG.warning("Size of the document '" + docId
-                    + "' is larger than supported");
-        return null;
       }
 
       LOG.info("CLOB Data found");
@@ -138,24 +118,8 @@ class LobDocumentBuilder extends DocumentBuilder {
     return binaryContent;
   }
 
-  @Override
-  protected ContentHolder getContentHolder(Map<String, Object> row,
-      List<String> primaryKey, String docId) throws DBException {
-    // Get the value of large object from map representing a row.
-    Object largeObject = row.get(dbContext.getLobField());
-
-    // Custom LOB TypeHandler creates a partial ContentHolder.
-    // Finish up calculating the checksum and return the ContentHolder.
-    if (largeObject instanceof DigestContentHolder) {
-      DigestContentHolder holder = (DigestContentHolder) largeObject;
-      // TODO: Look into which encoding/charset to use for getBytes().
-      holder.updateDigest(
-          getXmlDoc(getRowForXmlDoc(row), primaryKey, "").getBytes());
-      return holder;
-    }
-
-    // Check if large object data value for null.  If large object is null,
-    // then do not set content, else handle the content as per LOB type.
+  private byte[] getBytes(Object largeObject, String docId)
+      throws DBException {
     byte[] binaryContent;
     if (largeObject == null) {
       binaryContent = null;
@@ -166,23 +130,45 @@ class LobDocumentBuilder extends DocumentBuilder {
         throw new DBException("Error retrieving LOB content", e);
       }
     }
-    if (binaryContent != null) {
-      // TODO (bmj): We should really skip caching the content if the
-      // mimeTypeSupportLevel is <= 0.
-      InputStreamFactory content = 
-          InputStreamFactories.newInstance(binaryContent);
-      DigestContentHolder holder = new DigestContentHolder(content,
-          dbContext.getMimeTypeDetector().getMimeType(null, binaryContent));
-      holder.updateDigest(binaryContent);
-      // TODO: Look into which encoding/charset to use for getBytes().
-      holder.updateDigest(
-          getXmlDoc(getRowForXmlDoc(row), primaryKey, "").getBytes());
-      return holder;
-    } else {
+    if (binaryContent == null) {
+      // TODO(jlacey): The LobTypeHandler strategies log this at a lower level.
       LOG.warning("Content of Document " + docId + " has null value.");
-      return new ContentHolder(null,
-          getChecksum(getRowForXmlDoc(row), primaryKey, ""), null);
+      binaryContent = new byte[0];
     }
+    return binaryContent;
+  }
+
+  @Override
+  protected ContentHolder getContentHolder(Map<String, Object> row,
+      List<String> primaryKey, String docId) throws DBException {
+    // Get the value of large object from map representing a row.
+    Object largeObject = row.get(dbContext.getLobField());
+
+    DigestContentHolder holder;
+    if (largeObject instanceof DigestContentHolder) {
+      // Custom LOB TypeHandler creates a partial ContentHolder.
+      holder = (DigestContentHolder) largeObject;
+    } else {
+      // TODO(jlacey): This should be dead code with the LOB TypeHandler.
+      holder = DigestContentHolder.getInstance(getBytes(largeObject, docId),
+          mimeTypeDetector);
+    }
+
+    if (holder.getLength() > maxDocSize) {
+      LOG.warning("Size of the document '" + docId
+                  + "' is larger than supported");
+      holder = DigestContentHolder.getEmptyInstance(holder.getMimeType());
+    } else if (context.mimeTypeSupportLevel(holder.getMimeType()) <= 0) {
+      LOG.warning("Content MIME type " + holder.getMimeType()
+          + " of the document '" + docId + "' is not supported");
+      holder = DigestContentHolder.getEmptyInstance(holder.getMimeType());
+    }
+
+    // Finish up calculating the checksum and return the ContentHolder.
+    // TODO: Look into which encoding/charset to use for getBytes().
+    holder.updateDigest(
+        getXmlDoc(getRowForXmlDoc(row), primaryKey, "").getBytes());
+    return holder;
   }
 
   /**

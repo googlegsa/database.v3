@@ -10,6 +10,43 @@ documentation.
 Web Site: http://code.google.com/p/google-enterprise-connector-database/
 
 
+Release 3.2.4, January 10, 2014
+===============================
+
+Introduction
+------------
+This is a maintenance release that improves quality, reliability, and
+performance without adding any new functionality. All users of
+previous releases should upgrade to this release.
+
+Issues fixed since 3.2.0
+------------------------
+12440163 - The configuration form validation would fail with no error
+           message if the JDBC driver closed cursors when a transaction
+           is rolled back.
+
+12326156 - Large BLOB or CLOB values (larger than 30 MB by default) are
+           now skipped, following the configured size limit, rather
+           than erroneously sent to the GSA.
+
+11519723 - Null BLOB or CLOB field values threw a NullPointerException.
+
+11220599 - Support JDBC drivers that do not support the JDBC 4.0
+           methods Blob.free and Clob.free.
+
+Version Compatibility
+---------------------
+Connector instances created with versions earlier than 2.8.0 will not
+work with this version. Connector Manager version earlier than 3.2.4
+will not work correctly with this version of the connector.
+
+Java SE 5.0 is no longer supported. Java 6 or later is required.
+
+Customers upgrading from connector releases prior to 3.2.0 should read
+the Version Compatibiliy and Upgrade Instructions in the 3.2.0 release
+notes below.
+
+
 Release 3.2.0, October 25, 2013
 ===============================
 
@@ -21,6 +58,9 @@ previous releases should upgrade to this release.
 
 New Issues in 3.2.0
 -------------------
+12326156 - Large BLOB or CLOB values (larger than 30 MB by default) are
+           sent to the GSA rather than skipped.
+
 11519723 - Null BLOB or CLOB field values throw a NullPointerException.
            Workaround: Use a CASE or COALESCE expression in the select
            list to avoid NULL values in the BLOB or CLOB field. For
