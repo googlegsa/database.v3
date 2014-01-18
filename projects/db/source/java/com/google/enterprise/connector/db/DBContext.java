@@ -15,7 +15,6 @@
 package com.google.enterprise.connector.db;
 
 import com.google.common.collect.ImmutableList;
-import com.google.enterprise.connector.util.MimeTypeDetector;
 
 import java.text.Collator;
 import java.util.Set;
@@ -25,8 +24,6 @@ import java.util.Set;
  * instance.
  */
 public class DBContext implements ValueOrdering {
-  private final MimeTypeDetector mimeTypeDetector = new MimeTypeDetector();
-
   private DBClient client;
   private String connectionUrl;
   private String connectorName;
@@ -66,10 +63,6 @@ public class DBContext implements ValueOrdering {
         throw new DBException("nullsSortLowFlag must be set in configuration.");
       }
     }
-  }
-
-  public MimeTypeDetector getMimeTypeDetector() {
-    return mimeTypeDetector;
   }
 
   public boolean isParameterizedQueryFlag() {

@@ -14,7 +14,6 @@
 
 package com.google.enterprise.connector.db;
 
-import com.google.common.base.Preconditions;
 import com.google.enterprise.connector.db.diffing.DigestContentHolder;
 import com.google.enterprise.connector.util.MimeTypeDetector;
 
@@ -158,13 +157,7 @@ public class LobTypeHandler extends BaseTypeHandler<DigestContentHolder> {
     return value;
   }
 
-  private DigestContentHolder getContentHolder(byte[] contentBytes)
-      throws SQLException {
-    Preconditions.checkNotNull(contentBytes);
-    DigestContentHolder contentHolder = new DigestContentHolder(
-        InputStreamFactories.newInstance(contentBytes),
-        mimeTypeDetector.getMimeType(null, contentBytes));
-    contentHolder.updateDigest(contentBytes);
-    return contentHolder;
+  private DigestContentHolder getContentHolder(byte[] contentBytes) {
+    return DigestContentHolder.getInstance(contentBytes, mimeTypeDetector);
   }
 }

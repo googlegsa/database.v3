@@ -14,7 +14,13 @@
 
 package com.google.enterprise.connector.db.diffing;
 
+import com.google.common.base.Preconditions;
+import com.google.enterprise.connector.db.InputStreamFactories;
 import com.google.enterprise.connector.db.Util;
+import com.google.enterprise.connector.util.Base16;
+import com.google.enterprise.connector.util.InputStreamFactory;
+import com.google.enterprise.connector.util.MimeTypeDetector;
+
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
@@ -26,11 +32,30 @@ import java.security.NoSuchAlgorithmException;
  * is called.
  */
 public class DigestContentHolder extends ContentHolder {
+  public static DigestContentHolder getInstance(byte[] contentBytes,
+      MimeTypeDetector mimeTypeDetector) {
+    Preconditions.checkNotNull(contentBytes);
+    DigestContentHolder contentHolder = new DigestContentHolder(
+        InputStreamFactories.newInstance(contentBytes),
+        mimeTypeDetector.getMimeType(null, contentBytes),
+        contentBytes.length);
+    contentHolder.updateDigest(contentBytes);
+    return contentHolder;
+  }
+
+  public static DigestContentHolder getEmptyInstance(String mimeType) {
+    return new DigestContentHolder(
+        InputStreamFactories.newInstance(new byte[0]), mimeType, 0);
+  }
+
+  private final int length;
   private final MessageDigest digest;
   private String checksum;
 
-  public DigestContentHolder(Object content, String mimeType) {
+  private DigestContentHolder(InputStreamFactory content, String mimeType,
+      int length) {
     super(content, null, mimeType);
+    this.length = length;
     this.checksum = null;
     try {
       this.digest = MessageDigest.getInstance(Util.CHECKSUM_ALGO);
@@ -40,10 +65,14 @@ public class DigestContentHolder extends ContentHolder {
     }
   }
 
+  public long getLength() {
+    return length;
+  }
+
   @Override
   public synchronized String getChecksum() {
     if (checksum == null) {
-      checksum = Util.asHex(digest.digest());
+      checksum = Base16.lowerCase().encode(digest.digest());
     }
     return checksum;
   }
