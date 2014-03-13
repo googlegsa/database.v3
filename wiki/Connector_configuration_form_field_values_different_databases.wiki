@@ -1,71 +1,7 @@
 #summary DB connector configuration form field values for different databases
+#labels Phase-Deploy,Deprecated
 
-== Introduction ==
-
-Following fields on the DB connector configuration page are dependent on which DB your connector needs to be configured:
-
- 
-1. JDBC Connection URL
-
-2. JDBC Driver Classname
- 
-
-
-== Details ==
-
-Here are the typical values used for different databases for these fields:
-
-*_DB_HOST_NAME_OR_IP_ :* is the IP address or the name of the machine where Database server resides.
-
-*_Database Name_ :* is the name of database schema in which the table used in select query resides.  
-
-
-
-
-*MY SQL server:*
- 
-
-Driver Jar Used:mysql-connector-java-5.1.6-bin.jar 
-
-1.JDBC Connection URL: jdbc:mysql://*DB_HOST_NAME_OR_IP*:3306/*_Database Name_*
-
-2. JDBC Driver Classname: com.mysql.jdbc.Driver
- 
-
-*MS SQL server 2005:*
- 
-
-Driver Jar Used:sqljdbc.jar. If you are using JDK 1.6 and above, use sqljdbc4.jar.
-
-1. JDBC Connection URL:jdbc:sqlserver://*DB_HOST_NAME_OR_IP*:1433;databaseName=*_Database Name_*
-
-2. JDBC Driver Classname: com.microsoft.sqlserver.jdbc.SQLServerDriver
- 
-
-*Oracle:*
- 
-
-Driver Jar Used: ojdbc14.jar
-
-1. JDBC Connection URL: jdbc:oracle:thin:@*DB_HOST_NAME_OR_IP*:1521:*_Database Name_*
-
-2. JDBC Driver Classname: oracle.jdbc.OracleDriver
- 
-
-*IBM DB2:*
- 
-
-Driver Jar Used:db2jcc.jar
-
-1. JDBC Connection URL: jdbc:db2://*DB_HOST_NAME_OR_IP*:50000/*_Database Name_*
-
-2. JDBC Driver Classname: com.ibm.db2.jcc.DB2Driver
- 
- 
-
-*Notes:*
-
-1. Ports used in the JDBC connection URLs above are the default Database installation TCP/IP ports. These may differ if user has custom installation.
-
-2. For JDBC driver jars and driver class names refer: http://www.dbvis.com/products/dbvis/doc/supports.jsp
-  
+==Deprecated==
+This wiki page has been incorporated into the connector documentation for versions  [https://developers.google.com/search-appliance/documentation/connectors/260/connector_admin/database_connector#BeforeInstall 2.6]
+and
+[https://support.google.com/gsa/answer/4382158?hl=en&ref_topic=4317357#BeforeInstall 3.0].
