@@ -1,8 +1,8 @@
 #labels Featured
-Steps to install Google Enterprise Connector for Databases.
+Steps to install Google Search Appliance Connector for Databases.
 
 = Introduction =
-This document walks you through the steps to manually install a Google Enterprise Connector for Databases. The instructions mentioned here are applicable to connector version 2.8.0 and above
+This document walks you through the steps to manually install a Google Search Appliance Connector for Databases. The instructions mentioned here are applicable to connector version 2.8.0 and above
 
 Google recommends that you use the Google connectors installer for installing the connector. You may want to do it manually if,
 
