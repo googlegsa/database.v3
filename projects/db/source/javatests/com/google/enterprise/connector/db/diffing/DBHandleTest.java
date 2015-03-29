@@ -25,6 +25,9 @@ import com.google.enterprise.connector.util.diffing.DocumentHandle;
 
 import junit.framework.TestCase;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.sql.Timestamp;
 import java.util.Calendar;
 import java.util.Date;
@@ -82,12 +85,22 @@ public class DBHandleTest extends TestCase {
    * Tests that the JSON object handle string includes all of the
    * document properties.
    */
-  public void testToString() {
+  public void testToString() throws JSONException {
     DocumentHandle handle = new DBHandle(jsonDocument);
-    Object expected = "{\"google:ispublic\":\"false\",\"google:docid\":\"1\","
+
+    // TODO(jlacey): The serialization of the DBHandle produces
+    // different results on Java 7 and Java 8 (which is not
+    // unexpected). We want to compare the parsed strings as
+    // JSONObjects, but JSONObject does not implement equals. Calling
+    // toString on both JSONObjects happens to work on both versions
+    // of Java. If this test fails, we should compare the wrapped
+    // JSONObjects directly using getNames and get.
+    String expected = "{\"google:ispublic\":\"false\",\"google:docid\":\"1\","
         + "\"google:mimetype\":\"text/plain\","
         + "\"google:lastmodified\":\"" + lastModified + "\"}";
-    assertEquals(expected, handle.toString());
+    assertEquals(
+        new JSONObject(expected).toString(),
+        new JSONObject(handle.toString()).toString());
   }
 
   /**
