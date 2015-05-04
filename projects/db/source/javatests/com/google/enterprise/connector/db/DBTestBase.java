@@ -15,6 +15,7 @@
 package com.google.enterprise.connector.db;
 
 import com.google.enterprise.connector.traversal.ProductionTraversalContext;
+import com.google.enterprise.connector.util.diffing.testing.TestDirectoryManager;
 
 import junit.framework.TestCase;
 
@@ -61,7 +62,8 @@ public abstract class DBTestBase extends TestCase {
     configMap.put("driverClassName", LanguageResource.getPropertyValue("driverClassName"));
     configMap.put("sqlQuery", LanguageResource.getPropertyValue("sqlQuery"));
     configMap.put("primaryKeysString", LanguageResource.getPropertyValue("primaryKeysString"));
-    configMap.put("googleConnectorWorkDir", testDirManager.getTmpDir());
+    configMap.put("googleConnectorWorkDir",
+        testDirManager.makeDirectory("connectorWorkDir").getCanonicalPath());
     configMap.put("xslt", "");
     configMap.put("authZQuery", LanguageResource.getPropertyValue("authZQuery"));
     configMap.put("lastModifiedDate", "");
