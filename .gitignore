@@ -1,0 +1,6 @@
+build/
+downloads/
+javadoc/
+reports/
+
+cobertura.ser
