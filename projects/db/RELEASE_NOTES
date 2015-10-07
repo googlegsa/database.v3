@@ -7,7 +7,16 @@ Connector for Databases. The following sections describe the release
 in detail and provide information that supplements the main
 documentation.
 
-Web Site: http://code.google.com/p/google-enterprise-connector-database/
+For information about the latest version of the Connector for Databases,
+see the version 4 overview page and GitHub project:
+
+    http://googlegsa.github.io/adaptor/index.html
+
+    https://github.com/googlegsa/database
+
+For more about version 3, see the version 3 GitHub project:
+
+    https://github.com/googlegsa/database.v3
 
 
 Release 3.2.4, January 10, 2014

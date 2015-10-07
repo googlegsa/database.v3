@@ -1,41 +1,51 @@
-Welcome to the Google Search Appliance Connector for databases
+Welcome to the Google Search Appliance Connector for Databases
 
-The Google Search Appliance connector framework enables Google search
-appliances to search and serve documents stored in non-Web
+The Google Search Appliance connector framework enables Google Search
+Appliances to search and serve documents stored in non-Web
 repositories, such as enterprise content management systems.
 An enterprise content management (ECM) system provides a central
 repository for large numbers of documents.
 
-The Google Search Appliance Connector for databases
-enables the appliance to traverse databases and
-index rows in the form of documents.
+The Connector for Databases enables the appliance to traverse
+databases and index rows in the form of documents.
 
-The Google Search Appliance Connector for databases
-communicates with the databases using the ibatis library which is
-built on top of the jdbc. So the connector could work with any database
-which supports jdbc.
+The connector communicates with the databases using the MyBatis
+library, which is built on top of the JDBC. So the connector could
+work with any database that supports JDBC.
+
+This source code repository is for version 3 of the connector. For
+information about the latest version of the Connector for Databases,
+see the version 4 overview page and GitHub project:
+
+    http://googlegsa.github.io/adaptor/index.html
+
+    https://github.com/googlegsa/database
 
 Documentation Links
 
-* Documentation for the Google Search Appliance Connectors
-  http://code.google.com/apis/searchappliance/documentation/connectors/index.html
+    * Documentation for the Google Search Appliance Connectors
+      https://support.google.com/gsa/topic/4566684?ref_topic=2709671
 
-* Google Search Appliance Connector for databases
- http://code.google.com/p/google-enterprise-connector-database/
+    * Google Search Appliance Connector for Databases
+      Version 4: https://github.com/googlegsa/database
+      Version 3: https://github.com/googlegsa/database.v3
+
+    * Google Search Appliance
+      https://support.google.com/gsa/
 
 Licensing
 
-This product includes software developed by
-The Apache Software Foundation (http://www.apache.org/).
+      This product includes software developed by
+      The Apache Software Foundation (http://www.apache.org/).
 
-In addition this product includes a number of open source components.
-The license files for each included component is provided in this
-distribution under the License directory.
-
+      In addition this product includes a number of open source components.
+      The license files for each included component is provided in this
+      distribution under the License directory.
 
 Source code for 3rd party libraries
 
-Database connector uses various 3rd party open source libraries. The versions
-of these libraries are embedded in the names of the files. If you have trouble
-locating the source code of any of the libraries used by Database connector,
-you can file an issue on the Database connector project site.
+      The Connector for Databases uses various 3rd party open source
+      libraries. The versions of these libraries are embedded in the
+      names of the files. If you have trouble locating the source code
+      of any of the libraries used by the Connector for Databases, you
+      can file an issue on this project site.
