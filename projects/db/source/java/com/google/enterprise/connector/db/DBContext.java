@@ -18,12 +18,16 @@ import com.google.common.collect.ImmutableList;
 
 import java.text.Collator;
 import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * An encapsulation of all the config needed for a working Database Connector
  * instance.
  */
 public class DBContext implements ValueOrdering {
+  private static final Logger LOG = Logger.getLogger(DBContext.class.getName());
+
   private DBClient client;
   private String connectionUrl;
   private String connectorName;
@@ -98,6 +102,7 @@ public class DBContext implements ValueOrdering {
   }
 
   public void setAuthZQuery(String authZQuery) {
+    LOG.log(Level.CONFIG, "AUTHZ QUERY = {0}", authZQuery);
     this.authZQuery = authZQuery;
   }
 

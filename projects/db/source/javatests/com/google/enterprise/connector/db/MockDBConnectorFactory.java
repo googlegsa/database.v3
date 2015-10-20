@@ -57,7 +57,8 @@ public class MockDBConnectorFactory implements ConnectorFactory {
     }
     // Escape MyBatis syntax that looks like a Spring placeholder.
     // See https://jira.springsource.org/browse/SPR-4953
-    props.put("docIds", "#{'$'}{docIds}");
+    props.put("dollarSign", "$");
+    props.put("docIds", "${dollarSign}{docIds}");
     props.putAll(config);
 
     Resource prototype = new ClassPathResource("config/connectorInstance.xml",

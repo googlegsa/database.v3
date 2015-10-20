@@ -25,6 +25,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -49,6 +50,7 @@ public class DBConnectorAuthorizationManager implements AuthorizationManager {
     String userName = identity.getUsername();
     Map<String, String> docIdMap = DocIdUtil.getDocIdMap(docIds);
     String docIdString = DocIdUtil.getDocIdString(docIdMap.keySet());
+    LOG.log(Level.FINE, "Encoded doc IDs: {0}", docIdString);
     List<AuthorizationResponse> encodedDocuments =
         new ArrayList<AuthorizationResponse>();
     List<String> authorizedDocIdList =

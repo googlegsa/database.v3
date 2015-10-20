@@ -15,14 +15,17 @@
 package com.google.enterprise.connector.db;
 
 import com.google.enterprise.connector.spi.AuthenticationIdentity;
+import com.google.enterprise.connector.spi.AuthorizationManager;
 import com.google.enterprise.connector.spi.AuthorizationResponse;
+import com.google.enterprise.connector.spi.Connector;
 import com.google.enterprise.connector.spi.RepositoryException;
+import com.google.enterprise.connector.spi.Session;
 
 import java.util.ArrayList;
 import java.util.Collection;
 
 public class DBConnectorAuthorizationManagerTest extends DBTestBase {
-  private DBConnectorAuthorizationManager authZmanager = null;
+  private AuthorizationManager authZmanager;
 
   @Override
   protected void setUp() throws Exception {
@@ -36,7 +39,11 @@ public class DBConnectorAuthorizationManagerTest extends DBTestBase {
      */
     runDBScript(LOAD_USER_DOC_MAP_TEST_DATA);
 
-    authZmanager = new DBConnectorAuthorizationManager(getDbContext());
+    // Spring-instantiate the connector to test the ${docIds} escaping.
+    MockDBConnectorFactory connectorFactory = new MockDBConnectorFactory();
+    Connector connector = connectorFactory.makeConnector(configMap);
+    Session session = connector.login();
+    authZmanager = session.getAuthorizationManager();
   }
 
   /**

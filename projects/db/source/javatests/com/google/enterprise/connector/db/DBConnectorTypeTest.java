@@ -446,6 +446,19 @@ public class DBConnectorTypeTest extends DBTestBase {
     }
   }
 
+  public void testValidAuthZQuery() throws Exception {
+    Map<String, String> newConfigMap = Maps.newHashMap(configMap);
+    // TODO(jlacey): See testQuotedPlaceholdersAuthZQuery about the
+    // use of lname with ${docIds} instead of id.
+    newConfigMap.put(AUTHZ_QUERY, "select id from TestEmpTable where "
+        + "lname = #{username} and lname IN (${docIds})");
+    ConfigureResponse configRes = connectorType.validateConfig(
+        newConfigMap, Locale.ENGLISH, mdbConnectorFactory);
+    if (configRes != null) {
+      fail(configRes.getMessage());
+    }
+  }
+
   /** Tests an authZ query with no #{username} placeholder. */
   public void testInvalidAuthZQuery() throws Exception {
     Map<String, String> newConfigMap = Maps.newHashMap(configMap);
