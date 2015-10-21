@@ -14,14 +14,18 @@
 
 package com.google.enterprise.connector.db;
 
-import com.google.enterprise.connector.spi.AuthenticationIdentity;
+import static com.google.common.base.Charsets.UTF_8;
+
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.enterprise.connector.spi.AuthorizationManager;
 import com.google.enterprise.connector.spi.AuthorizationResponse;
 import com.google.enterprise.connector.spi.Connector;
 import com.google.enterprise.connector.spi.RepositoryException;
 import com.google.enterprise.connector.spi.Session;
+import com.google.enterprise.connector.spi.SimpleAuthenticationIdentity;
+import com.google.enterprise.connector.util.Base64;
 
-import java.util.ArrayList;
 import java.util.Collection;
 
 public class DBConnectorAuthorizationManagerTest extends DBTestBase {
@@ -46,69 +50,71 @@ public class DBConnectorAuthorizationManagerTest extends DBTestBase {
     authZmanager = session.getAuthorizationManager();
   }
 
-  /**
-   * Test method authorizeDocids.
-   */
-  public void testAuthorizeDocids() {
-    /*
-     * Create AuthenticationIdentity for user-name "user1"
-     */
-    AuthenticationIdentity authNIdentity = new AuthenticationIdentity() {
-      @Override public String getUsername() { return "user1"; }
-      @Override public String getPassword() { return null; }
-      @Override public String getDomain() { return null; }
-    };
+  private void testAuthorizeDocids(ImmutableMap<String, Boolean> expected)
+      throws RepositoryException {
+    testAuthorizeDocids(expected.keySet(), expected);
+  }
 
-    Collection<String> docIds = new ArrayList<String>();
+  private void testAuthorizeDocids(Collection<String> docIds,
+      ImmutableMap<String, Boolean> expected) throws RepositoryException {
+    SimpleAuthenticationIdentity authNIdentity =
+        new SimpleAuthenticationIdentity("user1");
 
-    // build doc Ids for testing
-    String docId1 = "l/1";
-    String docId2 = "l/2";
-    String docId3 = "l/3";
-    String docId4 = "l/4";
+    Collection<AuthorizationResponse> authZResponse =
+        authZmanager.authorizeDocids(docIds, authNIdentity);
+    assertNotNull(authZResponse);
+    assertEquals(authZResponse.toString(),
+        expected.size(), authZResponse.size());
 
-    // add doc Ids in the collection of documents to be authorized.
-    docIds.add(docId1);
-    docIds.add(docId2);
-    docIds.add(docId3);
-    docIds.add(docId4);
-
-    try {
-      /*
-       * authorized above collection of doc Ids for user-name "user1"
-       */
-
-      Collection<AuthorizationResponse> authZResponce =
-          authZmanager.authorizeDocids(docIds, authNIdentity);
-
-      assertNotNull(authZResponce);
-
-      /*
-       * Iterate over collection of AuthorizationResponse and check for PERMIT
-       * and DENY documents. In test data, user-name "user1" is allowed to view
-       * documents with docId 'docId1' and 'docId3' and denied for 'docId2' and
-       * 'docId4'.
-       */
-      for (AuthorizationResponse responce : authZResponce) {
-        String docId = responce.getDocid();
-
-        if (docId1.equals(docId)) {
-          assertTrue(responce.isValid());
-        }
-
-        if (docId2.equals(docId)) {
-          assertFalse(responce.isValid());
-        }
-        if (docId3.equals(docId)) {
-          assertTrue(responce.isValid());
-        }
-        if (docId4.equals(docId)) {
-          assertFalse(responce.isValid());
-        }
-      }
-    } catch (RepositoryException e) {
-      fail("Exception occured while authorization");
+    for (AuthorizationResponse response : authZResponse) {
+      String docId = response.getDocid();
+      assertEquals(docId, expected.get(docId),
+          Boolean.valueOf(response.isValid()));
     }
+  }
+
+  public void testAuthorizeDocids_basic() throws RepositoryException {
+    testAuthorizeDocids(ImmutableMap.<String, Boolean>of(
+        "l/1", true, "l/2", false, "l/3", true, "l/4", false));
+  }
+
+  /**
+   * Docids without type tags are assumed to be Base64-encoded. Here
+   * the decoding fails, so there are no docids to put in the query.
+   */
+  public void testAuthorizeDocids_untyped() throws RepositoryException {
+    testAuthorizeDocids(ImmutableMap.<String, Boolean>of(
+        "1", false, "2", false, "3", false, "4", false));
+  }
+
+  /**
+   * The fix for untyped docids is small and partial. If only some
+   * docids are invalid, they will not be returned by authorizeDocids,
+   * and they will be assumed to be denied downstream.
+   */
+  public void testAuthorizeDocids_mixed() throws RepositoryException {
+    testAuthorizeDocids(ImmutableList.of("1", "l/2", "l/3", "4"),
+        ImmutableMap.<String, Boolean>of("l/2", false, "l/3", true));
+  }
+
+  private String base64(String input) {
+    return Base64.encodeWebSafe(input.getBytes(UTF_8), false);
+  }
+
+  /** Base64-encoded docids are legacy but acceptable. */
+  public void testAuthorizeDocids_base64() throws RepositoryException {
+    testAuthorizeDocids(ImmutableMap.<String, Boolean>of(
+        base64("1"), true, base64("2"), false,
+        base64("3"), true, base64("4"), false));
+  }
+
+  /**
+   * Some invalid docids can successfully be decoded into random garbage,
+   * so they are returned by authorizeDocids.
+   */
+  public void testAuthorizeDocids_nonBase64() throws RepositoryException {
+    testAuthorizeDocids(ImmutableMap.<String, Boolean>of(
+        "hello-_world", false));
   }
 
   @Override

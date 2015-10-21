@@ -46,13 +46,22 @@ public class DBConnectorAuthorizationManager implements AuthorizationManager {
       Collection<String> docIds, AuthenticationIdentity identity)
       throws RepositoryException {
     LOG.info("Documents to be authorized: " + docIds);
-
-    String userName = identity.getUsername();
-    Map<String, String> docIdMap = DocIdUtil.getDocIdMap(docIds);
-    String docIdString = DocIdUtil.getDocIdString(docIdMap.keySet());
-    LOG.log(Level.FINE, "Encoded doc IDs: {0}", docIdString);
     List<AuthorizationResponse> encodedDocuments =
         new ArrayList<AuthorizationResponse>();
+
+    Map<String, String> docIdMap = DocIdUtil.getDocIdMap(docIds);
+    if (docIdMap.isEmpty()) {
+      LOG.log(Level.INFO, "Unable to authorize invalid document IDs: {0}",
+          docIds);
+      for (String docId : docIds) {
+        encodedDocuments.add(new AuthorizationResponse(Status.DENY, docId));
+      }
+      return encodedDocuments;
+    }
+
+    String docIdString = DocIdUtil.getDocIdString(docIdMap.keySet());
+    LOG.log(Level.FINE, "Encoded doc IDs: {0}", docIdString);
+    String userName = identity.getUsername();
     List<String> authorizedDocIdList =
         dbClient.executeAuthZQuery(userName, docIdString);
     StringBuilder logMessage = new StringBuilder();
