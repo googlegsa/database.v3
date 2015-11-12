@@ -19,6 +19,33 @@ For more about version 3, see the version 3 GitHub project:
     https://github.com/googlegsa/database.v3
 
 
+Release 3.2.12, November 11, 2015
+=================================
+
+Introduction
+------------
+This is a maintenance release that improves quality without adding any
+new functionality. Users of previous releases are encouraged to review
+the changes below to determine whether to upgrade.
+
+Issues fixed since 3.2.4
+------------------------
+25093902 - Authorization queries are broken in versions 3.2.0 and 3.2.4.
+
+Version Compatibility
+---------------------
+Connector instances created with versions earlier than 2.8.0 will not
+work with this version. This version works with Connector Manager
+version 3.2.4 or later. Earlier versions of the Connector Manager will
+not work correctly with this version of the connector.
+
+Java SE versions 6, 7, and 8 are supported.
+
+Customers upgrading from connector releases prior to 3.2.0 should read
+the Version Compatibiliy and Upgrade Instructions in the 3.2.0 release
+notes below.
+
+
 Release 3.2.4, January 10, 2014
 ===============================
 
